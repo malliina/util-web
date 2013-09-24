@@ -1,23 +1,35 @@
 package com.mle.play.controllers
 
-import play.api.mvc.{Security, RequestHeader}
+import play.api.mvc._
 import play.api.http.HeaderNames
 import scala.Predef.String
 import org.apache.commons.codec.binary.Base64
 import play.api.mvc.Results._
+import com.mle.util.Log
 import scala.Some
 import play.api.mvc.SimpleResult
-import play.api.mvc.Security.AuthenticatedBuilder
-import com.mle.util.Log
+import com.mle.play.actions.Actions.MappingActionBuilder
+import play.api.mvc.Security.AuthenticatedRequest
+import scala.concurrent.Future
+import java.nio.file.{Paths, Files, Path}
+import play.api.libs.{Files => PlayFiles}
+import com.mle.util.Implicits._
+import play.api.mvc.BodyParsers.parse
 
 /**
  *
  * @author mle
  */
+class AuthRequest[A](user: String, request: Request[A]) extends AuthenticatedRequest[A, String](user, request)
+
+class FileUploadRequest[A](val files: Seq[Path], user: String, request: Request[A]) extends AuthRequest(user, request)
+
+class OneFileUploadRequest[A](val file: Path, user: String, request: Request[A]) extends AuthRequest(user, request)
+
 trait BaseSecurity extends Log {
 
   def authenticateFromSession(implicit request: RequestHeader): Option[String] =
-    request.session.get(Security.username)//.filter(_.nonEmpty)
+    request.session.get(Security.username) //.filter(_.nonEmpty)
 
   def authenticateFromHeader(implicit request: RequestHeader): Option[String] = headerAuth(validateCredentials)
 
@@ -78,16 +90,68 @@ trait BaseSecurity extends Log {
       authenticateFromQueryString
   }
 
-  protected def onAuthFail(req: RequestHeader): SimpleResult = {
+  /**
+   * Called when an unauthorized request has been made. Also
+   * called when a failed authentication attempt is made.
+   *
+   * Returns HTTP 401 by default; override to handle unauthorized
+   * requests in a more app-specific manner.
+   *
+   * @param req header of request which failed authentication
+   * @return "auth failed" result
+   */
+  protected def onUnauthorized(implicit req: RequestHeader): SimpleResult = {
     val ip = req.remoteAddress
     val path = req.path
     log warn s"Unauthorized request to: $path from: $ip"
     Unauthorized
   }
 
-  class AuthAction[U](f: RequestHeader => Option[U])
-    extends AuthenticatedBuilder[U](f, onAuthFail)
+  /**
+   * Ensures that the user is authenticated before serving the request.
+   *
+   */
+  class AuthActionBuilder extends MappingActionBuilder[AuthRequest] {
+    protected def map[A](request: Request[A]): Option[AuthRequest[A]] =
+      authenticate(request).map(user => new AuthRequest[A](user, request))
 
-  object BasicAuthAction extends AuthAction(req => authenticate(req))
+    override protected def onSuccess[A](request: AuthRequest[A], f: (AuthRequest[A] => Future[SimpleResult])): Future[SimpleResult] =
+      f(request)
 
+    override protected def onFailure[A](request: Request[A]): SimpleResult =
+      onUnauthorized(request)
+  }
+
+  object AuthAction extends AuthActionBuilder
+
+  val uploadDir = Paths get sys.props("java.io.tmpdir")
+
+  /**
+   * An action for multipart/form-data uploaded files. Assumes file uploads require authentication.
+   * Saves the uploaded file in a temporary directory.
+   *
+   * @param builder action builder
+   * @param f builds a result from a request with a file
+   * @return the action
+   */
+  def UploadAction(builder: AuthActionBuilder = AuthAction)(f: FileUploadRequest[MultipartFormData[PlayFiles.TemporaryFile]] => SimpleResult): Action[MultipartFormData[PlayFiles.TemporaryFile]] =
+    builder(parse.multipartFormData)(req => {
+      val files = saveFiles(req)
+      f(new FileUploadRequest(files, req.user, req))
+    })
+
+  def HeadUploadAction(builder: AuthActionBuilder = AuthAction)(f: OneFileUploadRequest[MultipartFormData[PlayFiles.TemporaryFile]] => SimpleResult) =
+    UploadAction(builder)(req =>
+      req.files.headOption
+        .map(firstFile => f(new OneFileUploadRequest(firstFile, req.user, req)))
+        .getOrElse(BadRequest)
+    )
+
+  private def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
+    request.body.files.map(file => {
+      val dest = uploadDir / file.filename
+      if (!Files.exists(dest))
+        file.ref.moveTo(dest.toFile, replace = true)
+      dest
+    })
 }
