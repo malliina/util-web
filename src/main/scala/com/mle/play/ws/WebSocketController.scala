@@ -31,7 +31,9 @@ trait WebSocketController extends WebSocketBase with Log {
         // iteratee that eats client messages (input)
         val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo))
           .map(_ => onDisconnect(clientInfo))
-        (in, out)
+        val enumerator = welcomeMessage.map(msg => Enumerator[Message](msg) andThen out)
+          .getOrElse(out)
+        (in, enumerator)
       }).getOrElse({
         // authentication failed
         log warn s"Unauthorized WebSocket connection attempt from: ${request.remoteAddress}"
@@ -40,6 +42,8 @@ trait WebSocketController extends WebSocketBase with Log {
         (in, out)
       })
     })
+
+  def welcomeMessage: Option[Message] = None
 
   def authenticate(implicit request: RequestHeader): Option[String]
 

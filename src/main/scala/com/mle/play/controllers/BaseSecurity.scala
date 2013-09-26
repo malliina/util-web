@@ -10,7 +10,6 @@ import scala.Some
 import play.api.mvc.SimpleResult
 import com.mle.play.actions.Actions.MappingActionBuilder
 import play.api.mvc.Security.AuthenticatedRequest
-import scala.concurrent.Future
 import java.nio.file.{Paths, Files, Path}
 import play.api.libs.{Files => PlayFiles}
 import com.mle.util.Implicits._
@@ -107,19 +106,20 @@ trait BaseSecurity extends Log {
     Unauthorized
   }
 
+  trait AuthFailureHandling[R[C]] extends MappingActionBuilder[R] {
+    override protected def onFailure[A](request: Request[A]): SimpleResult =
+      onUnauthorized(request)
+  }
+
   /**
    * Ensures that the user is authenticated before serving the request.
    *
    */
-  class AuthActionBuilder extends MappingActionBuilder[AuthRequest] {
-    protected def map[A](request: Request[A]): Option[AuthRequest[A]] =
-      authenticate(request).map(user => new AuthRequest[A](user, request))
-
-    override protected def onSuccess[A](request: AuthRequest[A], f: (AuthRequest[A] => Future[SimpleResult])): Future[SimpleResult] =
-      f(request)
-
-    override protected def onFailure[A](request: Request[A]): SimpleResult =
-      onUnauthorized(request)
+  class AuthActionBuilder extends MappingActionBuilder[AuthRequest] with AuthFailureHandling[AuthRequest] {
+    override def map[A](request: Request[A]): Either[SimpleResult, AuthRequest[A]] =
+      authenticate(request)
+        .map(user => Right(new AuthRequest[A](user, request)))
+        .getOrElse(Left(onFailure(request)))
   }
 
   object AuthAction extends AuthActionBuilder
