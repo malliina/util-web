@@ -114,6 +114,12 @@ trait BaseSecurity extends Log {
   /**
    * Ensures that the user is authenticated before serving the request.
    *
+   * Note that this is silly, because now the request body is parsed
+   * regardless of whether authentication succeeded or not. That's
+   * especially unacceptable if the web service handles file uploads.
+   *
+   * It is therefore better to use <code>SecureAction</code> which
+   * performs authentication before body parsing.
    */
   class AuthActionBuilder extends MappingActionBuilder[AuthRequest] with AuthFailureHandling[AuthRequest] {
     override def map[A](request: Request[A]): Either[SimpleResult, AuthRequest[A]] =
@@ -123,6 +129,11 @@ trait BaseSecurity extends Log {
   }
 
   object AuthAction extends AuthActionBuilder
+
+  def SecureAction[U](auth: RequestHeader => Option[U])(f: U => EssentialAction) =
+    Security.Authenticated(req => auth(req), req => onUnauthorized(req))(f)
+
+  def UserAction(f: String => EssentialAction) = SecureAction[String](req => authenticate(req))(f)
 
   val uploadDir = Paths get sys.props("java.io.tmpdir")
 

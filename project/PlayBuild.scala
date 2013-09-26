@@ -9,7 +9,7 @@ object PlayBuild extends Build {
   import Dependencies._
 
   lazy val utilPlay = Project("util-play", file("."), settings = projectSettings)
-    .settings(libraryDependencies ++= Seq(scalaTest, play, utilDep))
+    .settings(libraryDependencies ++= Seq(scalaTest, play, utilDep, httpClient, httpMime))
 
   val releaseVersion = "1.0.0"
   val snapshotVersion = "1.0.0-SNAPSHOT"
@@ -54,4 +54,8 @@ object Dependencies {
   val utilDep = "com.github.malliina" %% "util" % "1.0.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "1.9.2" % "test"
   val play = "com.typesafe.play" %% "play" % "2.2.0"
+  val httpGroup = "org.apache.httpcomponents"
+  val httpVersion = "4.3"
+  val httpClient = httpGroup % "httpclient" % httpVersion
+  val httpMime = httpGroup % "httpmime" % httpVersion
 }

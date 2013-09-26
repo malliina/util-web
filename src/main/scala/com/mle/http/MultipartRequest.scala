@@ -1,0 +1,64 @@
+package com.mle.http
+
+import org.apache.http.client.methods.HttpPost
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.impl.auth.BasicScheme
+import java.nio.file.Path
+import org.apache.http.util.EntityUtils
+import play.api.http.HeaderNames._
+import play.api.http.ContentTypes._
+import org.apache.http.protocol.BasicHttpContext
+import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.entity.mime.{HttpMultipartMode, MultipartEntityBuilder}
+import org.apache.http.entity.mime.content.FileBody
+
+/**
+ * The Play WS API does not afaik support multipart/form-data
+ * file uploads, therefore this class provides it using Apache HttpClient.
+ *
+ * @author mle
+ */
+class MultipartRequest(uri: String) extends AutoCloseable {
+  private val client = HttpClientBuilder.create().build()
+  private val request = new HttpPost(uri)
+  request.addHeader(ACCEPT, JSON)
+  private val reqContent = MultipartEntityBuilder.create()
+    .setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+
+  def setAuth(username: String, password: String) {
+    val creds = new UsernamePasswordCredentials(username, password)
+    request addHeader new BasicScheme().authenticate(creds, request, new BasicHttpContext())
+  }
+
+  def addFile(file: Path): Unit = {
+    def fileName = file.getFileName.toString
+    reqContent.addPart(fileName, new FileBody(file.toFile))
+  }
+
+  def addKeyValues(kvs: (String, String)*): Unit =
+    kvs.foreach(kv => {
+      val (key, value) = kv
+      reqContent.addTextBody(key, value)
+    })
+
+  /**
+   * Executes the request.
+   *
+   * @return the response
+   */
+  def execute() = {
+    request setEntity reqContent.build()
+    client execute request
+  }
+
+  /**
+   * Executes the request.
+   *
+   * @return the stringified response, if any
+   */
+  def executeToString() = Option(execute().getEntity) map EntityUtils.toString
+
+  override def close() {
+    client.close()
+  }
+}
