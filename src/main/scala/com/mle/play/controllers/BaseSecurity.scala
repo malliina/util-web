@@ -135,6 +135,25 @@ trait BaseSecurity extends Log {
 
   def UserAction(f: String => EssentialAction) = SecureAction[String](req => authenticate(req))(f)
 
+  def Logged(action: EssentialAction): EssentialAction = EssentialAction(req => {
+    log debug s"Request: ${req.path} from: ${req.remoteAddress}"
+    action(req)
+  })
+
+  /**
+   * Logs authenticated requests.
+   */
+  def UserLogged(user: String, f: String => EssentialAction) =
+    EssentialAction(request => {
+      val qString = request.rawQueryString
+      // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
+      def queryString =
+        if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
+        else ""
+      log info s"User: $user from: ${request.remoteAddress} requests: ${request.path}$queryString"
+      f(user)(request)
+    })
+
   val uploadDir = Paths get sys.props("java.io.tmpdir")
 
   /**
@@ -158,7 +177,7 @@ trait BaseSecurity extends Log {
         .getOrElse(BadRequest)
     )
 
-  private def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
+  protected def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
     request.body.files.map(file => {
       val dest = uploadDir / file.filename
       if (!Files.exists(dest))
