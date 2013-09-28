@@ -24,6 +24,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * To start authentication, send the user to the OpenID route you first defined:
  * {{{Redirect(routes.App.handleOpenId())}}}
  *
+ * The authenticated email address is stored in the username session variable.
+ *
  * @author Michael
  */
 trait OpenIdAuth extends Log {

@@ -2,18 +2,15 @@ package com.mle.play.controllers
 
 import play.api.mvc._
 import play.api.http.HeaderNames
-import scala.Predef.String
 import org.apache.commons.codec.binary.Base64
 import play.api.mvc.Results._
 import com.mle.util.Log
 import scala.Some
 import play.api.mvc.SimpleResult
-import com.mle.play.actions.Actions.MappingActionBuilder
 import play.api.mvc.Security.AuthenticatedRequest
 import java.nio.file.{Paths, Files, Path}
 import play.api.libs.{Files => PlayFiles}
 import com.mle.util.Implicits._
-import play.api.mvc.BodyParsers.parse
 
 /**
  *
@@ -101,81 +98,48 @@ trait BaseSecurity extends Log {
    */
   protected def onUnauthorized(implicit req: RequestHeader): SimpleResult = {
     val ip = req.remoteAddress
-    val path = req.path
-    log warn s"Unauthorized request to: $path from: $ip"
+    val resource = req.path
+    log warn s"Unauthorized request to: $resource from: $ip"
     Unauthorized
   }
 
-  trait AuthFailureHandling[R[C]] extends MappingActionBuilder[R] {
-    override protected def onFailure[A](request: Request[A]): SimpleResult =
-      onUnauthorized(request)
-  }
+  def Authenticated(f: String => EssentialAction): EssentialAction =
+    Security.Authenticated(req => authenticate(req), req => onUnauthorized(req))(f)
 
-  /**
-   * Ensures that the user is authenticated before serving the request.
-   *
-   * Note that this is silly, because now the request body is parsed
-   * regardless of whether authentication succeeded or not. That's
-   * especially unacceptable if the web service handles file uploads.
-   *
-   * It is therefore better to use <code>SecureAction</code> which
-   * performs authentication before body parsing.
-   */
-  class AuthActionBuilder extends MappingActionBuilder[AuthRequest] with AuthFailureHandling[AuthRequest] {
-    override def map[A](request: Request[A]): Either[SimpleResult, AuthRequest[A]] =
-      authenticate(request)
-        .map(user => Right(new AuthRequest[A](user, request)))
-        .getOrElse(Left(onFailure(request)))
-  }
+  def Authenticated(f: => EssentialAction): EssentialAction =
+    Authenticated(user => f)
 
-  object AuthAction extends AuthActionBuilder
+  def AuthenticatedLogged(f: String => EssentialAction): EssentialAction =
+    Authenticated(user => Logged(user, f))
 
-  def SecureAction[U](auth: RequestHeader => Option[U])(f: U => EssentialAction) =
-    Security.Authenticated(req => auth(req), req => onUnauthorized(req))(f)
+  def AuthenticatedLogged(f: => EssentialAction): EssentialAction =
+    AuthenticatedLogged(_ => f)
 
-  def UserAction(f: String => EssentialAction) = SecureAction[String](req => authenticate(req))(f)
-
-  def Logged(action: EssentialAction): EssentialAction = EssentialAction(req => {
-    log debug s"Request: ${req.path} from: ${req.remoteAddress}"
-    action(req)
-  })
+  def AuthAction(f: AuthRequest[AnyContent] => SimpleResult) =
+    AuthenticatedLogged(user => Action(req => f(new AuthRequest(user, req))))
 
   /**
    * Logs authenticated requests.
    */
-  def UserLogged(user: String, f: String => EssentialAction) =
+  def Logged(user: String, f: String => EssentialAction) =
     EssentialAction(request => {
       val qString = request.rawQueryString
       // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
       def queryString =
         if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
         else ""
-      log info s"User: $user from: ${request.remoteAddress} requests: ${request.path}$queryString"
+      log info s"User: $user from: ${request.remoteAddress} requests: ${
+        request.path
+      }$queryString"
       f(user)(request)
     })
 
+  def Logged(action: EssentialAction): EssentialAction = EssentialAction(req => {
+    log debug s"Request: ${req.path} from: ${req.remoteAddress}"
+    action(req)
+  })
+
   val uploadDir = Paths get sys.props("java.io.tmpdir")
-
-  /**
-   * An action for multipart/form-data uploaded files. Assumes file uploads require authentication.
-   * Saves the uploaded file in a temporary directory.
-   *
-   * @param builder action builder
-   * @param f builds a result from a request with a file
-   * @return the action
-   */
-  def UploadAction(builder: AuthActionBuilder = AuthAction)(f: FileUploadRequest[MultipartFormData[PlayFiles.TemporaryFile]] => SimpleResult): Action[MultipartFormData[PlayFiles.TemporaryFile]] =
-    builder(parse.multipartFormData)(req => {
-      val files = saveFiles(req)
-      f(new FileUploadRequest(files, req.user, req))
-    })
-
-  def HeadUploadAction(builder: AuthActionBuilder = AuthAction)(f: OneFileUploadRequest[MultipartFormData[PlayFiles.TemporaryFile]] => SimpleResult) =
-    UploadAction(builder)(req =>
-      req.files.headOption
-        .map(firstFile => f(new OneFileUploadRequest(firstFile, req.user, req)))
-        .getOrElse(BadRequest)
-    )
 
   protected def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
     request.body.files.map(file => {
