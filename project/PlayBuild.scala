@@ -19,7 +19,7 @@ object PlayBuild extends Build {
     fork in Test := true,
     organization := "com.github.malliina",
     name := "util-play",
-    version := snapshotVersion,
+    version := releaseVersion,
     exportJars := false,
     publishTo := {
       val repo =
