@@ -11,8 +11,8 @@ object PlayBuild extends Build {
   lazy val utilPlay = Project("util-play", file("."), settings = projectSettings)
     .settings(libraryDependencies ++= Seq(scalaTest, play, utilDep, httpClient, httpMime))
 
-  val releaseVersion = "1.0.0"
-  val snapshotVersion = "1.0.1-SNAPSHOT"
+  val releaseVersion = "1.1.0"
+  val snapshotVersion = "1.1.1-SNAPSHOT"
 
   lazy val projectSettings = Defaults.defaultSettings ++ Seq(
     scalaVersion := "2.10.3",
