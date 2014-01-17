@@ -11,7 +11,7 @@ import com.mle.util.{Util, Log}
  * The main motivation of this class is to be able to find out
  * whether a request is made over HTTPS or not.
  */
-class RequestHelpers(server: Option[NettyServer]) extends Log {
+class RequestHelpers(serverOpt: Option[NettyServer]) extends Log {
   /**
    * May not work if the HTTPS port is 80 and excluded from the request's <code>host</code> member.
    *
@@ -35,7 +35,9 @@ class RequestHelpers(server: Option[NettyServer]) extends Log {
   }
 
   private def port(f: NettyServer => Option[(ServerBootstrap, Channel)]): Option[Int] =
-    server.flatMap(server => f(server)
-      .flatMap(pair => Option(pair._2.getLocalAddress)
-      .map(_.asInstanceOf[InetSocketAddress].getPort)))
+    for {
+      server <- serverOpt
+      serverAndChannel <- f(server)
+      localAddr <- Option(serverAndChannel._2.getLocalAddress)
+    } yield localAddr.asInstanceOf[InetSocketAddress].getPort
 }
