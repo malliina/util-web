@@ -5,6 +5,8 @@ import play.core.StaticApplication
 import com.mle.util.{Log, FileUtilities, Util}
 import java.nio.file.{Files, Path, Paths}
 import scala.Some
+import java.io.{FileInputStream, FileNotFoundException}
+import java.security.KeyStore
 
 /**
  * Starts Play Framework 2, does not create a RUNNING_PID file.
@@ -16,6 +18,14 @@ import scala.Some
  */
 trait PlayLifeCycle extends Log {
 
+  protected val (httpPortKey, httpsPortKey, httpAddressKey) =
+    ("http.port", "https.port", "http.address")
+  protected val (keyStoreKey, keyStorePassKey, keyStoreTypeKey) =
+    ("https.keyStore", "https.keyStorePassword", "https.keyStoreType")
+  protected val defaultHttpPort = 9000
+  protected val defaultHttpAddress = "0.0.0.0"
+  protected val defaultKeyStoreType = "JKS"
+
   var nettyServer: Option[NettyServer] = None
 
   def appName: String
@@ -26,9 +36,10 @@ trait PlayLifeCycle extends Log {
   }
 
   def start() {
-    log info s"Starting $appName..."
     FileUtilities.basePath = Paths get sys.props.get(s"$appName.home").getOrElse(sys.props("user.dir"))
-    addConfFileToSysProps(appName)
+    log info s"Starting $appName... app home: ${FileUtilities.basePath}"
+    sys.props ++= conformize(readConfFile(appName))
+    validateKeyStoreIfSpecified()
 
     /**
      * NettyServer.createServer insists on writing a RUNNING_PID file.
@@ -40,49 +51,70 @@ trait PlayLifeCycle extends Log {
   private def createServer() = {
     val server = new NettyServer(
       new StaticApplication(FileUtilities.basePath.toFile),
-      Option(System.getProperty("http.port")).map(Integer.parseInt).orElse(Some(9000)),
-      Option(System.getProperty("https.port")).map(Integer.parseInt),
-      Option(System.getProperty("http.address")).getOrElse("0.0.0.0")
+      Option(System.getProperty(httpPortKey)).map(Integer.parseInt).orElse(Some(defaultHttpPort)),
+      Option(System.getProperty(httpsPortKey)).map(Integer.parseInt),
+      Option(System.getProperty(httpAddressKey)).getOrElse(defaultHttpAddress)
     )
     Util.addShutdownHook(server.stop())
     server
   }
 
   /**
-   * If a file named app_name_here.conf exists, reads it and adds any
-   * properties in it to the system properties.
+   * Reads a file named `confNameWithoutExtension`.conf if it exists.
    *
    * @param confNameWithoutExtension name of conf, typically the name of the app
+   * @return the key-value pairs from the conf file; an empty map if the file doesn't exist
    */
-  def addConfFileToSysProps(confNameWithoutExtension: String) {
+  def readConfFile(confNameWithoutExtension: String): Map[String, String] = {
     // adds settings in app conf to system properties
     val confFile = FileUtilities.pathTo(s"$confNameWithoutExtension.conf")
-    if (Files.exists(confFile)) {
-      val props = propsFromFile(confFile)
-      // makes keystore file path absolute
-      val keystorePathKey = "https.keyStore"
-      val sysPropsAdditions = props.get(keystorePathKey).map(keyStorePath => {
-        props.updated(keystorePathKey, FileUtilities.pathTo(keyStorePath).toAbsolutePath.toString)
-      }).getOrElse(props)
-      sys.props ++= sysPropsAdditions
+    if (Files.exists(confFile)) propsFromFile(confFile)
+    else Map.empty[String, String]
+  }
+
+  /**
+   * @param params key-value pairs
+   * @return key-value pairs where key https.keyStore, if any, is an absolute path
+   */
+  def conformize(params: Map[String, String]): Map[String, String] = {
+    params.get(keyStoreKey).map(keyStorePath => {
+      val absKeyStorePath = FileUtilities.pathTo(keyStorePath).toAbsolutePath
+      params.updated(keyStoreKey, absKeyStorePath.toString)
+    }).getOrElse(params)
+  }
+
+  private def sysProp(key: String) = sys.props.get(key)
+
+  private def verifyFileReadability(file: Path): Unit = {
+    import Files._
+    if (!exists(file)) {
+      throw new FileNotFoundException(file.toString)
+    }
+    if (!isRegularFile(file)) {
+      throw new Exception(s"Not a regular file: $file")
+    }
+    if (!isReadable(file)) {
+      throw new Exception(s"File exists but is not readable: $file")
     }
   }
 
+  private def validateKeyStoreIfSpecified(): Unit = {
+    sysProp(keyStoreKey) foreach (keyStore => {
+      val absPath = FileUtilities.pathTo(keyStore).toAbsolutePath
+      verifyFileReadability(absPath)
+      val pass = sysProp(keyStorePassKey) getOrElse (throw new Exception(s"Key $keyStoreKey exists but no corresponding $keyStorePassKey was found."))
+      val storeType = sysProp(keyStoreTypeKey) getOrElse defaultKeyStoreType
+      validateKeyStore(Paths get keyStore, pass, storeType)
+    })
+  }
+
+  private def validateKeyStore(keyStore: Path, keyStorePassword: String, keyStoreType: String = defaultKeyStoreType): Unit = {
+    val ks = KeyStore.getInstance(keyStoreType)
+    Util.using(new FileInputStream(keyStore.toFile))(keyStream => ks.load(keyStream, keyStorePassword.toCharArray))
+  }
+
   private def propsFromFile(file: Path): Map[String, String] = {
-    if (Files.exists(file)) {
-      Util.resource(io.Source.fromFile(file.toFile))(src => {
-        val kvs = src.getLines().flatMap(line => {
-          val kv = line.split("=", 2)
-          if (kv.size >= 2) {
-            Some(kv(0) -> kv(1))
-          } else {
-            None
-          }
-        })
-        Map(kvs.toList: _*)
-      })
-    } else {
-      Map.empty[String, String]
-    }
+    if (Files.exists(file)) Util.props(file)
+    else Map.empty[String, String]
   }
 }
