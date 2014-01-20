@@ -11,7 +11,7 @@ object PlayBuild extends Build {
   lazy val utilPlay = Project("util-play", file(".")).settings(projectSettings: _*)
 
   val releaseVersion = "1.1.0"
-  val snapshotVersion = "1.1.1-SNAPSHOT"
+  val snapshotVersion = "1.1.2-SNAPSHOT"
 
   lazy val projectSettings = Seq(
     libraryDependencies ++= Seq(scalaTest, play, utilDep, httpClient, httpMime),
@@ -19,7 +19,7 @@ object PlayBuild extends Build {
     fork in Test := true,
     organization := "com.github.malliina",
     name := "util-play",
-    version := releaseVersion,
+    version := snapshotVersion,
     exportJars := false,
     publishTo := {
       val repo =

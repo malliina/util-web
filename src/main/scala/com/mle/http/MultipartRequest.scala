@@ -18,8 +18,8 @@ import org.apache.http.entity.mime.content.FileBody
  *
  * @author mle
  */
-class MultipartRequest(uri: String) extends AutoCloseable {
-  private val client = HttpClientBuilder.create().build()
+class MultipartRequest(uri: String, buildInstructions: HttpClientBuilder => HttpClientBuilder = b => b) extends AutoCloseable {
+  private val client = buildInstructions(HttpClientBuilder.create()).build()
   private val request = new HttpPost(uri)
   request.addHeader(ACCEPT, JSON)
   private val reqContent = MultipartEntityBuilder.create()
@@ -62,3 +62,6 @@ class MultipartRequest(uri: String) extends AutoCloseable {
     client.close()
   }
 }
+
+class TrustAllMultipartRequest(uri: String)
+  extends MultipartRequest(uri, _.setSSLSocketFactory(ApacheHttpHelper.allowAllCertificatesSocketFactory()))
