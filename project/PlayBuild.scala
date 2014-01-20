@@ -10,16 +10,17 @@ object PlayBuild extends Build {
 
   lazy val utilPlay = Project("util-play", file(".")).settings(projectSettings: _*)
 
-  val releaseVersion = "1.1.0"
-  val snapshotVersion = "1.1.2-SNAPSHOT"
+  val releaseVersion = "1.2.0"
+  val snapshotVersion = "1.2.0-SNAPSHOT"
 
   lazy val projectSettings = Seq(
     libraryDependencies ++= Seq(scalaTest, play, utilDep, httpClient, httpMime),
+    resolvers += "Sonatype snaps" at "http://oss.sonatype.org/content/repositories/snapshots/",
     scalaVersion := "2.10.3",
     fork in Test := true,
     organization := "com.github.malliina",
     name := "util-play",
-    version := snapshotVersion,
+    version := releaseVersion,
     exportJars := false,
     publishTo := {
       val repo =
@@ -51,7 +52,7 @@ object PlayBuild extends Build {
 }
 
 object Dependencies {
-  val utilDep = "com.github.malliina" %% "util" % "1.0.0"
+  val utilDep = "com.github.malliina" %% "util" % "1.2.0"
   val scalaTest = "org.scalatest" %% "scalatest" % "1.9.2" % "test"
   val play = "com.typesafe.play" %% "play" % "2.2.1"
   val httpGroup = "org.apache.httpcomponents"

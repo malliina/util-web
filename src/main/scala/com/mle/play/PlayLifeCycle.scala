@@ -7,6 +7,7 @@ import java.nio.file.{Files, Path, Paths}
 import scala.Some
 import java.io.{FileInputStream, FileNotFoundException}
 import java.security.KeyStore
+import com.mle.security.KeyStores
 
 /**
  * Starts Play Framework 2, does not create a RUNNING_PID file.
@@ -16,15 +17,12 @@ import java.security.KeyStore
  *
  * @author mle
  */
-trait PlayLifeCycle extends Log {
+trait PlayLifeCycle extends KeyStores with Log {
 
   protected val (httpPortKey, httpsPortKey, httpAddressKey) =
     ("http.port", "https.port", "http.address")
-  protected val (keyStoreKey, keyStorePassKey, keyStoreTypeKey) =
-    ("https.keyStore", "https.keyStorePassword", "https.keyStoreType")
   protected val defaultHttpPort = 9000
   protected val defaultHttpAddress = "0.0.0.0"
-  protected val defaultKeyStoreType = "JKS"
 
   var nettyServer: Option[NettyServer] = None
 
@@ -81,36 +79,6 @@ trait PlayLifeCycle extends Log {
       val absKeyStorePath = FileUtilities.pathTo(keyStorePath).toAbsolutePath
       params.updated(keyStoreKey, absKeyStorePath.toString)
     }).getOrElse(params)
-  }
-
-  private def sysProp(key: String) = sys.props.get(key)
-
-  private def verifyFileReadability(file: Path): Unit = {
-    import Files._
-    if (!exists(file)) {
-      throw new FileNotFoundException(file.toString)
-    }
-    if (!isRegularFile(file)) {
-      throw new Exception(s"Not a regular file: $file")
-    }
-    if (!isReadable(file)) {
-      throw new Exception(s"File exists but is not readable: $file")
-    }
-  }
-
-  private def validateKeyStoreIfSpecified(): Unit = {
-    sysProp(keyStoreKey) foreach (keyStore => {
-      val absPath = FileUtilities.pathTo(keyStore).toAbsolutePath
-      verifyFileReadability(absPath)
-      val pass = sysProp(keyStorePassKey) getOrElse (throw new Exception(s"Key $keyStoreKey exists but no corresponding $keyStorePassKey was found."))
-      val storeType = sysProp(keyStoreTypeKey) getOrElse defaultKeyStoreType
-      validateKeyStore(Paths get keyStore, pass, storeType)
-    })
-  }
-
-  private def validateKeyStore(keyStore: Path, keyStorePassword: String, keyStoreType: String = defaultKeyStoreType): Unit = {
-    val ks = KeyStore.getInstance(keyStoreType)
-    Util.using(new FileInputStream(keyStore.toFile))(keyStream => ks.load(keyStream, keyStorePassword.toCharArray))
   }
 
   private def propsFromFile(file: Path): Map[String, String] = {
