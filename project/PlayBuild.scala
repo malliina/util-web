@@ -1,3 +1,4 @@
+import com.mle.sbtutils.SbtUtils
 import sbt._
 import sbt.Keys._
 
@@ -10,51 +11,21 @@ object PlayBuild extends Build {
 
   lazy val utilPlay = Project("util-play", file(".")).settings(projectSettings: _*)
 
-  val releaseVersion = "1.2.0"
-  val snapshotVersion = "1.2.0-SNAPSHOT"
-
-  lazy val projectSettings = Seq(
+  lazy val projectSettings = SbtUtils.publishSettings ++ Seq(
+    version := "1.3.0",
+    SbtUtils.gitUserName := "malliina",
+    SbtUtils.developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(scalaTest, play, utilDep, httpClient, httpMime),
-    resolvers += "Sonatype snaps" at "http://oss.sonatype.org/content/repositories/snapshots/",
-    scalaVersion := "2.10.3",
+    scalaVersion := "2.10.4",
     fork in Test := true,
-    organization := "com.github.malliina",
-    name := "util-play",
-    version := releaseVersion,
-    exportJars := false,
-    publishTo := {
-      val repo =
-        if (version.value endsWith "SNAPSHOT") {
-          "Sonatype snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-        } else {
-          "Sonatype releases" at "https://oss.sonatype.org/service/local/staging/deploy/maven2"
-        }
-      Some(repo)
-    },
-    licenses += ("BSD-style" -> url("http://www.opensource.org/licenses/BSD-3-Clause")),
-    scmInfo := Some(ScmInfo(url("https://github.com/malliina/util-play"), "git@github.com:malliina/util-play.git")),
-    credentials += Credentials(Path.userHome / ".ivy2" / "sonatype.txt"),
-    publishMavenStyle := true,
-    publishArtifact in Test := false,
-    pomIncludeRepository := (_ => false),
-    pomExtra := extraPom
+    exportJars := false
   )
-
-  def extraPom = (
-    <url>https://github.com/malliina/util-play</url>
-      <developers>
-        <developer>
-          <id>malliina</id>
-          <name>Michael Skogberg</name>
-          <url>http://mskogberg.info</url>
-        </developer>
-      </developers>)
 }
 
 object Dependencies {
-  val utilDep = "com.github.malliina" %% "util" % "1.2.0"
-  val scalaTest = "org.scalatest" %% "scalatest" % "1.9.2" % "test"
-  val play = "com.typesafe.play" %% "play" % "2.2.1"
+  val utilDep = "com.github.malliina" %% "util" % "1.3.0"
+  val scalaTest = "org.scalatest" %% "scalatest" % "2.0" % "test"
+  val play = "com.typesafe.play" %% "play" % "2.2.2"
   val httpGroup = "org.apache.httpcomponents"
   val httpVersion = "4.3"
   val httpClient = httpGroup % "httpclient" % httpVersion

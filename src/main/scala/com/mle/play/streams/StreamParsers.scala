@@ -1,0 +1,75 @@
+package com.mle.play.streams
+
+import play.api.mvc.BodyParsers.parse.Multipart._
+import play.api.mvc.BodyParsers.parse
+import play.api.libs.iteratee._
+import com.mle.util.Log
+import play.api.mvc.{BodyParser, MultipartFormData}
+import scala.concurrent.ExecutionContext.Implicits.global
+import java.nio.file.Path
+import java.io._
+import play.api.mvc.MultipartFormData.FilePart
+
+/**
+ *
+ * @author mle
+ */
+trait StreamParsers extends Log {
+  /**
+   * Pushes the bytes to the supplied channel as they are received.
+   *
+   * @param dest channel to push to
+   */
+  def multiPartByteStreaming(dest: Concurrent.Channel[Array[Byte]]): BodyParser[MultipartFormData[Long]] =
+    multiPartByteStreaming(bytes => dest push bytes)
+
+  def multiPartByteStreaming(f: Array[Byte] => Unit): BodyParser[MultipartFormData[Long]] =
+    parse.multipartFormData(byteArrayPartConsumer(f))
+
+  /**
+   * Parses a multipart form-data upload in such a way that any parsed bytes are made available
+   * to the returned [[InputStream]].
+   *
+   * @return
+   */
+  def multiPartStreamPiping(): (InputStream, BodyParser[MultipartFormData[OutputStream]]) = {
+    val (inStream, iteratee) = Streams.joinedStream()
+    val parser = parse.multipartFormData(byteArrayPartHandler(iteratee))
+    (inStream, parser)
+  }
+
+  /**
+   * Builds a part handler that applies the supplied function
+   * to the array of bytes as they are received.
+   *
+   * @param f what to do with the bytes
+   * @return a part handler memorizing the total number of bytes consumed
+   */
+  def byteArrayPartConsumer(f: Array[Byte] => Unit): PartHandler[FilePart[Long]] = {
+    val iteratee = Iteratee.fold[Array[Byte], Long](0)((count, bytes) => {
+      //      log debug s"Bytes handled: $count"
+      f(bytes)
+      count + bytes.length
+    })
+    byteArrayPartHandler(iteratee)
+  }
+
+  /**
+   * Builds a part handler that uses the supplied iteratee to handle the bytes as they are received.
+   *
+   * @param in input byte handler
+   * @tparam T eventual value produced by iteratee
+   * @return
+   */
+  def byteArrayPartHandler[T](in: Iteratee[Array[Byte], T]): PartHandler[FilePart[T]] = {
+    // note: seems this is shorthand for handleFilePart(fileInfo => fileInfo match { case { ... }})
+    parse.Multipart.handleFilePart {
+      case parse.Multipart.FileInfo(partName, fileName, contentType) =>
+        in
+    }
+  }
+
+
+}
+
+object StreamParsers extends StreamParsers

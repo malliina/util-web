@@ -23,6 +23,9 @@ trait WebSocketController extends WebSocketBase with Log {
    * @return a websocket connection using messages of type Message
    */
   def ws(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message] =
+    ws2(welcomeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message]))
+
+  def ws2(initialEnumerator: Enumerator[Message])(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message] =
     WebSocket.using[Message](request => {
       authenticate(request).map(user => {
         val (out, channel) = Concurrent.broadcast[Message]
@@ -31,8 +34,9 @@ trait WebSocketController extends WebSocketBase with Log {
         // iteratee that eats client messages (input)
         val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo))
           .map(_ => onDisconnect(clientInfo))
-        val enumerator = welcomeMessage.map(msg => Enumerator[Message](msg) andThen out)
-          .getOrElse(out)
+        val enumerator = Enumerator.interleave(initialEnumerator, out)
+        //        val enumerator = welcomeMessage.map(msg => Enumerator[Message](msg) andThen out)
+        //          .getOrElse(out)
         (in, enumerator)
       }).getOrElse({
         // authentication failed
@@ -46,5 +50,4 @@ trait WebSocketController extends WebSocketBase with Log {
   def welcomeMessage: Option[Message] = None
 
   def authenticate(implicit request: RequestHeader): Option[String]
-
 }

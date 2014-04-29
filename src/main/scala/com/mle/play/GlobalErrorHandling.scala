@@ -14,7 +14,7 @@ trait GlobalErrorHandling extends GlobalSettings with Log {
     def src = request.remoteAddress
     def path = request.path
     def exName = ex.getClass.getName
-    log.warn(s"Unhandled exception for request to: $path from: $src. Exception: $exName: ${ex.getMessage}\n${ex.getStackTraceString}")
+    log.warn(s"Unhandled $exName for request to: $path from: $src", ex)
     super.onError(request, ex)
   }
 }
