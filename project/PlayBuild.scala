@@ -14,6 +14,7 @@ object PlayBuild extends Build {
 
   lazy val projectSettings = SbtUtils.publishSettings ++ Seq(
     version := "1.4.0",
+    scalaVersion := "2.10.4",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(
@@ -21,7 +22,6 @@ object PlayBuild extends Build {
       "com.github.malliina" %% "util" % "1.3.1",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
-    scalaVersion := "2.10.4",
     fork in Test := true,
     exportJars := false
   )
