@@ -5,10 +5,9 @@ import play.api.mvc.BodyParsers.parse
 import play.api.libs.iteratee._
 import com.mle.util.Log
 import play.api.mvc.{BodyParser, MultipartFormData}
-import scala.concurrent.ExecutionContext.Implicits.global
-import java.nio.file.Path
 import java.io._
 import play.api.mvc.MultipartFormData.FilePart
+import scala.concurrent.ExecutionContext
 
 /**
  *
@@ -20,10 +19,10 @@ trait StreamParsers extends Log {
    *
    * @param dest channel to push to
    */
-  def multiPartByteStreaming(dest: Concurrent.Channel[Array[Byte]]): BodyParser[MultipartFormData[Long]] =
+  def multiPartByteStreaming(dest: Concurrent.Channel[Array[Byte]])(implicit ec: ExecutionContext): BodyParser[MultipartFormData[Long]] =
     multiPartByteStreaming(bytes => dest push bytes)
 
-  def multiPartByteStreaming(f: Array[Byte] => Unit): BodyParser[MultipartFormData[Long]] =
+  def multiPartByteStreaming(f: Array[Byte] => Unit)(implicit ec: ExecutionContext): BodyParser[MultipartFormData[Long]] =
     parse.multipartFormData(byteArrayPartConsumer(f))
 
   /**
@@ -32,11 +31,14 @@ trait StreamParsers extends Log {
    *
    * @return
    */
-  def multiPartStreamPiping(): (InputStream, BodyParser[MultipartFormData[OutputStream]]) = {
+  def multiPartStreamPiping()(implicit ec: ExecutionContext): (InputStream, BodyParser[MultipartFormData[Long]]) = {
     val (inStream, iteratee) = Streams.joinedStream()
-    val parser = parse.multipartFormData(byteArrayPartHandler(iteratee))
+    val parser = multiPartBodyParser(iteratee)
     (inStream, parser)
   }
+
+  def multiPartBodyParser[T](iteratee: Iteratee[Array[Byte], T]): BodyParser[MultipartFormData[T]] =
+    parse.multipartFormData(byteArrayPartHandler(iteratee))
 
   /**
    * Builds a part handler that applies the supplied function
@@ -45,7 +47,7 @@ trait StreamParsers extends Log {
    * @param f what to do with the bytes
    * @return a part handler memorizing the total number of bytes consumed
    */
-  def byteArrayPartConsumer(f: Array[Byte] => Unit): PartHandler[FilePart[Long]] = {
+  def byteArrayPartConsumer(f: Array[Byte] => Unit)(implicit ec: ExecutionContext): PartHandler[FilePart[Long]] = {
     val iteratee = Iteratee.fold[Array[Byte], Long](0)((count, bytes) => {
       //      log debug s"Bytes handled: $count"
       f(bytes)
@@ -68,8 +70,6 @@ trait StreamParsers extends Log {
         in
     }
   }
-
-
 }
 
 object StreamParsers extends StreamParsers

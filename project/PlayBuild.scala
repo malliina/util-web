@@ -3,31 +3,26 @@ import sbt._
 import sbt.Keys._
 
 /**
- * A scala build file template.
+ * The build.
  */
 object PlayBuild extends Build {
 
-  import Dependencies._
+  lazy val utilPlay = SbtUtils.testableProject("util-play").settings(projectSettings: _*)
 
-  lazy val utilPlay = Project("util-play", file(".")).settings(projectSettings: _*)
+  val httpGroup = "org.apache.httpcomponents"
+  val httpVersion = "4.3"
 
   lazy val projectSettings = SbtUtils.publishSettings ++ Seq(
-    version := "1.3.0",
+    version := "1.4.0",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
-    libraryDependencies ++= Seq(scalaTest, play, utilDep, httpClient, httpMime),
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %% "play" % "2.2.3",
+      "com.github.malliina" %% "util" % "1.3.1",
+      httpGroup % "httpclient" % httpVersion,
+      httpGroup % "httpmime" % httpVersion),
     scalaVersion := "2.10.4",
     fork in Test := true,
     exportJars := false
   )
-}
-
-object Dependencies {
-  val utilDep = "com.github.malliina" %% "util" % "1.3.0"
-  val scalaTest = "org.scalatest" %% "scalatest" % "2.0" % "test"
-  val play = "com.typesafe.play" %% "play" % "2.2.2"
-  val httpGroup = "org.apache.httpcomponents"
-  val httpVersion = "4.3"
-  val httpClient = httpGroup % "httpclient" % httpVersion
-  val httpMime = httpGroup % "httpmime" % httpVersion
 }

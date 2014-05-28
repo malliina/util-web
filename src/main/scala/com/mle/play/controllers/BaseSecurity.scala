@@ -10,7 +10,6 @@ import play.api.mvc.SimpleResult
 import play.api.mvc.Security.AuthenticatedRequest
 import java.nio.file.{Paths, Files, Path}
 import play.api.libs.{Files => PlayFiles}
-import com.mle.util.Implicits._
 
 /**
  *
@@ -128,9 +127,7 @@ trait BaseSecurity extends Log {
       def queryString =
         if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
         else ""
-      log info s"User: $user from: ${request.remoteAddress} requests: ${
-        request.path
-      }$queryString"
+      log info s"User: $user from: ${request.remoteAddress} requests: ${request.path}$queryString"
       f(user)(request)
     })
 
@@ -143,7 +140,7 @@ trait BaseSecurity extends Log {
 
   protected def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
     request.body.files.map(file => {
-      val dest = uploadDir / file.filename
+      val dest = uploadDir resolve file.filename
       if (!Files.exists(dest))
         file.ref.moveTo(dest.toFile, replace = true)
       dest
