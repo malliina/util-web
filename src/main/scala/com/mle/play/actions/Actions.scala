@@ -1,10 +1,9 @@
 package com.mle.play.actions
 
-import play.api.mvc._
-import scala.concurrent.Future
 import com.mle.play.concurrent.ExecutionContexts
-import play.api.mvc.Security.AuthenticatedRequest
-import play.api.mvc.SimpleResult
+import play.api.mvc._
+
+import scala.concurrent.Future
 
 /**
  *
@@ -25,9 +24,10 @@ trait Actions {
    * Default action builder, override what you need.
    */
   abstract class DefaultActionBuilder extends ActionBuilder[Request] {
-    protected def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[SimpleResult]): Future[SimpleResult] =
+    def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]): Future[Result] =
       block(request)
   }
+
 }
 
 object Actions extends Actions

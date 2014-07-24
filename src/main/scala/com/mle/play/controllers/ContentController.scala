@@ -3,11 +3,11 @@ package com.mle.play.controllers
 import play.api.http.MimeTypes
 import play.api.libs.json.JsValue
 import play.api.mvc._
-import play.api.templates.Html
+import play.twirl.api.Html
 
 trait ContentController extends Controller with BaseController {
 
-  def respondResult(html: => SimpleResult, json: => SimpleResult)(implicit request: RequestHeader): SimpleResult = {
+  def respondResult(html: => Result, json: => Result)(implicit request: RequestHeader): Result = {
     val maybeForceJson = request.getQueryString("f").map(_ == "json")
     if (maybeForceJson.isDefined) {
       NoCache(json)
@@ -16,7 +16,7 @@ trait ContentController extends Controller with BaseController {
     }
   }
 
-  def respond(html: => SimpleResult, json: => JsValue)(implicit request: RequestHeader): SimpleResult =
+  def respond(html: => Result, json: => JsValue)(implicit request: RequestHeader): Result =
     respondResult(html, Ok(json))
 
   /**
@@ -29,7 +29,7 @@ trait ContentController extends Controller with BaseController {
    * @param request
    * @return
    */
-  private def respondIgnoreQueryParam(html: => SimpleResult, json: => SimpleResult)(implicit request: RequestHeader): SimpleResult = {
+  private def respondIgnoreQueryParam(html: => Result, json: => Result)(implicit request: RequestHeader): Result = {
     if (request accepts MimeTypes.HTML) {
       html
     } else if (request accepts MimeTypes.JSON) {
@@ -39,6 +39,6 @@ trait ContentController extends Controller with BaseController {
     }
   }
 
-  def response(html: => Html, json: => JsValue)(implicit request: RequestHeader): SimpleResult =
+  def response(html: => Html, json: => JsValue)(implicit request: RequestHeader): Result =
     respond(Ok(html), json)
 }

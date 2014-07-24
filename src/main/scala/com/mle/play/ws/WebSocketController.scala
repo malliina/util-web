@@ -1,8 +1,9 @@
 package com.mle.play.ws
 
-import play.api.mvc.{RequestHeader, WebSocket}
-import play.api.libs.iteratee.{Enumerator, Iteratee, Concurrent}
 import com.mle.util.Log
+import play.api.libs.iteratee.{Concurrent, Enumerator, Iteratee}
+import play.api.mvc.{RequestHeader, WebSocket}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -22,10 +23,10 @@ trait WebSocketController extends WebSocketBase with Log {
    *
    * @return a websocket connection using messages of type Message
    */
-  def ws(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message] =
+  def ws(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
     ws2(welcomeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message]))
 
-  def ws2(initialEnumerator: Enumerator[Message])(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message] =
+  def ws2(initialEnumerator: Enumerator[Message])(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
     WebSocket.using[Message](request => {
       authenticate(request).map(user => {
         val (out, channel) = Concurrent.broadcast[Message]

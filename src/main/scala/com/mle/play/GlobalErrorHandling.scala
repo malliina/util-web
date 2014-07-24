@@ -1,16 +1,18 @@
 package com.mle.play
 
-import play.api.GlobalSettings
-import play.api.mvc.{SimpleResult, RequestHeader}
-import scala.concurrent.Future
 import com.mle.util.Log
+import play.api.GlobalSettings
+import play.api.mvc.{RequestHeader, Result}
+
+import scala.concurrent.Future
 
 /**
  *
  * @author mle
  */
 trait GlobalErrorHandling extends GlobalSettings with Log {
-  override def onError(request: RequestHeader, ex: Throwable): Future[SimpleResult] = {
+
+  override def onError(request: RequestHeader, ex: Throwable): Future[Result] = {
     def src = request.remoteAddress
     def path = request.path
     def exName = ex.getClass.getName

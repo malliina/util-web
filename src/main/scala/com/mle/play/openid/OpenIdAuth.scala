@@ -1,10 +1,10 @@
 package com.mle.play.openid
 
-import play.api.libs.openid.{UserInfo, OpenID}
-
-import play.api.mvc._
-import Results._
 import com.mle.util.Log
+import play.api.libs.openid.{OpenID, UserInfo}
+import play.api.mvc.Results._
+import play.api.mvc._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -33,6 +33,7 @@ trait OpenIdAuth extends Log {
    * @return routes.YourPlayController.openIdCallback
    */
   protected def openIdCallbackRoute: Call
+
   /**
    * Implement something like: <code>routes.Controller.homePage()</code>
    *
@@ -43,7 +44,7 @@ trait OpenIdAuth extends Log {
   /**
    * Suggestion: redirect to an error page with an error message.
    */
-  def onOpenIdFailure: SimpleResult
+  def onOpenIdFailure: Result
 
   /**
    *
@@ -59,7 +60,7 @@ trait OpenIdAuth extends Log {
    * @param userInfo authenticated user
    * @return the result
    */
-  def onOpenIdUnauthorized(userInfo: UserInfo): SimpleResult = {
+  def onOpenIdUnauthorized(userInfo: UserInfo): Result = {
     val user = userString(userInfo)
     Unauthorized(s"Hi $user, you're not authorized.")
   }
@@ -104,7 +105,7 @@ trait OpenIdAuth extends Log {
    * Note that this is not called if the authorization fails;
    * see <code>onOpenIdUnauthorized(UserInfo)</code> in that case.
    */
-  protected def handleOpenIdFailure(ex: Throwable, request: RequestHeader): SimpleResult = {
+  protected def handleOpenIdFailure(ex: Throwable, request: RequestHeader): Result = {
     val addr = request.remoteAddress
     val errorMsg = Option(ex).map(ex => s": ${ex.getMessage}").getOrElse("")
     log warn s"OpenID authentication failed from: $addr with error: $errorMsg"

@@ -13,16 +13,20 @@ object PlayBuild extends Build {
   val httpVersion = "4.3"
 
   lazy val projectSettings = SbtUtils.publishSettings ++ Seq(
-    version := "1.4.0",
-    scalaVersion := "2.10.4",
+    version := "1.4.3",
+    scalaVersion := "2.11.2",
+//    crossScalaVersions := Seq("2.10.4", "2.11.1"),
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %% "play" % "2.2.3",
-      "com.github.malliina" %% "util" % "1.3.1",
+      "com.typesafe.play" %% "play" % "2.3.2",
+      "com.typesafe.play" %% "play-ws" % "2.3.2",
+      "com.github.malliina" %% "util" % "1.3.2",
+      "com.ning" % "async-http-client" % "1.8.9",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true,
-    exportJars := false
+    exportJars := false,
+    resolvers += "typesafe releases" at "http://repo.typesafe.com/typesafe/releases/"
   )
 }

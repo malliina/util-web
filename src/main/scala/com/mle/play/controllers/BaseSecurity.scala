@@ -1,15 +1,14 @@
 package com.mle.play.controllers
 
-import play.api.mvc._
-import play.api.http.HeaderNames
-import org.apache.commons.codec.binary.Base64
-import play.api.mvc.Results._
+import java.nio.file.{Files, Path, Paths}
+
 import com.mle.util.Log
-import scala.Some
-import play.api.mvc.SimpleResult
-import play.api.mvc.Security.AuthenticatedRequest
-import java.nio.file.{Paths, Files, Path}
+import org.apache.commons.codec.binary.Base64
+import play.api.http.HeaderNames
 import play.api.libs.{Files => PlayFiles}
+import play.api.mvc.Results._
+import play.api.mvc.Security.AuthenticatedRequest
+import play.api.mvc._
 
 /**
  *
@@ -68,7 +67,12 @@ trait BaseSecurity extends Log {
     ) yield user
   }
 
-  def validateCredentials(user: String, pass: String): Boolean
+  /**
+   * Override if you intend to use password authentication.
+   *
+   * @return True if the credentials are valid; false otherwise. False by default.
+   */
+  def validateCredentials(user: String, pass: String): Boolean = false
 
   /**
    * Retrieves the authenticated username from the request.
@@ -95,7 +99,7 @@ trait BaseSecurity extends Log {
    * @param req header of request which failed authentication
    * @return "auth failed" result
    */
-  protected def onUnauthorized(implicit req: RequestHeader): SimpleResult = {
+  protected def onUnauthorized(implicit req: RequestHeader): Result = {
     val ip = req.remoteAddress
     val resource = req.path
     log warn s"Unauthorized request to: $resource from: $ip"
@@ -114,7 +118,7 @@ trait BaseSecurity extends Log {
   def AuthenticatedLogged(f: => EssentialAction): EssentialAction =
     AuthenticatedLogged(_ => f)
 
-  def AuthAction(f: AuthRequest[AnyContent] => SimpleResult) =
+  def AuthAction(f: AuthRequest[AnyContent] => Result) =
     AuthenticatedLogged(user => Action(req => f(new AuthRequest(user, req))))
 
   /**
