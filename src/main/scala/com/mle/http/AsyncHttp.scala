@@ -1,11 +1,13 @@
 package com.mle.http
 
-import com.ning.http.client.{AsyncCompletionHandler, Response, AsyncHttpClient}
-import play.api.libs.json.{Json, JsValue}
-import scala.concurrent.{ExecutionContext, Promise, Future}
-import com.ning.http.util.Base64
 import java.io.Closeable
+
 import com.mle.http.AsyncHttp._
+import com.ning.http.client.{AsyncCompletionHandler, AsyncHttpClient, Response}
+import com.ning.http.util.Base64
+import play.api.libs.json.{JsValue, Json}
+
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 /**
  * A Scala [[Future]]s-based HTTP client. Wraps ning's async http client.

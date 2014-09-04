@@ -1,11 +1,10 @@
 package com.mle.play.json
 
-import play.api.libs.json.{JsResult, JsValue, Format}
-import scala.concurrent.duration.Duration
+import com.mle.storage.{StorageLong, StorageSize}
 import play.api.libs.json.Json._
-import com.mle.storage.StorageSize
-import com.mle.storage.StorageLong
-import concurrent.duration.DurationLong
+import play.api.libs.json.{Format, JsResult, JsValue}
+
+import scala.concurrent.duration.{Duration, DurationLong}
 
 /**
  *

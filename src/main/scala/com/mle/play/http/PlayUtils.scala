@@ -1,7 +1,7 @@
 package com.mle.play.http
 
-import play.api.mvc.RequestHeader
 import com.mle.util.FileUtilities
+import play.api.mvc.RequestHeader
 
 /**
  *

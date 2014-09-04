@@ -1,13 +1,11 @@
 package com.mle.play
 
-import play.core.server.NettyServer
-import play.core.StaticApplication
-import com.mle.util.{Log, FileUtilities, Util}
 import java.nio.file.{Files, Path, Paths}
-import scala.Some
-import java.io.{FileInputStream, FileNotFoundException}
-import java.security.KeyStore
+
 import com.mle.security.KeyStores
+import com.mle.util.{FileUtilities, Log, Util, Utils}
+import play.core.StaticApplication
+import play.core.server.NettyServer
 
 /**
  * Starts Play Framework 2, does not create a RUNNING_PID file.
@@ -25,6 +23,10 @@ trait PlayLifeCycle extends KeyStores with Log {
   protected val defaultHttpAddress = "0.0.0.0"
 
   var nettyServer: Option[NettyServer] = None
+
+  def isHttpAvailable = tryReadInt(httpPortKey).isDefined
+
+  def isHttpsAvailable = tryReadInt(httpsPortKey).isDefined
 
   def appName: String
 
@@ -46,12 +48,15 @@ trait PlayLifeCycle extends KeyStores with Log {
     nettyServer = Some(createServer())
   }
 
-  private def createServer() = {
+  protected def tryReadInt(key: String) =
+    sys.props.get(key).filter(_ != "disabled").flatMap(ps => Utils.opt[Int, NumberFormatException](Integer.parseInt(ps)))
+
+  protected def createServer() = {
     val server = new NettyServer(
       new StaticApplication(FileUtilities.basePath.toFile),
-      Option(System.getProperty(httpPortKey)).map(Integer.parseInt).orElse(Some(defaultHttpPort)),
-      Option(System.getProperty(httpsPortKey)).map(Integer.parseInt),
-      Option(System.getProperty(httpAddressKey)).getOrElse(defaultHttpAddress)
+      tryReadInt(httpPortKey),
+      tryReadInt(httpsPortKey),
+      sys.props.get(httpAddressKey) getOrElse defaultHttpAddress
     )
     Util.addShutdownHook(server.stop())
     server

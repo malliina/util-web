@@ -1,11 +1,12 @@
 package com.mle.play.streams
 
 import java.io._
-import play.api.libs.iteratee.{Done, Input, Cont, Iteratee}
 import java.nio.file.Path
+
+import com.mle.storage.{StorageInt, StorageSize}
+import play.api.libs.iteratee.{Cont, Done, Input, Iteratee}
+
 import scala.concurrent.ExecutionContext
-import com.mle.storage.StorageSize
-import com.mle.storage.StorageInt
 
 /**
  *

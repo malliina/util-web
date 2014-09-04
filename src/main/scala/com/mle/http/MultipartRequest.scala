@@ -1,20 +1,21 @@
 package com.mle.http
 
-import org.apache.http.client.methods.HttpPost
-import org.apache.http.auth.UsernamePasswordCredentials
-import org.apache.http.impl.auth.BasicScheme
 import java.nio.file.Path
-import org.apache.http.util.EntityUtils
-import play.api.http.HeaderNames._
-import play.api.http.ContentTypes._
-import org.apache.http.protocol.BasicHttpContext
-import org.apache.http.impl.client.HttpClientBuilder
-import org.apache.http.entity.mime.{HttpMultipartMode, MultipartEntityBuilder}
+
+import org.apache.http.auth.UsernamePasswordCredentials
+import org.apache.http.client.methods.HttpPost
 import org.apache.http.entity.mime.content.FileBody
+import org.apache.http.entity.mime.{HttpMultipartMode, MultipartEntityBuilder}
+import org.apache.http.impl.auth.BasicScheme
+import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.protocol.BasicHttpContext
+import org.apache.http.util.EntityUtils
+import play.api.http.ContentTypes._
+import play.api.http.HeaderNames._
 
 /**
- * The Play WS API does not afaik support multipart/form-data
- * file uploads, therefore this class provides it using Apache HttpClient.
+ * The Play WS API does not afaik support multipart/form-data file uploads, therefore this class provides it using
+ * Apache HttpClient.
  *
  * @author mle
  */

@@ -1,8 +1,9 @@
 package com.mle.play.concurrent
 
-import concurrent.ExecutionContext
-import play.api.libs.concurrent.Akka
 import play.api.Play.current
+import play.api.libs.concurrent.Akka
+
+import scala.concurrent.ExecutionContext
 
 /**
  * @author Michael

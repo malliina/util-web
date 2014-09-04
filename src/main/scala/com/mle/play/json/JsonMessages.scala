@@ -1,8 +1,8 @@
 package com.mle.play.json
 
+import com.mle.play.json.JsonStrings._
 import play.api.libs.json.Json
-import Json._
-import JsonStrings._
+import play.api.libs.json.Json._
 
 
 /**

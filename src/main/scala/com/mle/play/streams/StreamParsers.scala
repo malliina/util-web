@@ -1,12 +1,14 @@
 package com.mle.play.streams
 
-import play.api.mvc.BodyParsers.parse.Multipart._
-import play.api.mvc.BodyParsers.parse
-import play.api.libs.iteratee._
-import com.mle.util.Log
-import play.api.mvc.{BodyParser, MultipartFormData}
 import java.io._
+
+import com.mle.util.Log
+import play.api.libs.iteratee._
+import play.api.mvc.BodyParsers.parse
+import play.api.mvc.BodyParsers.parse.Multipart._
 import play.api.mvc.MultipartFormData.FilePart
+import play.api.mvc.{BodyParser, MultipartFormData}
+
 import scala.concurrent.ExecutionContext
 
 /**

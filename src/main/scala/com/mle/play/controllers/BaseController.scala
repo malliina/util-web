@@ -1,9 +1,8 @@
 package com.mle.play.controllers
 
-import play.api.mvc.{Result, Results}
+import com.mle.play.http.HttpConstants.NO_CACHE
 import play.api.http.HeaderNames._
-import com.mle.play.http.HttpConstants
-import HttpConstants._
+import play.api.mvc.{Result, Results}
 
 /**
  *

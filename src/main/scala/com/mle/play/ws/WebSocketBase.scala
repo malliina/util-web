@@ -1,7 +1,7 @@
 package com.mle.play.ws
 
-import play.api.mvc.RequestHeader
 import play.api.libs.iteratee.Concurrent
+import play.api.mvc.RequestHeader
 
 /**
  * @author Michael
@@ -23,7 +23,7 @@ trait WebSocketBase {
   def onMessage(msg: Message, client: Client) {}
 
   /**
-   * Called when a client has connected.
+   * Called when a client has been created. Note however that messages cannot yet be sent to the client.
    *
    * @param client the client channel, can be used to push messages to the client
    */

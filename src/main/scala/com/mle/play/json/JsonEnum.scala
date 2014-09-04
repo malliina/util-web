@@ -1,7 +1,6 @@
 package com.mle.play.json
 
-import play.api.libs.json._
-import play.api.libs.json.JsSuccess
+import play.api.libs.json.{JsSuccess, _}
 
 /**
  *
@@ -25,4 +24,5 @@ trait JsonEnum[T] {
 
     override def writes(o: T): JsValue = Json.toJson(resolveName(o))
   }
+
 }

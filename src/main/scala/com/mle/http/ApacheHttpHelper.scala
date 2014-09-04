@@ -1,7 +1,7 @@
 package com.mle.http
 
-import org.apache.http.conn.ssl.{SSLConnectionSocketFactory, X509HostnameVerifier}
 import com.mle.security.SSLUtils
+import org.apache.http.conn.ssl.{SSLConnectionSocketFactory, X509HostnameVerifier}
 
 /**
  *

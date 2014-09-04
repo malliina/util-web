@@ -1,8 +1,8 @@
 package com.mle.play.controllers
 
-import play.api.mvc.{Controller, AnyContent, Request}
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.mvc.{AnyContent, Controller, Request}
 
 /**
  *
