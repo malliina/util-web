@@ -1,6 +1,6 @@
 package com.mle.play.http
 
-import com.mle.util.FileUtilities
+import com.mle.file.FileUtilities
 import play.api.mvc.RequestHeader
 
 /**

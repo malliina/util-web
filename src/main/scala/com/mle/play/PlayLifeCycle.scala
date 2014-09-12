@@ -2,8 +2,9 @@ package com.mle.play
 
 import java.nio.file.{Files, Path, Paths}
 
+import com.mle.file.FileUtilities
 import com.mle.security.KeyStores
-import com.mle.util.{FileUtilities, Log, Util, Utils}
+import com.mle.util.{Log, Util, Utils}
 import play.core.StaticApplication
 import play.core.server.NettyServer
 

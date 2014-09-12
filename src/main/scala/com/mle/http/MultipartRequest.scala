@@ -23,8 +23,7 @@ class MultipartRequest(uri: String, buildInstructions: HttpClientBuilder => Http
   private val client = buildInstructions(HttpClientBuilder.create()).build()
   private val request = new HttpPost(uri)
   request.addHeader(ACCEPT, JSON)
-  private val reqContent = MultipartEntityBuilder.create()
-    .setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
+  private val reqContent = MultipartEntityBuilder.create().setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 
   def setAuth(username: String, password: String) {
     val creds = new UsernamePasswordCredentials(username, password)

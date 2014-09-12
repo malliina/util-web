@@ -1,5 +1,6 @@
 package com.mle.play.ws
 
+import com.mle.play.controllers.AuthResult
 import com.mle.util.Log
 import play.api.libs.iteratee.{Concurrent, Enumerator, Iteratee}
 import play.api.mvc.{RequestHeader, Result, Results, WebSocket}
@@ -32,7 +33,7 @@ trait WebSocketController extends WebSocketBase with Log {
     WebSocket.using[Message](request => {
       authenticate(request).map(user => {
         val (out, channel) = Concurrent.broadcast[Message]
-        val clientInfo: Client = newClient(user, channel)(request)
+        val clientInfo: Client = newClient(user.user, channel)(request)
         onConnect(clientInfo)
         // iteratee that eats client messages (input)
         val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo)).map(_ => onDisconnect(clientInfo))
@@ -51,7 +52,7 @@ trait WebSocketController extends WebSocketBase with Log {
     WebSocket.tryAccept[Message](req => Future.successful {
       authenticate(req).fold[Either[Result, (Iteratee[Message, _], Enumerator[Message])]](Left(Results.Unauthorized))(user => {
         val (out, channel) = Concurrent.broadcast[Message]
-        val clientInfo: Client = newClient(user, channel)(req)
+        val clientInfo: Client = newClient(user.user, channel)(req)
         onConnect(clientInfo)
         // iteratee that eats client messages (input)
         val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo)).map(_ => onDisconnect(clientInfo))
@@ -64,5 +65,5 @@ trait WebSocketController extends WebSocketBase with Log {
 
   def welcomeEnumerator = welcomeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message])
 
-  def authenticate(implicit request: RequestHeader): Option[String]
+  def authenticate(implicit request: RequestHeader): Option[AuthResult]
 }

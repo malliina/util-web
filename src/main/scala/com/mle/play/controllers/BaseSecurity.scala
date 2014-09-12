@@ -14,18 +14,23 @@ import play.api.mvc._
  *
  * @author mle
  */
-class AuthRequest[A](user: String, request: Request[A]) extends AuthenticatedRequest[A, String](user, request)
+class AuthRequest[A](user: String, request: Request[A], val cookie: Option[Cookie] = None)
+  extends AuthenticatedRequest[A, String](user, request)
 
 class FileUploadRequest[A](val files: Seq[Path], user: String, request: Request[A]) extends AuthRequest(user, request)
 
 class OneFileUploadRequest[A](val file: Path, user: String, request: Request[A]) extends AuthRequest(user, request)
 
+case class AuthResult(user: String, cookie: Option[Cookie] = None)
+
 trait BaseSecurity extends Log {
+
 
   def authenticateFromSession(implicit request: RequestHeader): Option[String] =
     request.session.get(Security.username) //.filter(_.nonEmpty)
 
-  def authenticateFromHeader(implicit request: RequestHeader): Option[String] = headerAuth(validateCredentials)
+  def authenticateFromHeader(implicit request: RequestHeader): Option[String] =
+    headerAuth(validateCredentials)
 
   /**
    * Basic HTTP authentication.
@@ -81,12 +86,12 @@ trait BaseSecurity extends Log {
    * attempts to authenticate based on the the HTTP Authorization header,
    * finally if that also fails, authenticates based on credentials in the query string.
    *
-   * @return the username wrapped in an [[scala.Option]] if successfully authenticated, [[scala.None]] otherwise
+   * @return the authentication result wrapped in an [[scala.Option]] if successfully authenticated, [[scala.None]] otherwise
    */
-  def authenticate(implicit request: RequestHeader): Option[String] = {
-    authenticateFromSession orElse
+  def authenticate(implicit request: RequestHeader): Option[AuthResult] = {
+    (authenticateFromSession orElse
       authenticateFromHeader orElse
-      authenticateFromQueryString
+      authenticateFromQueryString) map lift
   }
 
   /**
@@ -106,32 +111,29 @@ trait BaseSecurity extends Log {
     Unauthorized
   }
 
-  def Authenticated(f: String => EssentialAction): EssentialAction =
-    Security.Authenticated(req => authenticate(req), req => onUnauthorized(req))(f)
+  def Authenticated(f: AuthResult => EssentialAction): EssentialAction =
+    Security.Authenticated(req => authenticate(req), unAuthorizedRequest => onUnauthorized(unAuthorizedRequest))(f)
 
-  def Authenticated(f: => EssentialAction): EssentialAction =
-    Authenticated(user => f)
+  def Authenticated(f: => EssentialAction): EssentialAction = Authenticated(user => f)
 
-  def AuthenticatedLogged(f: String => EssentialAction): EssentialAction =
-    Authenticated(user => Logged(user, f))
+  def AuthenticatedLogged(f: AuthResult => EssentialAction): EssentialAction = Authenticated(user => Logged(user, f))
 
-  def AuthenticatedLogged(f: => EssentialAction): EssentialAction =
-    AuthenticatedLogged(_ => f)
+  def AuthenticatedLogged(f: => EssentialAction): EssentialAction = AuthenticatedLogged(_ => f)
 
   def AuthAction(f: AuthRequest[AnyContent] => Result) =
-    AuthenticatedLogged(user => Action(req => f(new AuthRequest(user, req))))
+    AuthenticatedLogged(user => Action(req => f(new AuthRequest(user.user, req, user.cookie))))
 
   /**
    * Logs authenticated requests.
    */
-  def Logged(user: String, f: String => EssentialAction) =
+  def Logged(user: AuthResult, f: AuthResult => EssentialAction) =
     EssentialAction(request => {
       val qString = request.rawQueryString
       // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
       def queryString =
         if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
         else ""
-      log info s"User: $user from: ${request.remoteAddress} requests: ${request.path}$queryString"
+      log info s"User: ${user.user} from: ${request.remoteAddress} requests: ${request.path}$queryString"
       f(user)(request)
     })
 
@@ -149,4 +151,6 @@ trait BaseSecurity extends Log {
         file.ref.moveTo(dest.toFile, replace = true)
       dest
     })
+
+  private def lift(user: String) = AuthResult(user)
 }
