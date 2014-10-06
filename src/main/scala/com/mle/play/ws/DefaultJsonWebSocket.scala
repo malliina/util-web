@@ -12,7 +12,7 @@ import scala.collection.concurrent.TrieMap
  */
 trait DefaultJsonWebSocket extends JsonWebSockets with Log {
   override type Client = ClientInfo[Message]
-  override type AuthResult = String
+  override type AuthSuccess = String
 
   /**
    * TODO: Find the best way to represent a concurrent collection. Both actors and scala-stm are heavy artillery and
@@ -22,7 +22,7 @@ trait DefaultJsonWebSocket extends JsonWebSockets with Log {
 
   def clients = clientsMap.keys.toSeq
 
-  override def newClient(user: AuthResult, channel: Channel[Message])(implicit request: RequestHeader): Client =
+  override def newClient(user: AuthSuccess, channel: Channel[Message])(implicit request: RequestHeader): Client =
     ClientInfo(channel, request, user)
 
   /**

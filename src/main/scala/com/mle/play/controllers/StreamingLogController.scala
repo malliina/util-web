@@ -17,20 +17,17 @@ import scala.collection.concurrent.TrieMap
  */
 trait StreamingLogController extends JsonWebSockets {
   override type Client = WebSocketClient
-  override type AuthResult = String
+  override type AuthSuccess = String
+
+  val jsonLogEvents = logEvents.map(e => Json.toJson(e))
+  val subscriptions = TrieMap.empty[WebSocketClient, Subscription]
+  val SUBSCRIBE = "subscribe"
 
   def logEvents: Observable[LogEvent]
 
-  private val jsonLogEvents = logEvents.map(e => Json.toJson(e))
-
-  private val subscriptions = TrieMap.empty[WebSocketClient, Subscription]
-
-
-  val SUBSCRIBE = "subscribe"
-
   def openLogSocket = ws(FrameFormatter.jsonFrame)
 
-  override def newClient(user: AuthResult, channel: Channel[Message])(implicit request: RequestHeader): Client =
+  override def newClient(user: AuthSuccess, channel: Channel[Message])(implicit request: RequestHeader): Client =
     WebSocketClient(user, channel, request)
 
   override def onMessage(msg: Message, client: Client): Unit = {
@@ -52,18 +49,8 @@ trait StreamingLogController extends JsonWebSockets {
     writeLog(client, "disconnected")
   }
 
-  //  protected def broadcast(message: String) =
-  //    subscriptions.keys.foreach(client => client.channel push Json.toJson(message))
-
   private def writeLog(client: Client, suffix: String): Unit =
     log.info(s"User: ${client.user} from: ${client.request.remoteAddress} $suffix.")
-
-  //  trait WebSocketClientBase {
-  //    def user: String
-  //
-  //    def channel: Channel[JsValue]
-  //  }
-
 }
 
 case class WebSocketClient(user: String, channel: Channel[JsValue], request: RequestHeader) extends SocketClient[JsValue]

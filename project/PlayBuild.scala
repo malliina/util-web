@@ -15,7 +15,7 @@ object PlayBuild extends Build {
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = Seq(
-    version := "1.6.0-SNAPSHOT",
+    version := "1.6.1",
     scalaVersion := "2.11.2",
     //    crossScalaVersions := Seq("2.10.4", "2.11.1"),
     SbtUtils.gitUserName := "malliina",

@@ -9,11 +9,11 @@ import play.api.mvc.RequestHeader
 trait WebSocketBase {
   type Message
   type Client <: SocketClient[Message]
-  type AuthResult
+  type AuthSuccess
 
   def clients: Seq[Client]
 
-  def newClient(authResult: AuthResult, channel: Concurrent.Channel[Message])(implicit request: RequestHeader): Client
+  def newClient(authResult: AuthSuccess, channel: Concurrent.Channel[Message])(implicit request: RequestHeader): Client
 
   def wsUrl(implicit request: RequestHeader): String
 

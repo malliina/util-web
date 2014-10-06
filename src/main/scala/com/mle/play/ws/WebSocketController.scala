@@ -31,8 +31,8 @@ trait WebSocketController extends WebSocketBase with Log {
    *
    * @return a websocket connection using messages of type Message
    */
-  def ws(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
-    wsBase(req => Left(onUnauthorized(req)))
+  def ws(frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
+    wsBase(req => Left(onUnauthorized(req)), frameFormatter)
 
   /**
    * Instead of returning an Unauthorized result upon authentication failures, this opens then immediately closes a
@@ -40,31 +40,31 @@ trait WebSocketController extends WebSocketBase with Log {
    *
    * The Java-WebSocket client library hangs if an Unauthorized result is returned after a websocket connection attempt.
    *
-   * @param frameFormatter
    * @return
    */
-  def ws2(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
-    wsBase(req => Right(unauthorizedSocket(req)))
+  def ws2(frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
+    wsBase(req => Right(unauthorizedSocket(req)), frameFormatter)
 
-  private def wsBase(onFailure: RequestHeader => Either[Result, (Iteratee[Message, _], Enumerator[Message])])(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
+  private def wsBase(onFailure: RequestHeader => Either[Result, (Iteratee[Message, _], Enumerator[Message])],
+                     frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
     WebSocket.tryAccept[Message](request => {
-      authenticate(request)
+      authenticateAsync(request)
         .map(res => Right(authorizedSocket(res, request)))
         .recoverAll(t => onFailure(request))
-    })
+    })(frameFormatter)
 
   /**
+   * What do we want?
+   * - Future[Either[AuthFailure, AuthSuccess]]
+   * - Future[Option[AuthSuccess]]
+   * - Future[AuthSuccess]
    *
    * @param req req
    * @return a successful authentication result, or fails with a NoSuchElementException if authentication fails
    */
-  def authenticate(req: RequestHeader): Future[AuthResult] = toFuture(authenticateSync(req))
+  def authenticateAsync(req: RequestHeader): Future[AuthSuccess]
 
-  def authenticateSync(req: RequestHeader): Option[AuthResult]
-
-  def toFuture[T](opt: Option[T]) = opt.fold[Future[T]](Future failed new NoSuchElementException)(Future.successful)
-
-  private def authorizedSocket(user: AuthResult, req: RequestHeader): (Iteratee[Message, _], Enumerator[Message]) = {
+  private def authorizedSocket(user: AuthSuccess, req: RequestHeader): (Iteratee[Message, _], Enumerator[Message]) = {
     val (out, channel) = Concurrent.broadcast[Message]
     val clientInfo: Client = newClient(user, channel)(req)
     onConnect(clientInfo)

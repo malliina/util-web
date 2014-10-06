@@ -19,5 +19,4 @@ trait JsonWebSockets extends WebSocketController {
   def openSocket: WebSocket[Message, Message] = ws(FrameFormatter.jsonFrame)
 
   def openSocket2: WebSocket[Message, Message] = ws2(FrameFormatter.jsonFrame)
-
 }
