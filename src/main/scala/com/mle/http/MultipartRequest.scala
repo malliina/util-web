@@ -21,7 +21,7 @@ import play.api.http.HeaderNames._
  */
 class MultipartRequest(uri: String, buildInstructions: HttpClientBuilder => HttpClientBuilder = b => b) extends AutoCloseable {
   private val client = buildInstructions(HttpClientBuilder.create()).build()
-  private val request = new HttpPost(uri)
+  val request = new HttpPost(uri)
   request.addHeader(ACCEPT, JSON)
   private val reqContent = MultipartEntityBuilder.create().setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 

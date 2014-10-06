@@ -1,11 +1,12 @@
 package com.mle.play.http
 
-import play.api.mvc.RequestHeader
 import java.net.InetSocketAddress
-import play.core.server.NettyServer
+
+import com.mle.util.{Log, Utils}
 import org.jboss.netty.bootstrap.ServerBootstrap
 import org.jboss.netty.channel.Channel
-import com.mle.util.{Utils, Util, Log}
+import play.api.mvc.RequestHeader
+import play.core.server.NettyServer
 
 class ServerUtils(server: NettyServer) extends Log {
   val httpsPort = port(_.HTTPS)

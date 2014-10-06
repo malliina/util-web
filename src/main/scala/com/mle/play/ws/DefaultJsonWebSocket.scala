@@ -1,42 +1,28 @@
 package com.mle.play.ws
 
-import java.util.concurrent.ConcurrentHashMap
-
 import com.mle.util.Log
 import play.api.libs.iteratee.Concurrent.Channel
-import play.api.libs.json.JsValue
-import play.api.mvc.WebSocket.FrameFormatter
-import play.api.mvc.{Call, RequestHeader}
+import play.api.libs.json.{Json, Writes}
+import play.api.mvc.RequestHeader
 
-import scala.collection.JavaConversions._
+import scala.collection.concurrent.TrieMap
 
 /**
  * @author Michael
  */
-trait JsonWebSocket extends WebSocketController with Log {
-  override type Message = JsValue
+trait DefaultJsonWebSocket extends JsonWebSockets with Log {
   override type Client = ClientInfo[Message]
+  override type AuthResult = String
 
   /**
    * TODO: Find the best way to represent a concurrent collection. Both actors and scala-stm are heavy artillery and
    * error-prone.
    */
-  val clientsMap: collection.concurrent.Map[Client, Unit] = new ConcurrentHashMap[Client, Unit]()
+  val clientsMap: collection.concurrent.Map[Client, Unit] = TrieMap.empty[Client, Unit]
 
-  def clients = clientsMap.keys
+  def clients = clientsMap.keys.toSeq
 
-  /**
-   * Implement this like `routes.YourController.openSocket()`.
-   *
-   * @return
-   */
-  def openSocketCall: Call
-
-  def openSocket = ws3(FrameFormatter.jsonFrame)
-
-  def wsUrl(implicit request: RequestHeader): String = openSocketCall.webSocketURL(request.secure)
-
-  override def newClient(user: String, channel: Channel[Message])(implicit request: RequestHeader): Client =
+  override def newClient(user: AuthResult, channel: Channel[Message])(implicit request: RequestHeader): Client =
     ClientInfo(channel, request, user)
 
   /**
@@ -72,8 +58,5 @@ trait JsonWebSocket extends WebSocketController with Log {
     userCount > 0
   }
 
-  def broadcast(message: Message) = {
-    // ?
-    clients.foreach(_.channel push message)
-  }
+  def unicastJson[T](user: String, message: T)(implicit writer: Writes[T]) = unicast(user, Json.toJson(message))
 }

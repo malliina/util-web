@@ -9,7 +9,7 @@ import play.api.mvc.RequestHeader
  * @param request the request headers from the HTTP request that initiated the WebSocket connection
  * @param user the authenticated username
  */
-case class ClientInfo[T](channel: Concurrent.Channel[T], request: RequestHeader, user: String) extends Log {
+case class ClientInfo[T](channel: Concurrent.Channel[T], request: RequestHeader, user: String) extends SocketClient[T] with Log {
   val protocol = if (request.secure) "wss" else "ws"
   val remoteAddress = request.remoteAddress
   val describe = s"$protocol://$user@$remoteAddress"

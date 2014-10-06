@@ -1,9 +1,9 @@
 package com.mle.play.ws
 
-import com.mle.play.controllers.AuthResult
+import com.mle.concurrent.FutureImplicits.RichFuture
 import com.mle.util.Log
 import play.api.libs.iteratee.{Concurrent, Enumerator, Iteratee}
-import play.api.mvc.{RequestHeader, Result, Results, WebSocket}
+import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -14,56 +14,82 @@ import scala.concurrent.Future
  */
 trait WebSocketController extends WebSocketBase with Log {
   /**
+   * Implement this like `routes.YourController.openSocket()`.
+   *
+   * @return
+   */
+  def openSocketCall: Call
+
+  def wsUrl(implicit request: RequestHeader): String = openSocketCall.webSocketURL(request.secure)
+
+  def broadcast(message: Message) = clients.foreach(_.channel push message)
+
+  /**
    * Opens a WebSocket connection.
    *
    * This is the controller for requests to ws://... or wss://... URIs.
    *
-   * The implementation is problematic because a websocket connection appears to be opened even if authentication fails,
-   * if only for a very brief moment. I would prefer to return some erroneous HTTP status code when authentication fails
-   * but I don't know how to.
-   *
    * @return a websocket connection using messages of type Message
    */
-  @deprecated("Use ws3(...)", "1.5.4")
   def ws(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
-    ws2(welcomeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message]))
+    wsBase(req => Left(onUnauthorized(req)))
 
-  @deprecated("Use ws3(...)", "1.5.4")
-  def ws2(initialEnumerator: Enumerator[Message])(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
-    WebSocket.using[Message](request => {
-      authenticate(request).map(user => {
-        val (out, channel) = Concurrent.broadcast[Message]
-        val clientInfo: Client = newClient(user.user, channel)(request)
-        onConnect(clientInfo)
-        // iteratee that eats client messages (input)
-        val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo)).map(_ => onDisconnect(clientInfo))
-        val enumerator = Enumerator.interleave(initialEnumerator, out)
-        (in, enumerator)
-      }).getOrElse({
-        // authentication failed
-        log warn s"Unauthorized WebSocket connection attempt from: ${request.remoteAddress}"
-        val in = Iteratee.foreach[Message](_ => ())
-        val out = Enumerator.eof[Message]
-        (in, out)
-      })
+  /**
+   * Instead of returning an Unauthorized result upon authentication failures, this opens then immediately closes a
+   * connection connections, sends no messages and ignores any messages.
+   *
+   * The Java-WebSocket client library hangs if an Unauthorized result is returned after a websocket connection attempt.
+   *
+   * @param frameFormatter
+   * @return
+   */
+  def ws2(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
+    wsBase(req => Right(unauthorizedSocket(req)))
+
+  private def wsBase(onFailure: RequestHeader => Either[Result, (Iteratee[Message, _], Enumerator[Message])])(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
+    WebSocket.tryAccept[Message](request => {
+      authenticate(request)
+        .map(res => Right(authorizedSocket(res, request)))
+        .recoverAll(t => onFailure(request))
     })
 
-  def ws3(implicit frameFormatter: WebSocket.FrameFormatter[Message]): WebSocket[Message, Message] =
-    WebSocket.tryAccept[Message](req => Future.successful {
-      authenticate(req).fold[Either[Result, (Iteratee[Message, _], Enumerator[Message])]](Left(Results.Unauthorized))(user => {
-        val (out, channel) = Concurrent.broadcast[Message]
-        val clientInfo: Client = newClient(user.user, channel)(req)
-        onConnect(clientInfo)
-        // iteratee that eats client messages (input)
-        val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo)).map(_ => onDisconnect(clientInfo))
-        val outEnumerator = Enumerator.interleave(welcomeEnumerator, out)
-        Right((in, outEnumerator))
-      })
-    })
+  /**
+   *
+   * @param req req
+   * @return a successful authentication result, or fails with a NoSuchElementException if authentication fails
+   */
+  def authenticate(req: RequestHeader): Future[AuthResult] = toFuture(authenticateSync(req))
 
-  def welcomeMessage: Option[Message] = None
+  def authenticateSync(req: RequestHeader): Option[AuthResult]
 
-  def welcomeEnumerator = welcomeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message])
+  def toFuture[T](opt: Option[T]) = opt.fold[Future[T]](Future failed new NoSuchElementException)(Future.successful)
 
-  def authenticate(implicit request: RequestHeader): Option[AuthResult]
+  private def authorizedSocket(user: AuthResult, req: RequestHeader): (Iteratee[Message, _], Enumerator[Message]) = {
+    val (out, channel) = Concurrent.broadcast[Message]
+    val clientInfo: Client = newClient(user, channel)(req)
+    onConnect(clientInfo)
+    // iteratee that eats client messages (input)
+    val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo)).map(_ => onDisconnect(clientInfo))
+    val enumerator = Enumerator.interleave(welcomeEnumerator(clientInfo), out)
+    (in, enumerator)
+  }
+
+  private def unauthorizedSocket(req: RequestHeader): (Iteratee[Message, _], Enumerator[Message]) = {
+    onUnauthorized(req)
+    val in = Iteratee.foreach[Message](_ => ())
+    val out = Enumerator.eof[Message]
+    (in, out)
+  }
+
+  def onUnauthorized(req: RequestHeader) = {
+    log warn s"Unauthorized WebSocket connection attempt from: ${req.remoteAddress}"
+    Results.Unauthorized
+  }
+
+  def welcomeMessage(client: Client): Option[Message] = None
+
+  def welcomeEnumerator(client: Client) = toEnumerator(welcomeMessage(client))
+
+  def toEnumerator(maybeMessage: Option[Message]) =
+    maybeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message])
 }

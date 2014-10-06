@@ -12,9 +12,10 @@ object PlayBuild extends Build {
   val httpVersion = "4.3.5"
   val playGroup = "com.typesafe.play"
   val playVersion = "2.3.4"
+  val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = Seq(
-    version := "1.5.8",
+    version := "1.6.0-SNAPSHOT",
     scalaVersion := "2.11.2",
     //    crossScalaVersions := Seq("2.10.4", "2.11.1"),
     SbtUtils.gitUserName := "malliina",
@@ -22,7 +23,8 @@ object PlayBuild extends Build {
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
-      "com.github.malliina" %% "util" % "1.4.2",
+      mleGroup %% "util" % "1.4.2",
+      mleGroup %% "logback-rx" % "0.1.0",
       "com.ning" % "async-http-client" % "1.8.13",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),

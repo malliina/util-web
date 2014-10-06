@@ -8,9 +8,12 @@ import play.api.mvc.RequestHeader
  */
 trait WebSocketBase {
   type Message
-  type Client
+  type Client <: SocketClient[Message]
+  type AuthResult
 
-  def newClient(user: String, channel: Concurrent.Channel[Message])(implicit request: RequestHeader): Client
+  def clients: Seq[Client]
+
+  def newClient(authResult: AuthResult, channel: Concurrent.Channel[Message])(implicit request: RequestHeader): Client
 
   def wsUrl(implicit request: RequestHeader): String
 
@@ -35,4 +38,6 @@ trait WebSocketBase {
    * @param client the disconnected client channel
    */
   def onDisconnect(client: Client)
+
+  def broadcast(message: Message): Unit
 }
