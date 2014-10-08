@@ -10,7 +10,7 @@ import scala.concurrent.Future
 trait SyncAuth extends WebSocketController {
   override def authenticateAsync(req: RequestHeader): Future[AuthSuccess] = toFuture(authenticate(req))
 
-  def authenticate(req: RequestHeader): Option[AuthSuccess]
+  def authenticate(implicit req: RequestHeader): Option[AuthSuccess]
 
   def toFuture[T](opt: Option[T]) = opt.fold[Future[T]](Future failed new NoSuchElementException)(Future.successful)
 }

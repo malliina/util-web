@@ -172,5 +172,5 @@ trait BaseSecurity extends Log {
       dest
     })
 
-  private def lift(user: String) = AuthResult(user)
+  protected def lift(user: String) = AuthResult(user)
 }
