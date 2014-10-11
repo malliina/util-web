@@ -9,11 +9,11 @@ import rx.lang.scala.Observable
  * @author mle
  */
 trait LogStreaming extends Streaming {
-  val jsonEvents = logEvents.map(e => Json.toJson(e))
+  lazy val jsonEvents = logEvents.map(e => Json.toJson(e))
 
-  def appenderOpt: Option[RxLogback.EventMapping]
+  def appender: RxLogback.EventMapping
 
-  def logEvents: Observable[LogEvent] = appenderOpt.map(_.logEvents) getOrElse Observable.empty
+  def logEvents: Observable[LogEvent] = appender.logEvents
 }
 
 
