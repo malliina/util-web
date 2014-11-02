@@ -59,6 +59,8 @@ trait WebSocketController extends WebSocketBase with Log {
    * - Future[Option[AuthSuccess]]
    * - Future[AuthSuccess]
    *
+   * IMO: The first one, then the others as convenience based on the first. (_.toOption, _.toOption.get)
+   *
    * @param req req
    * @return a successful authentication result, or fails with a NoSuchElementException if authentication fails
    */

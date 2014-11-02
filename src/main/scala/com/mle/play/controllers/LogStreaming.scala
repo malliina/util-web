@@ -15,6 +15,3 @@ trait LogStreaming extends Streaming {
 
   def logEvents: Observable[LogEvent] = appender.logEvents
 }
-
-
-

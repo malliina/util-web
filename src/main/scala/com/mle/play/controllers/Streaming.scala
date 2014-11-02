@@ -3,7 +3,7 @@ package com.mle.play.controllers
 import com.mle.play.json.SimpleCommand
 import com.mle.play.ws.{JsonWebSockets, WebSocketClient}
 import play.api.libs.iteratee.Concurrent.Channel
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
 
@@ -26,14 +26,16 @@ trait Streaming extends JsonWebSockets {
   override def newClient(user: AuthSuccess, channel: Channel[Message])(implicit request: RequestHeader): Client =
     WebSocketClient(user.user, channel, request)
 
-  override def onMessage(msg: Message, client: Client): Unit = {
+  override def onMessage(msg: Message, client: Client): Boolean = {
     msg.validate[SimpleCommand].map(_.cmd match {
       case SUBSCRIBE =>
         val subscription = jsonEvents.subscribe(e => client.channel push e)
         subscriptions += (client -> subscription)
         writeLog(client, s"subscribed. Subscriptions in total: ${subscriptions.size}")
-      case _ => log.warn(s"Unknown message: $msg")
-    })
+        JsSuccess
+      case _ =>
+        JsError //log.warn(s"Unknown message: $msg")
+    }).isSuccess
   }
 
   override def onConnect(client: Client): Unit =
