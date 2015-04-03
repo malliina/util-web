@@ -11,23 +11,25 @@ object PlayBuild extends Build {
   val httpGroup = "org.apache.httpcomponents"
   val httpVersion = "4.3.5"
   val playGroup = "com.typesafe.play"
-  val playVersion = "2.3.7"
+  val playVersion = "2.3.8"
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = Seq(
-    version := "1.7.1",
-    scalaVersion := "2.11.4",
+    version := "1.8.0",
+    scalaVersion := "2.11.6",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
-      mleGroup %% "util" % "1.5.0",
-      mleGroup %% "logback-rx" % "0.1.2",
+      mleGroup %% "util" % "1.7.0",
+      mleGroup %% "logback-rx" % "0.2.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true,
     exportJars := false,
-    resolvers += "typesafe releases" at "http://repo.typesafe.com/typesafe/releases/"
+    resolvers ++= Seq(
+      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
+      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/")
   )
 }

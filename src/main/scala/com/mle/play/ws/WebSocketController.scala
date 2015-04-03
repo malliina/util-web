@@ -1,6 +1,6 @@
 package com.mle.play.ws
 
-import com.mle.concurrent.FutureImplicits.RichFuture
+import com.mle.concurrent.FutureOps
 import com.mle.util.Log
 import play.api.libs.iteratee.{Concurrent, Enumerator, Iteratee}
 import play.api.mvc._

@@ -11,6 +11,8 @@ import com.mle.util.BaseConfigReader
 class DiscoGsOAuthReader extends BaseConfigReader[DiscoGsOAuthCredentials] {
   val defaultHomePath = userHome / "keys" / "discogs-oauth.txt"
 
+  override def resourceCredential: String = ""
+
   override def userHomeConfPath: Path = sys.props.get("discogs.oauth").map(Paths.get(_)) getOrElse defaultHomePath
 
   override def fromMapOpt(map: Map[String, String]): Option[DiscoGsOAuthCredentials] = for {

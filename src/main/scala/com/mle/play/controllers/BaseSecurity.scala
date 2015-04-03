@@ -2,7 +2,7 @@ package com.mle.play.controllers
 
 import java.nio.file.{Files, Path, Paths}
 
-import com.mle.concurrent.FutureImplicits.RichFuture
+import com.mle.concurrent.FutureOps
 import com.mle.play.auth.{Auth, BasicCredentials}
 import com.mle.util.Log
 import play.api.libs.iteratee.{Done, Input, Iteratee}

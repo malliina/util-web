@@ -11,6 +11,8 @@ import com.mle.util.BaseConfigReader
 class GoogleOAuthReader extends BaseConfigReader[GoogleOAuthCredentials] {
   val defaultHomePath = userHome / "keys" / "google-oauth.txt"
 
+  override def resourceCredential: String = ""
+
   override def userHomeConfPath: Path = sys.props.get("google.oauth").map(Paths.get(_)) getOrElse defaultHomePath
 
   override def fromMapOpt(map: Map[String, String]): Option[GoogleOAuthCredentials] = for {
@@ -18,6 +20,7 @@ class GoogleOAuthReader extends BaseConfigReader[GoogleOAuthCredentials] {
     clientSecret <- map get "clientSecret"
     scope <- map get "scope"
   } yield GoogleOAuthCredentials(clientId, clientSecret, scope)
+
 }
 
 object GoogleOAuthReader extends GoogleOAuthReader
