@@ -15,14 +15,14 @@ object PlayBuild extends Build {
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = Seq(
-    version := "1.8.0",
+    version := "1.9.0",
     scalaVersion := "2.11.6",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
-      mleGroup %% "util" % "1.7.0",
+      mleGroup %% "util" % "1.8.0",
       mleGroup %% "logback-rx" % "0.2.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
