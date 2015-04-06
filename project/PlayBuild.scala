@@ -1,7 +1,7 @@
+import bintray.Plugin.bintraySettings
 import com.mle.sbtutils.{SbtProjects, SbtUtils}
 import sbt.Keys._
 import sbt._
-import bintray.Plugin.bintraySettings
 
 /**
  * The build.
@@ -16,7 +16,7 @@ object PlayBuild extends Build {
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = bintraySettings ++ Seq(
-    version := "1.9.1",
+    version := "1.9.2",
     scalaVersion := "2.11.6",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
@@ -24,7 +24,7 @@ object PlayBuild extends Build {
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
       mleGroup %% "util" % "1.8.1",
-      mleGroup %% "logback-rx" % "0.2.0",
+      mleGroup %% "logback-rx" % "0.2.1",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true,
