@@ -1,6 +1,7 @@
 import com.mle.sbtutils.{SbtProjects, SbtUtils}
 import sbt.Keys._
 import sbt._
+import bintray.Plugin.bintraySettings
 
 /**
  * The build.
@@ -14,15 +15,15 @@ object PlayBuild extends Build {
   val playVersion = "2.3.8"
   val mleGroup = "com.github.malliina"
 
-  lazy val projectSettings = Seq(
-    version := "1.9.0",
+  lazy val projectSettings = bintraySettings ++ Seq(
+    version := "1.9.1",
     scalaVersion := "2.11.6",
     SbtUtils.gitUserName := "malliina",
     SbtUtils.developerName := "Michael Skogberg",
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
-      mleGroup %% "util" % "1.8.0",
+      mleGroup %% "util" % "1.8.1",
       mleGroup %% "logback-rx" % "0.2.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
@@ -30,6 +31,9 @@ object PlayBuild extends Build {
     exportJars := false,
     resolvers ++= Seq(
       "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
-      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/")
+      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/",
+      sbt.Resolver.jcenterRepo,
+      "Bintray malliina" at "http://dl.bintray.com/malliina/maven"),
+    licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
   )
 }
