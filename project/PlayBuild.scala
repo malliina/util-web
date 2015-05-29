@@ -31,11 +31,7 @@ object PlayBuild extends Build {
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true,
     exportJars := false,
-    resolvers ++= Seq(
-      "Typesafe releases" at "http://repo.typesafe.com/typesafe/releases/",
-      "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/",
-      sbt.Resolver.jcenterRepo,
-      "Bintray malliina" at "http://dl.bintray.com/malliina/maven"),
+    resolvers ++= Seq(sbt.Resolver.jcenterRepo),
     licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
   )
 }

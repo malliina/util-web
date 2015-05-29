@@ -22,7 +22,7 @@ trait WebSocketController extends WebSocketBase with Log {
 
   def wsUrl(implicit request: RequestHeader): String = openSocketCall.webSocketURL(request.secure)
 
-  def broadcast(message: Message) = clients.foreach(_.channel push message)
+  def broadcast(message: Message): Unit = clients.foreach(_.channel push message)
 
   /**
    * Opens a WebSocket connection.
@@ -83,14 +83,14 @@ trait WebSocketController extends WebSocketBase with Log {
     (in, out)
   }
 
-  def onUnauthorized(req: RequestHeader) = {
+  def onUnauthorized(req: RequestHeader): Result = {
     log warn s"Unauthorized WebSocket connection attempt from: ${req.remoteAddress}"
     Results.Unauthorized
   }
 
   def welcomeMessage(client: Client): Option[Message] = None
 
-  def welcomeEnumerator(client: Client) = toEnumerator(welcomeMessage(client))
+  def welcomeEnumerator(client: Client): Enumerator[Message] = toEnumerator(welcomeMessage(client))
 
   def toEnumerator(maybeMessage: Option[Message]) =
     maybeMessage.map(Enumerator[Message](_)).getOrElse(Enumerator.empty[Message])
