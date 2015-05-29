@@ -1,8 +1,0 @@
-@(field: Field)
-    @util.span("help-block") {
-        @{
-            field.error.map {
-                error => Messages(error.message, error.args: _*)
-            }
-        }
-    }

@@ -27,7 +27,7 @@ object PlayBuild extends Build {
       playGroup %% "play-ws" % playVersion,
       playGroup %% "play-netty-server" % playVersion,
       mleGroup %% "util" % "1.9.0",
-      mleGroup %% "logback-rx" % "0.2.1",
+      mleGroup %% "logback-rx" % "0.3.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true,
