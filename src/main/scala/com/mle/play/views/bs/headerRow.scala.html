@@ -1,0 +1,11 @@
+@(header: String, columnClass: String = "col-md-12", small: String = "")
+
+@bs.rowColumn(columnClass) {
+    @util.div("page-header") {
+        @if(small == "") {
+            <h1>@header</h1>
+        } else {
+            <h1>@header <small>@small</small></h1>
+        }
+    }
+}

@@ -13,11 +13,11 @@ object PlayBuild extends Build {
   val httpGroup = "org.apache.httpcomponents"
   val httpVersion = "4.3.5"
   val playGroup = "com.typesafe.play"
-  val playVersion = "2.3.9"
+  val playVersion = "2.4.0"
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = bintraySettings ++ Seq(
-    version := "1.9.3",
+    version := "2.0.0",
     scalaVersion := "2.11.6",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
@@ -25,7 +25,7 @@ object PlayBuild extends Build {
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
-      mleGroup %% "util" % "1.8.1",
+      mleGroup %% "util" % "1.9.0",
       mleGroup %% "logback-rx" % "0.2.1",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpmime" % httpVersion),

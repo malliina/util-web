@@ -1,0 +1,7 @@
+@(header: String, columnClass: String = "col-md-12", initialStatus: String = "Initializing...")
+
+@bs.rowColumn(columnClass) {
+    @util.div("page-header") {
+        <h1>@header <small class="pull-right" id="status">@initialStatus</small></h1>
+    }
+}
