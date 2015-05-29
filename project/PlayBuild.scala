@@ -1,4 +1,3 @@
-import bintray.Plugin.bintraySettings
 import com.mle.sbtutils.SbtProjects
 import com.mle.sbtutils.SbtUtils.{developerName, gitUserName}
 import sbt.Keys._
@@ -8,7 +7,8 @@ import sbt._
  * The build.
  */
 object PlayBuild extends Build {
-  lazy val utilPlay = SbtProjects.testableProject("util-play").settings(projectSettings: _*)
+  lazy val utilPlay = SbtProjects.testableProject("util-play")
+    .enablePlugins(bintray.BintrayPlugin).settings(projectSettings: _*)
 
   val httpGroup = "org.apache.httpcomponents"
   val httpVersion = "4.3.5"
@@ -16,7 +16,7 @@ object PlayBuild extends Build {
   val playVersion = "2.4.0"
   val mleGroup = "com.github.malliina"
 
-  lazy val projectSettings = bintraySettings ++ Seq(
+  lazy val projectSettings = Seq(
     version := "2.0.0",
     scalaVersion := "2.11.6",
     gitUserName := "malliina",
@@ -25,6 +25,7 @@ object PlayBuild extends Build {
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
+      playGroup %% "play-netty-server" % playVersion,
       mleGroup %% "util" % "1.9.0",
       mleGroup %% "logback-rx" % "0.2.1",
       httpGroup % "httpclient" % httpVersion,

@@ -5,8 +5,13 @@ import java.nio.file.{Files, Path, Paths}
 import com.mle.file.FileUtilities
 import com.mle.security.KeyStores
 import com.mle.util.{Log, Util, Utils}
-import play.core.StaticApplication
-import play.core.server.NettyServer
+import play.{Routes, DefaultApplication}
+import play.api.routing.Router
+import play.api.{Environment, Play, DefaultApplication, Mode}
+
+//import play.core.StaticApplication
+
+import play.core.server.{ServerConfig, NettyServer}
 
 /**
  * Starts Play Framework 2, does not create a RUNNING_PID file.
@@ -31,12 +36,7 @@ trait PlayLifeCycle extends KeyStores with Log {
 
   def appName: String
 
-  def main(args: Array[String]) {
-    // TODO add option to kill running instance gracefully using e.g. remote akka actors
-    start()
-  }
-
-  def start() {
+  def start(rs: Router.Routes) {
     FileUtilities.basePath = Paths get sys.props.get(s"$appName.home").getOrElse(sys.props("user.dir"))
     log info s"Starting $appName... app home: ${FileUtilities.basePath}"
     sys.props ++= conformize(readConfFile(appName))
@@ -46,19 +46,20 @@ trait PlayLifeCycle extends KeyStores with Log {
      * NettyServer.createServer insists on writing a RUNNING_PID file.
      * Fuck that.
      */
-    nettyServer = Some(createServer())
+    nettyServer = Some(createServer(rs))
   }
 
   protected def tryReadInt(key: String) =
     sys.props.get(key).filter(_ != "disabled").flatMap(ps => Utils.opt[Int, NumberFormatException](Integer.parseInt(ps)))
 
-  protected def createServer() = {
-    val server = new NettyServer(
-      new StaticApplication(FileUtilities.basePath.toFile),
-      tryReadInt(httpPortKey),
-      tryReadInt(httpsPortKey),
-      sys.props.get(httpAddressKey) getOrElse defaultHttpAddress
-    )
+  protected def createServer(rs: Router.Routes): NettyServer = {
+    val serverConfig = ServerConfig(
+      classLoader = this.getClass.getClassLoader,
+      rootDir = FileUtilities.basePath.toFile,
+      port = tryReadInt(httpPortKey),
+      sslPort = tryReadInt(httpsPortKey),
+      address = sys.props.get(httpAddressKey) getOrElse defaultHttpAddress)
+    val server = NettyServer.fromRouter(serverConfig)(rs)
     Util.addShutdownHook(server.stop())
     server
   }

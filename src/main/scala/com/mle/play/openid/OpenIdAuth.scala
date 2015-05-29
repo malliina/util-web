@@ -1,6 +1,7 @@
 package com.mle.play.openid
 
 import com.mle.util.Log
+import play.api.Play.current
 import play.api.libs.openid.{OpenID, UserInfo}
 import play.api.mvc.Results._
 import play.api.mvc._

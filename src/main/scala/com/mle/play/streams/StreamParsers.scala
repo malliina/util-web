@@ -5,9 +5,10 @@ import java.io._
 import com.mle.util.Log
 import play.api.libs.iteratee._
 import play.api.mvc.BodyParsers.parse
-import play.api.mvc.BodyParsers.parse.Multipart._
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc.{BodyParser, MultipartFormData}
+import play.core.parsers.Multipart
+import play.core.parsers.Multipart.PartHandler
 
 import scala.concurrent.ExecutionContext
 
@@ -66,9 +67,8 @@ trait StreamParsers extends Log {
    * @return
    */
   def byteArrayPartHandler[T](in: Iteratee[Array[Byte], T]): PartHandler[FilePart[T]] = {
-    // note: seems this is shorthand for handleFilePart(fileInfo => fileInfo match { case { ... }})
-    parse.Multipart.handleFilePart {
-      case parse.Multipart.FileInfo(partName, fileName, contentType) =>
+    Multipart.handleFilePart {
+      case Multipart.FileInfo(partName, fileName, contentType) =>
         in
     }
   }
