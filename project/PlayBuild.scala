@@ -11,14 +11,14 @@ object PlayBuild extends Build {
     .enablePlugins(bintray.BintrayPlugin).settings(projectSettings: _*)
 
   val httpGroup = "org.apache.httpcomponents"
-  val httpVersion = "4.3.5"
+  val httpVersion = "4.5"
   val playGroup = "com.typesafe.play"
-  val playVersion = "2.4.0"
+  val playVersion = "2.4.2"
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = Seq(
-    version := "2.0.0",
-    scalaVersion := "2.11.6",
+    version := "2.0.1",
+    scalaVersion := "2.11.7",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     organization := s"com.github.${gitUserName.value}",

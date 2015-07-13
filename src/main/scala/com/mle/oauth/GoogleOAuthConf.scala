@@ -15,7 +15,9 @@ case class GoogleOAuthConf(issuer: String,
                            responseTypesSupported: Seq[String],
                            subjectTypesSupported: Seq[String],
                            algorithmsSupported: Seq[String],
-                           authMethodsSupported: Seq[String])
+                           scopesSupported: Seq[String],
+                           authMethodsSupported: Seq[String],
+                            claimsSupported: Seq[String])
 
 object GoogleOAuthConf {
   implicit val jsonReader: Reads[GoogleOAuthConf] = (
@@ -27,7 +29,9 @@ object GoogleOAuthConf {
       (JsPath \ "jwks_uri").read[String] and
       (JsPath \ "response_types_supported").read[Seq[String]] and
       (JsPath \ "subject_types_supported").read[Seq[String]] and
-      (JsPath \ "id_token_alg_values_supported").read[Seq[String]] and
-      (JsPath \ "token_endpoint_auth_methods_supported").read[Seq[String]]
+      (JsPath \ "id_token_signing_alg_values_supported").read[Seq[String]] and
+      (JsPath \ "scopes_supported").read[Seq[String]] and
+      (JsPath \ "token_endpoint_auth_methods_supported").read[Seq[String]] and
+      (JsPath \ "claims_supported").read[Seq[String]]
     )(GoogleOAuthConf.apply _)
 }
