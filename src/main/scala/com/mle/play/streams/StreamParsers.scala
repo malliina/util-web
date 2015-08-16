@@ -11,22 +11,25 @@ import play.core.parsers.Multipart
 import play.core.parsers.Multipart.PartHandler
 
 import scala.concurrent.ExecutionContext
+import com.mle.storage.{StorageSize, StorageInt}
 
 /**
  *
  * @author mle
  */
 trait StreamParsers extends Log {
+  def defaultMaxLength: StorageSize = 10.gigs
+
   /**
    * Pushes the bytes to the supplied channel as they are received.
    *
    * @param dest channel to push to
    */
-  def multiPartByteStreaming(dest: Concurrent.Channel[Array[Byte]])(implicit ec: ExecutionContext): BodyParser[MultipartFormData[Long]] =
-    multiPartByteStreaming(bytes => dest push bytes)
+  def multiPartChannelStreaming(dest: Concurrent.Channel[Array[Byte]], maxLength: StorageSize = defaultMaxLength)(implicit ec: ExecutionContext): BodyParser[MultipartFormData[Long]] =
+    multiPartByteStreaming(bytes => dest push bytes, maxLength)
 
-  def multiPartByteStreaming(f: Array[Byte] => Unit)(implicit ec: ExecutionContext): BodyParser[MultipartFormData[Long]] =
-    parse.multipartFormData(byteArrayPartConsumer(f))
+  def multiPartByteStreaming(f: Array[Byte] => Unit, maxLength: StorageSize = defaultMaxLength)(implicit ec: ExecutionContext): BodyParser[MultipartFormData[Long]] =
+    parse.multipartFormData(byteArrayPartConsumer(f), maxLength.toBytes)
 
   /**
    * Parses a multipart form-data upload in such a way that any parsed bytes are made available
@@ -34,14 +37,14 @@ trait StreamParsers extends Log {
    *
    * @return
    */
-  def multiPartStreamPiping()(implicit ec: ExecutionContext): (InputStream, BodyParser[MultipartFormData[Long]]) = {
+  def multiPartStreamPiping(maxLength: StorageSize = defaultMaxLength)(implicit ec: ExecutionContext): (InputStream, BodyParser[MultipartFormData[Long]]) = {
     val (inStream, iteratee) = Streams.joinedStream()
-    val parser = multiPartBodyParser(iteratee)
+    val parser = multiPartBodyParser(iteratee, maxLength)
     (inStream, parser)
   }
 
-  def multiPartBodyParser[T](iteratee: Iteratee[Array[Byte], T]): BodyParser[MultipartFormData[T]] =
-    parse.multipartFormData(byteArrayPartHandler(iteratee))
+  def multiPartBodyParser[T](iteratee: Iteratee[Array[Byte], T], maxLength: StorageSize = defaultMaxLength): BodyParser[MultipartFormData[T]] =
+    parse.multipartFormData(byteArrayPartHandler(iteratee), maxLength.toBytes)
 
   /**
    * Builds a part handler that applies the supplied function
