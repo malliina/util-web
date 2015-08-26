@@ -7,7 +7,7 @@ import sbt._
  * The build.
  */
 object PlayBuild extends Build {
-  lazy val utilPlay = SbtProjects.testableProject("util-play")
+  lazy val utilPlay = SbtProjects.testableProject("util-play", file("util-play"))
     .enablePlugins(bintray.BintrayPlugin).settings(projectSettings: _*)
 
   val httpGroup = "org.apache.httpcomponents"
@@ -17,7 +17,7 @@ object PlayBuild extends Build {
   val mleGroup = "com.github.malliina"
 
   lazy val projectSettings = Seq(
-    version := "2.1.0",
+    version := "2.2.0",
     scalaVersion := "2.11.7",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
@@ -29,9 +29,9 @@ object PlayBuild extends Build {
       mleGroup %% "util" % "1.9.0",
       mleGroup %% "logback-rx" % "0.3.0",
       httpGroup % "httpclient" % httpVersion,
+      httpGroup % "httpcore" % "4.4.1",
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true,
-    exportJars := false,
     resolvers ++= Seq(sbt.Resolver.jcenterRepo),
     licenses += ("MIT", url("http://opensource.org/licenses/MIT"))
   )
