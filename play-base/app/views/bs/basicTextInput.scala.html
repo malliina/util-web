@@ -1,0 +1,8 @@
+@(field: Field, label: String, placeHolder: String = "", typeName: String = "text", moreClasses: Seq[String] = Seq.empty, defaultValue: String = "")
+
+@defining(if(field.hasErrors) " has-error" else "") { errorSuffix =>
+    @util.div(s"form-group$errorSuffix") {
+        @util.basicLabel(label, field.name)
+        @bs.input(field, typeName, placeHolder, moreClasses, defaultValue)
+    }
+}

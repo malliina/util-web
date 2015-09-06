@@ -1,0 +1,2 @@
+@(ss: (Symbol, String)*)(content: Html)
+<div @Html(ss.map(kv => s"""${kv._1.name}="${kv._2}"""").mkString(" "))>@content</div>
