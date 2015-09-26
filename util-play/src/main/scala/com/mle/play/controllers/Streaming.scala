@@ -1,13 +1,12 @@
 package com.mle.play.controllers
 
+import com.mle.maps.ItemMap
 import com.mle.play.json.SimpleCommand
 import com.mle.play.ws.{JsonWebSockets, WebSocketClient}
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
-
-import scala.collection.concurrent.TrieMap
 
 /**
  * @author Michael
@@ -17,9 +16,9 @@ trait Streaming extends JsonWebSockets {
   override type Client = WebSocketClient
   val SUBSCRIBE = "subscribe"
 
-  val subscriptions = TrieMap.empty[WebSocketClient, Subscription]
+  def subscriptions: ItemMap[WebSocketClient, Subscription]
 
-  override def clients: Seq[Client] = subscriptions.keys.toSeq
+  override def clients: Seq[Client] = subscriptions.keys
 
   def jsonEvents: Observable[JsValue]
 
@@ -30,7 +29,7 @@ trait Streaming extends JsonWebSockets {
     msg.validate[SimpleCommand].map(_.cmd match {
       case SUBSCRIBE =>
         val subscription = jsonEvents.subscribe(e => client.channel push e)
-        subscriptions += (client -> subscription)
+        subscriptions.put(client, subscription)
         writeLog(client, s"subscribed. Subscriptions in total: ${subscriptions.size}")
         JsSuccess
       case _ =>
@@ -43,10 +42,16 @@ trait Streaming extends JsonWebSockets {
 
   override def onDisconnect(client: Client): Unit = {
     subscriptions.get(client).foreach(_.unsubscribe())
-    subscriptions -= client
+    subscriptions.remove(client)
     writeLog(client, "disconnected")
   }
 
   protected def writeLog(client: Client, suffix: String): Unit =
     log.info(s"User: ${client.user} from: ${client.request.remoteAddress} $suffix.")
 }
+
+
+
+
+
+

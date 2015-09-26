@@ -6,7 +6,7 @@ import play.api.mvc.WebSocket
 import play.api.mvc.WebSocket.FrameFormatter
 import rx.lang.scala.Observable
 
-import scala.concurrent.duration.DurationLong
+import scala.concurrent.duration.DurationInt
 
 /**
  * @author Michael

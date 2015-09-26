@@ -1,11 +1,10 @@
 package com.mle.play.ws
 
+import com.mle.maps.{ItemMap, StmItemMap}
 import com.mle.util.Log
 import play.api.libs.iteratee.Concurrent.Channel
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.RequestHeader
-
-import scala.collection.concurrent.TrieMap
 
 /**
  * @author Michael
@@ -14,13 +13,9 @@ trait DefaultJsonWebSocket extends JsonWebSockets with Log {
   override type Client = ClientInfo[Message]
   override type AuthSuccess = String
 
-  /**
-   * TODO: Find the best way to represent a concurrent collection. Both actors and scala-stm are heavy artillery and
-   * error-prone.
-   */
-  val clientsMap: collection.concurrent.Map[Client, Unit] = TrieMap.empty[Client, Unit]
+  val users: ItemMap[Client, Unit] = StmItemMap.empty[Client, Unit]
 
-  def clients = clientsMap.keys.toSeq
+  def clients: Seq[ClientInfo[JsValue]] = users.keys
 
   override def newClient(user: AuthSuccess, channel: Channel[Message])(implicit request: RequestHeader): Client =
     ClientInfo(channel, request, user)
@@ -31,7 +26,7 @@ trait DefaultJsonWebSocket extends JsonWebSockets with Log {
    * @param client the client channel, can be used to push messages to the client
    */
   override def onConnect(client: Client): Unit = {
-    clientsMap += client ->()
+    users.put(client, ())
   }
 
   /**
@@ -40,7 +35,7 @@ trait DefaultJsonWebSocket extends JsonWebSockets with Log {
    * @param client the disconnected client channel
    */
   override def onDisconnect(client: Client): Unit = {
-    clientsMap -= client
+    users.remove(client)
   }
 
   /**

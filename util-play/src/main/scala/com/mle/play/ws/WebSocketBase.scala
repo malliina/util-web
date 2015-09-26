@@ -18,8 +18,8 @@ trait WebSocketBase {
   def wsUrl(implicit request: RequestHeader): String
 
   /**
-   *
    * Called when the client sends a message to the server.
+   *
    * @param msg the message
    * @param client the client that sent the message
    * @return true if the message was handled, false otherwise

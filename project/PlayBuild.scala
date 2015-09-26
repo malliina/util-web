@@ -13,23 +13,23 @@ object PlayBuild extends Build {
     .aggregate(utilPlay, playBase)
     .settings(rootSettings: _*)
 
-  lazy val utilPlay = SbtProjects.testableProject("util-play", file("util-play"))
-    .enablePlugins(bintray.BintrayPlugin)
-    .settings(utilPlaySettings: _*)
-
   lazy val playBase = PlayProject("play-base", file("play-base"))
     .settings(baseSettings: _*)
     .enablePlugins(bintray.BintrayPlugin)
     .dependsOn(utilPlay)
 
+  lazy val utilPlay = SbtProjects.testableProject("util-play", file("util-play"))
+    .enablePlugins(bintray.BintrayPlugin)
+    .settings(utilPlaySettings: _*)
+
   val httpGroup = "org.apache.httpcomponents"
   val httpVersion = "4.5"
   val playGroup = "com.typesafe.play"
-  val playVersion = "2.4.2"
+  val playVersion = "2.4.3"
   val mleGroup = "com.github.malliina"
 
   lazy val baseSettings = Seq(
-    version := "2.3.0",
+    version := "2.3.1",
     scalaVersion := "2.11.7",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
@@ -54,7 +54,7 @@ object PlayBuild extends Build {
       mleGroup %% "util" % "2.0.0",
       mleGroup %% "logback-rx" % "0.4.0",
       httpGroup % "httpclient" % httpVersion,
-      httpGroup % "httpcore" % "4.4.2",
+      httpGroup % "httpcore" % "4.4.3",
       httpGroup % "httpmime" % httpVersion),
     fork in Test := true
   )
