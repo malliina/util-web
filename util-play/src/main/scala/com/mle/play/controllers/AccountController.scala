@@ -23,11 +23,10 @@ trait AccountController extends Controller with BaseSecurity {
   val loginForm = Form[BasicCredentials](mapping(
     userFormKey -> nonEmptyText,
     passFormKey -> nonEmptyText
-  )(BasicCredentials.apply)(BasicCredentials.unapply)
-    .verifying("Invalid credentials.", creds => validateCredentials(creds)))
+  )(BasicCredentials.apply)(BasicCredentials.unapply))
 
   def changePasswordForm(implicit request: Request[AnyContent]) = Form(tuple(
-    oldPassKey -> nonEmptyText.verifying("Incorrect old password.", pass => validateCredentials(BasicCredentials(authenticate(request).get.user, pass))),
+    oldPassKey -> nonEmptyText,
     newPassKey -> nonEmptyText,
     newPassAgainKey -> nonEmptyText
   ).verifying("The new password was incorrectly repeated.", in => in match {

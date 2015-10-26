@@ -1,6 +1,7 @@
 import com.mle.sbtplay.PlayProject
 import com.mle.sbtutils.SbtProjects
 import com.mle.sbtutils.SbtUtils.{developerName, gitUserName}
+import play.core.PlayVersion
 import sbt.Keys._
 import sbt._
 
@@ -25,11 +26,11 @@ object PlayBuild extends Build {
   val httpGroup = "org.apache.httpcomponents"
   val httpVersion = "4.5"
   val playGroup = "com.typesafe.play"
-  val playVersion = "2.4.3"
+  val playVersion = PlayVersion.current
   val mleGroup = "com.github.malliina"
 
   lazy val baseSettings = Seq(
-    version := "2.3.1",
+    version := "2.4.2",
     scalaVersion := "2.11.7",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",

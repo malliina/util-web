@@ -1,16 +1,18 @@
 package com.mle.play.auth
 
+import scala.concurrent.Future
+
 /**
-  * @author Michael
-  */
+ * @author Michael
+ */
 trait TokenStore {
-   def persist(token: Token)
+  def persist(token: Token): Future[Unit]
 
-   def remove(token: Token)
+  def remove(token: Token): Future[Unit]
 
-   def removeAll(user: String)
+  def removeAll(user: String): Future[Unit]
 
-   def remove(user: String, series: Long)
+  def remove(user: String, series: Long): Future[Unit]
 
-   def findToken(user: String, series: Long): Option[Token]
- }
+  def findToken(user: String, series: Long): Future[Option[Token]]
+}

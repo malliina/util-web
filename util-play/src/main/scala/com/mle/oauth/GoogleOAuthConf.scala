@@ -17,7 +17,7 @@ case class GoogleOAuthConf(issuer: String,
                            algorithmsSupported: Seq[String],
                            scopesSupported: Seq[String],
                            authMethodsSupported: Seq[String],
-                            claimsSupported: Seq[String])
+                           claimsSupported: Seq[String])
 
 object GoogleOAuthConf {
   implicit val jsonReader: Reads[GoogleOAuthConf] = (

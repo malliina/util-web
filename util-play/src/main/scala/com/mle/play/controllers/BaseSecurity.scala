@@ -3,6 +3,7 @@ package com.mle.play.controllers
 import java.nio.file.{Files, Path, Paths}
 
 import com.mle.concurrent.FutureOps
+import com.mle.concurrent2.FutureOps2
 import com.mle.play.auth.{Auth, BasicCredentials}
 import com.mle.util.Log
 import play.api.libs.iteratee.{Done, Input, Iteratee}
@@ -28,13 +29,9 @@ class OneFileUploadRequest[A](val file: Path, user: String, request: Request[A])
 case class AuthResult(user: String, cookie: Option[Cookie] = None)
 
 trait BaseSecurity extends Log {
-
-
-  def authenticateFromSession(implicit request: RequestHeader): Option[String] =
-    request.session.get(Security.username) //.filter(_.nonEmpty)
-
-  def authenticateFromHeader(implicit request: RequestHeader): Option[String] =
-    headerAuth(validateCredentials)
+  def authenticateFromSession(implicit request: RequestHeader): Future[Option[String]] = {
+    fut(request.session.get(Security.username))
+  }
 
   /**
    * Basic HTTP authentication.
@@ -42,12 +39,11 @@ trait BaseSecurity extends Log {
    * The "Authorization" request header should be like: "Basic base64(username:password)", where
    * base64(x) means x base64-encoded.
    *
-   * @param f credentials verifier: returns true on success, false otherwise
    * @param request request from which the Authorization header is validated
    * @return the username wrapped in an Option if successfully authenticated, None otherwise
    */
-  def headerAuth(f: BasicCredentials => Boolean)(implicit request: RequestHeader): Option[String] = {
-    Auth.basicCredentials(request).filter(f).map(_.username)
+  def authenticateFromHeader(implicit request: RequestHeader): Future[Option[String]] = {
+    performAuthentication(Auth.basicCredentials(request))
   }
 
   /**
@@ -56,8 +52,16 @@ trait BaseSecurity extends Log {
    * @param request request
    * @return the username, if successfully authenticated
    */
-  def authenticateFromQueryString(implicit request: RequestHeader): Option[String] = {
-    Auth.credentialsFromQuery(request).filter(validateCredentials).map(_.username)
+  def authenticateFromQueryString(implicit request: RequestHeader): Future[Option[String]] = {
+    performAuthentication(Auth.credentialsFromQuery(request))
+  }
+
+  def performAuthentication(creds: Option[BasicCredentials]) = {
+    creds.map(validateUser).getOrElse(fut(None))
+  }
+
+  def validateUser(creds: BasicCredentials): Future[Option[String]] = {
+    validateCredentials(creds).map(isValid => if (isValid) Option(creds.username) else None)
   }
 
   /**
@@ -65,7 +69,7 @@ trait BaseSecurity extends Log {
    *
    * @return True if the credentials are valid; false otherwise. False by default.
    */
-  def validateCredentials(creds: BasicCredentials): Boolean = false
+  def validateCredentials(creds: BasicCredentials): Future[Boolean] = fut(false)
 
   /**
    * Retrieves the authenticated username from the request.
@@ -76,10 +80,15 @@ trait BaseSecurity extends Log {
    *
    * @return the authentication result wrapped in an [[scala.Option]] if successfully authenticated, [[scala.None]] otherwise
    */
-  def authenticate(implicit request: RequestHeader): Option[AuthResult] = {
-    (authenticateFromSession orElse
-      authenticateFromHeader orElse
-      authenticateFromQueryString) map lift
+  def authenticate(implicit request: RequestHeader): Future[Option[AuthResult]] = {
+    authenticateFromSession
+      .checkOrElse(_.nonEmpty, authenticateFromHeader)
+      .checkOrElse(_.nonEmpty, authenticateFromQueryString)
+      .map(_.map(lift))
+  }
+
+  def checkOrElse[T, U >: T](f: Future[T], orElse: => Future[U], check: T => Boolean): Future[U] = {
+    f.flatMap(t => if (check(t)) fut(t) else orElse)
   }
 
   /**
@@ -99,13 +108,6 @@ trait BaseSecurity extends Log {
     Unauthorized
   }
 
-  /**
-   *
-   * @param authFunction
-   * @param authAction
-   * @tparam U type of user
-   * @return
-   */
   def LoggedSecureAction[U](authFunction: RequestHeader => Option[U])(authAction: U => EssentialAction): EssentialAction =
     Security.Authenticated(req => authFunction(req), req => onUnauthorized(req))(user => Logged(authAction(user)))
 
@@ -113,35 +115,19 @@ trait BaseSecurity extends Log {
     AuthenticatedLogged(user => Action.async(req => f(new AuthRequest(user.user, req, user.cookie))))
 
   def LoggedSecureActionAsync[U](authFunction: RequestHeader => Future[U])(authAction: U => EssentialAction) =
-    AuthenticatedAsync(authFunction, req => onUnauthorized(req))(user => Logged(authAction(user)))
+    authenticatedAsync2(authFunction, req => onUnauthorized(req))(user => Logged(authAction(user)))
 
-  def AuthenticatedAsync[A](authFunction: RequestHeader => Future[A],
-                            onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction = {
-    val f2: RequestHeader => Future[Option[A]] = req => authFunction(req).map(a => Some(a)).recoverAll(_ => None)
-    AuthenticatedAsync2(f2, onUnauthorized)(action)
-  }
-
-  def AuthenticatedAsync2[A](authFunction: RequestHeader => Future[Option[A]],
-                             onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction = {
-    EssentialAction(request => {
-      val futureIteratee: Future[Iteratee[Array[Byte], Result]] = authFunction(request)
-        .map(userOpt => userOpt.map(user => action(user)(request))
-        .getOrElse(Done(onUnauthorized(request), Input.Empty)))
-      Iteratee flatten futureIteratee
-    })
-  }
-
-  def Authenticated(f: AuthResult => EssentialAction): EssentialAction =
-    Security.Authenticated(req => authenticate(req), unAuthorizedRequest => onUnauthorized(unAuthorizedRequest))(f)
-
-  def Authenticated(f: => EssentialAction): EssentialAction = Authenticated(user => f)
+  def AuthAction(f: AuthRequest[AnyContent] => Result) =
+    AuthenticatedLogged(user => Action(req => f(new AuthRequest(user.user, req, user.cookie))))
 
   def AuthenticatedLogged(f: AuthResult => EssentialAction): EssentialAction = Authenticated(user => Logged(user, f))
 
   def AuthenticatedLogged(f: => EssentialAction): EssentialAction = AuthenticatedLogged(_ => f)
 
-  def AuthAction(f: AuthRequest[AnyContent] => Result) =
-    AuthenticatedLogged(user => Action(req => f(new AuthRequest(user.user, req, user.cookie))))
+  def Authenticated(f: => EssentialAction): EssentialAction = Authenticated(user => f)
+
+  def Authenticated(f: AuthResult => EssentialAction): EssentialAction =
+    authenticatedAsync(req => authenticate(req), unAuthorizedRequest => onUnauthorized(unAuthorizedRequest))(f)
 
   /**
    * Logs authenticated requests.
@@ -162,6 +148,37 @@ trait BaseSecurity extends Log {
     action(req)
   })
 
+  /**
+   * @param authFunction authentication that fails the Future if authentication fails
+   * @return an authenticated action
+   */
+  def authenticatedAsync2[A](authFunction: RequestHeader => Future[A],
+                            onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction = {
+    val f2: RequestHeader => Future[Option[A]] = req => authFunction(req).map(a => Some(a)).recoverAll(_ => None)
+    authenticatedAsync(f2, onUnauthorized)(action)
+  }
+  
+  /**
+   * Async version of Security.Authenticated.
+   *
+   * @param auth auth function
+   * @param onUnauthorized callback if auth fails
+   * @param action authenticated action
+   * @tparam A type of user+request
+   * @return an authenticated action
+   */
+  def authenticatedAsync[A](auth: RequestHeader => Future[Option[A]],
+                            onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction = {
+    EssentialAction(request => {
+      val futureIteratee = auth(request).map(maybeUser => {
+        maybeUser
+          .map(user => action(user)(request))
+          .getOrElse(Done(onUnauthorized(request), Input.Empty))
+      })
+      Iteratee.flatten(futureIteratee)
+    })
+  }
+
   val uploadDir = Paths get sys.props("java.io.tmpdir")
 
   protected def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
@@ -173,4 +190,6 @@ trait BaseSecurity extends Log {
     })
 
   protected def lift(user: String) = AuthResult(user)
+
+  private def fut[T](t: T): Future[T] = Future.successful(t)
 }
