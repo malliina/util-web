@@ -1,11 +1,11 @@
-@(field: Field, label: String, placeHolder: String = "", typeName: String = "text", inputWidth: String = "col-sm-10", moreClasses: Seq[String] = Seq.empty, defaultValue: String = "")
+@(field: Field, label: String, placeHolder: String = "", typeName: String = "text", inputWidth: String = "col-sm-10", moreClasses: Seq[String] = Seq.empty, defaultValue: String = "")(implicit m: Messages)
 
 @if(field.hasErrors) {
     @util.div("form-group has-error") {
         @bs.label(label, field.name)
         @util.div(inputWidth) {
             @bs.input(field, typeName, placeHolder, moreClasses, defaultValue)
-            @bs.helpSpan(field)
+            @bs.helpSpan(field)(m)
         }
     }
 } else {

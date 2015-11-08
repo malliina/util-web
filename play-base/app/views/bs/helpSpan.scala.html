@@ -1,10 +1,8 @@
-@(field: Field)
-@import play.api.Play.current
-@import play.api.i18n.Messages.Implicits._
-    @util.span("help-block") {
-        @{
-            field.error.map {
-                error => Messages(error.message, error.args: _*)
-            }
+@(field: Field)(implicit m: Messages)
+@util.span("help-block") {
+    @{
+        field.error.map {
+            error => Messages(error.message, error.args: _*)(m)
         }
     }
+}

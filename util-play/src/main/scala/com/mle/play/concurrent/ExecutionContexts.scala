@@ -1,15 +1,14 @@
 package com.mle.play.concurrent
 
-import play.api.Play.current
-import play.api.libs.concurrent.Akka
+import akka.actor.ActorSystem
 
 import scala.concurrent.ExecutionContext
 
 /**
  * @author Michael
  */
-object ExecutionContexts {
+class ExecutionContexts(actorSystem: ActorSystem) {
   // see src/main/resources/reference.conf
   implicit val synchronousIO: ExecutionContext =
-    Akka.system.dispatchers.lookup("play.akka.actor.synchronous-io")
+    actorSystem.dispatchers.lookup("play.akka.actor.synchronous-io")
 }
