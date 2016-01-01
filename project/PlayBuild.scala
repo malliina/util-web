@@ -1,6 +1,6 @@
-import com.mle.sbtplay.PlayProject
-import com.mle.sbtutils.SbtProjects
-import com.mle.sbtutils.SbtUtils.{developerName, gitUserName}
+import com.malliina.sbtplay.PlayProject
+import com.malliina.sbtutils.SbtProjects
+import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import play.core.PlayVersion
 import sbt.Keys._
 import sbt._
@@ -27,14 +27,14 @@ object PlayBuild extends Build {
   val httpVersion = "4.5"
   val playGroup = "com.typesafe.play"
   val playVersion = PlayVersion.current
-  val mleGroup = "com.github.malliina"
+  val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = Seq(
-    version := "2.4.3",
+    version := "2.5.0",
     scalaVersion := "2.11.7",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
-    organization := s"com.github.${gitUserName.value}",
+    organization := s"com.${gitUserName.value}",
     resolvers ++= Seq(
       sbt.Resolver.jcenterRepo,
       "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
@@ -52,8 +52,8 @@ object PlayBuild extends Build {
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
       playGroup %% "play-netty-server" % playVersion,
-      mleGroup %% "util" % "2.0.0",
-      mleGroup %% "logback-rx" % "0.4.0",
+      malliinaGroup %% "util" % "2.1.0",
+      malliinaGroup %% "logback-rx" % "0.6.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpcore" % "4.4.3",
       httpGroup % "httpmime" % httpVersion),
