@@ -6,10 +6,6 @@ import play.api.{GlobalSettings, Logger}
 
 import scala.concurrent.Future
 
-/**
- *
- * @author mle
- */
 trait GlobalErrorHandling extends GlobalSettings {
 
   override def onError(request: RequestHeader, ex: Throwable): Future[Result] = {

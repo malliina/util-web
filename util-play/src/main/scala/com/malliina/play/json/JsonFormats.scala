@@ -6,10 +6,6 @@ import play.api.libs.json.{Format, JsResult, JsValue}
 
 import scala.concurrent.duration.{Duration, DurationLong}
 
-/**
- *
- * @author mle
- */
 trait JsonFormats {
 
   /**

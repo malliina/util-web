@@ -3,9 +3,6 @@ package com.malliina.play.io
 import com.malliina.play.io.LoggingList.log
 import play.api.Logger
 
-/**
-  * @author Michael
-  */
 trait LoggingList[T] extends PersistentList[T] {
   abstract override def add(item: T): Boolean = {
     val added = super.add(item)

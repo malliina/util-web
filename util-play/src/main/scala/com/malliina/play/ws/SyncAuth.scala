@@ -4,9 +4,6 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 
-/**
- * @author Michael
- */
 trait SyncAuth extends WebSocketController {
   override def authenticateAsync(req: RequestHeader): Future[AuthSuccess] = toFuture(authenticate(req))
 

@@ -7,10 +7,6 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.mvc.{AnyContent, Controller, Request, RequestHeader}
 
-/**
- *
- * @author mle
- */
 trait AccountController extends Controller with BaseSecurity {
   val INTENDED_URI = "intended_uri"
   val FEEDBACK = "feedback"

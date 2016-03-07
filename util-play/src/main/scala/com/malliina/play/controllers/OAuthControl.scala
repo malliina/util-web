@@ -13,16 +13,13 @@ import play.api.mvc._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-/**
- * A [[Controller]] to handle the Google OAuth2 authentication flow.
- *
- * 1) User is sent to initiate()
- * 2) initiate() sends (redirects) user to Google
- * 3) Google redirects user to redirResponse() after consent
- * 4) redirResponse() extracts email, authenticates
- *
- * @author Michael
- */
+/** A [[Controller]] to handle the Google OAuth2 authentication flow.
+  *
+  * 1) User is sent to initiate()
+  * 2) initiate() sends (redirects) user to Google
+  * 3) Google redirects user to redirResponse() after consent
+  * 4) redirResponse() extracts email, authenticates
+  */
 trait OAuthControl extends Controller {
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."

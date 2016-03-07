@@ -3,9 +3,6 @@ package com.malliina.oauth
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads}
 
-/**
- * @author Michael
- */
 case class GoogleOAuthConf(issuer: String,
                            authorizationEndpoint: String,
                            tokenEndpoint: String,

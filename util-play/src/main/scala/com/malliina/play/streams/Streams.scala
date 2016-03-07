@@ -8,10 +8,6 @@ import play.api.libs.iteratee.{Cont, Done, Input, Iteratee}
 
 import scala.concurrent.ExecutionContext
 
-/**
-  *
-  * @author mle
-  */
 trait Streams {
   //  /**
   //   * http://stackoverflow.com/questions/12066993/uploading-file-as-stream-in-play-framework-2-0

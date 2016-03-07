@@ -1,13 +1,11 @@
 package com.malliina.play.controllers
 
+import com.malliina.play.http.AuthResult
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.Future
 
-/**
- * @author Michael
- */
 trait OAuthSecured extends OAuthControl with BaseSecurity {
 
   override def authenticate(implicit request: RequestHeader): Future[Option[AuthResult]] =

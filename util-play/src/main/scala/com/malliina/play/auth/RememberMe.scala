@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.controllers.AuthResult
+import com.malliina.play.http.AuthResult
 import com.malliina.util.Log
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Cookie, CookieBaker, DiscardingCookie, RequestHeader}
@@ -8,11 +8,8 @@ import play.api.mvc.{Cookie, CookieBaker, DiscardingCookie, RequestHeader}
 import scala.concurrent.Future
 import scala.util.Random
 
-/**
- * Adapted from https://github.com/wsargent/play20-rememberme
- *
- * @author Michael
- */
+/** Adapted from https://github.com/wsargent/play20-rememberme
+  */
 object RememberMe extends CookieBaker[UnAuthToken] with Log {
   val COOKIE_NAME = "REMEMBER_ME"
   val SERIES_NAME = "series"
@@ -25,9 +22,9 @@ object RememberMe extends CookieBaker[UnAuthToken] with Log {
   override def maxAge: Option[Int] = Some(365.days.toSeconds.toInt)
 
   /**
-   * @param req request
-   * @return the browser's possibly stored token
-   */
+    * @param req request
+    * @return the browser's possibly stored token
+    */
   def readToken(req: RequestHeader): Option[UnAuthToken] = {
     val cookie = req.cookies get COOKIE_NAME
     log debug s"Reading cookie: $cookie"
@@ -47,12 +44,12 @@ object RememberMe extends CookieBaker[UnAuthToken] with Log {
   )
 
   /**
-   * The API says we must return a token, even if deserialization fails, so we introduce the concept of an "empty" token
-   * and filter it away in `readToken(RequestHeader)`.
-   *
-   * @param data token data
-   * @return a token
-   */
+    * The API says we must return a token, even if deserialization fails, so we introduce the concept of an "empty" token
+    * and filter it away in `readToken(RequestHeader)`.
+    *
+    * @param data token data
+    * @return a token
+    */
   override protected def deserialize(data: Map[String, String]): UnAuthToken = try {
     val maybeToken =
       for {
@@ -68,20 +65,20 @@ object RememberMe extends CookieBaker[UnAuthToken] with Log {
 
 class RememberMe(store: TokenStore) extends Log {
   /**
-   * @return the authenticated user, along with an optional cookie to include
-   */
+    * @return the authenticated user, along with an optional cookie to include
+    */
   def authenticateFromCookie(req: RequestHeader): Future[Option[AuthResult]] = {
     authenticateToken(req) map (maybeToken => maybeToken.map(token => AuthResult(token.user, Some(cookify(token)))))
   }
 
   /**
-   * @return an authenticated token
-   */
+    * @return an authenticated token
+    */
   def authenticateToken(req: RequestHeader): Future[Option[Token]] = {
     authenticate(req).map(_.right.toOption)
   }
 
-  def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] ={
+  def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] = {
     RememberMe.readToken(req).map(cookieAuth) getOrElse {
       log debug s"Found no token in request: ${req.cookies}"
       Future.successful(Left(CookieMissing))
@@ -104,13 +101,13 @@ class RememberMe(store: TokenStore) extends Log {
       maybeToken.map(savedToken => {
         if (savedToken.token == attempt.token) {
           /**
-           * I believe the intention is to ensure that a browser cannot reuse another browser's token.
-           *
-           * The token is replaced with a new one at each successful token authentication, while the series remains the
-           * same; this updated cookie is then sent to the browser. The series acts as a browser identifier. So, if
-           * there's a token mismatch, it suggests some other actor has authenticated using this browser's token, which is
-           * suspect.
-           */
+            * I believe the intention is to ensure that a browser cannot reuse another browser's token.
+            *
+            * The token is replaced with a new one at each successful token authentication, while the series remains the
+            * same; this updated cookie is then sent to the browser. The series acts as a browser identifier. So, if
+            * there's a token mismatch, it suggests some other actor has authenticated using this browser's token, which is
+            * suspect.
+            */
           log info s"Cookie authentication succeeded. Updating token."
           for {
             _ <- store remove savedToken

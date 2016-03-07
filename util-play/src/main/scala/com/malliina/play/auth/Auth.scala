@@ -4,9 +4,6 @@ import org.apache.commons.codec.binary.Base64
 import play.api.http.HeaderNames
 import play.api.mvc.{RequestHeader, Security}
 
-/**
- * @author Michael
- */
 object Auth {
   def basicCredentials(request: RequestHeader): Option[BasicCredentials] = {
     authHeaderParser(request)(decoded => {
@@ -18,12 +15,12 @@ object Auth {
   }
 
   /**
-   *
-   * @param request
-   * @param f decoded credentials => T
-   * @tparam T
-   * @return
-   */
+    *
+    * @param request
+    * @param f decoded credentials => T
+    * @tparam T
+    * @return
+    */
   def authHeaderParser[T](request: RequestHeader)(f: String => Option[T]): Option[T] = {
     request.headers.get(HeaderNames.AUTHORIZATION).flatMap(authInfo => {
       authInfo.split(" ") match {

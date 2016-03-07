@@ -3,9 +3,6 @@ package com.malliina.play.ws
 import play.api.libs.iteratee.Concurrent
 import play.api.mvc.RequestHeader
 
-/**
- * @author Michael
- */
 trait WebSocketBase {
   type Message
   type Client <: SocketClient[Message]

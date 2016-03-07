@@ -2,9 +2,6 @@ package com.malliina.play.auth
 
 import scala.concurrent.Future
 
-/**
- * @author Michael
- */
 trait TokenStore {
   def persist(token: Token): Future[Unit]
 

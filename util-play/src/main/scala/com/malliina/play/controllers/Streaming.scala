@@ -2,6 +2,7 @@ package com.malliina.play.controllers
 
 import com.malliina.maps.ItemMap
 import com.malliina.play.controllers.Streaming.log
+import com.malliina.play.http.AuthResult
 import com.malliina.play.json.SimpleCommand
 import com.malliina.play.ws.{JsonWebSockets, WebSocketClient}
 import play.api.Logger
@@ -10,9 +11,6 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
 
-/**
- * @author Michael
- */
 trait Streaming extends JsonWebSockets {
   override type AuthSuccess = AuthResult
   override type Client = WebSocketClient

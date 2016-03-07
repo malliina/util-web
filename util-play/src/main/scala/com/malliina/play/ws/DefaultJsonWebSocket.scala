@@ -7,9 +7,6 @@ import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.RequestHeader
 
-/**
- * @author Michael
- */
 trait DefaultJsonWebSocket extends JsonWebSockets {
   override type Client = ClientInfo[Message]
   override type AuthSuccess = String

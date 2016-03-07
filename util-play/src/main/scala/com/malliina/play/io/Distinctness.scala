@@ -1,8 +1,5 @@
 package com.malliina.play.io
 
-/**
- * @author Michael
- */
 trait Distinctness[T] extends PersistentList[T] {
   abstract override def add(item: T): Boolean = {
     val saved = load()

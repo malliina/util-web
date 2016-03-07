@@ -13,12 +13,9 @@ import org.apache.http.util.EntityUtils
 import play.api.http.ContentTypes._
 import play.api.http.HeaderNames._
 
-/**
- * The Play WS API does not afaik support multipart/form-data file uploads, therefore this class provides it using
- * Apache HttpClient.
- *
- * @author mle
- */
+/** The Play WS API does not afaik support multipart/form-data file uploads, therefore this class provides it using
+  * Apache HttpClient.
+  */
 class MultipartRequest(uri: String, buildInstructions: HttpClientBuilder => HttpClientBuilder = b => b) extends AutoCloseable {
   private val client = buildInstructions(HttpClientBuilder.create()).build()
   val request = new HttpPost(uri)
@@ -41,21 +38,19 @@ class MultipartRequest(uri: String, buildInstructions: HttpClientBuilder => Http
       reqContent.addTextBody(key, value)
     })
 
-  /**
-   * Executes the request.
-   *
-   * @return the response
-   */
+  /** Executes the request.
+    *
+    * @return the response
+    */
   def execute() = {
     request setEntity reqContent.build()
     client execute request
   }
 
-  /**
-   * Executes the request.
-   *
-   * @return the stringified response, if any
-   */
+  /** Executes the request.
+    *
+    * @return the stringified response, if any
+    */
   def executeToString() = Option(execute().getEntity) map EntityUtils.toString
 
   override def close() {

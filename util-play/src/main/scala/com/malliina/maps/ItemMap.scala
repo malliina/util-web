@@ -1,8 +1,5 @@
 package com.malliina.maps
 
-/**
- * @author mle
- */
 trait ItemMap[K, V] {
   def put(key: K, value: V): Option[V]
 

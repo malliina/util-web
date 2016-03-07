@@ -16,7 +16,6 @@ import scala.concurrent.Future
 
 /**
   * @see https://developers.google.com/accounts/docs/OAuth2Login
-  * @author Michael
   */
 class GoogleOAuth(clientId: String, clientSecret: String) extends Closeable with Log {
 

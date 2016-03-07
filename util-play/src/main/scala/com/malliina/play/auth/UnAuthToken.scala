@@ -1,8 +1,5 @@
 package com.malliina.play.auth
 
-/**
- * @author Michael
- */
 case class UnAuthToken(user: String, series: Long, token: Long) {
   lazy val isEmpty = this == UnAuthToken.empty
 }

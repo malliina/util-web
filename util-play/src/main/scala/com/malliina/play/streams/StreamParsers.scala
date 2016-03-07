@@ -13,9 +13,6 @@ import play.core.parsers.Multipart.PartHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 
-/**
- * @author mle
- */
 trait StreamParsers {
   /**
    * Pushes the bytes to the supplied channel as they are received.

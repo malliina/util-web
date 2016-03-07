@@ -2,9 +2,6 @@ package com.malliina.play.ws
 
 import com.malliina.maps.TrieItemMap
 
-/**
- * @author Michael
- */
 trait TrieClientStorage extends WebSocketBase {
   protected val clientsMap = TrieItemMap.empty[Client, Unit]
 

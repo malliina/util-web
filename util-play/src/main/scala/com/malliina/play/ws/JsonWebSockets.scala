@@ -8,9 +8,6 @@ import rx.lang.scala.Observable
 
 import scala.concurrent.duration.DurationInt
 
-/**
- * @author Michael
- */
 trait JsonWebSockets extends WebSocketController {
   override type Message = JsValue
   // prevents connections being dropped after 30s of inactivity; i don't know how to modify that timeout

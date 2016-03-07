@@ -6,10 +6,6 @@ import play.api.mvc._
 
 import scala.concurrent.Future
 
-/**
-  *
-  * @author mle
-  */
 trait Actions {
 
   /**
