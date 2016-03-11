@@ -3,6 +3,7 @@ package com.malliina.play.controllers
 import java.math.BigInteger
 import java.security.SecureRandom
 
+import akka.stream.Materializer
 import com.malliina.oauth.GoogleOAuth.{CODE, STATE}
 import com.malliina.oauth.{GoogleOAuth, GoogleOAuthReader}
 import com.malliina.play.controllers.OAuthControl.log
@@ -25,6 +26,8 @@ trait OAuthControl extends Controller {
   val logoutMessage = "You have successfully signed out."
   val creds = GoogleOAuthReader.load
   val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret)
+
+  implicit def mat: Materializer
 
   def isAuthorized(email: String): Boolean
 

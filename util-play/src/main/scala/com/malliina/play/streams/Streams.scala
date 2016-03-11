@@ -3,10 +3,13 @@ package com.malliina.play.streams
 import java.io._
 import java.nio.file.Path
 
+import akka.NotUsed
+import akka.stream.scaladsl._
+import akka.util.ByteString
 import com.malliina.storage.{StorageInt, StorageSize}
 import play.api.libs.iteratee.{Cont, Done, Input, Iteratee}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
 trait Streams {
   //  /**
@@ -28,7 +31,7 @@ trait Streams {
     *
     * @return an [[InputStream]] and an [[Iteratee]] such that any bytes consumed by the Iteratee are made available to the InputStream
     */
-  def joinedStream(inputBuffer: StorageSize = 10.megs)(implicit ec: ExecutionContext): (InputStream, Iteratee[Array[Byte], Long]) = {
+  def joinedStream(inputBuffer: StorageSize = 10.megs)(implicit ec: ExecutionContext): (PipedInputStream, Sink[ByteString, Future[Long]]) = {
     val outStream = new PipedOutputStream()
     val bufferSize = math.min(inputBuffer.toBytes.toInt, Int.MaxValue)
     val inStream = new PipedInputStream(outStream, bufferSize)
@@ -36,67 +39,60 @@ trait Streams {
     (inStream, iteratee)
   }
 
-  /**
-    * @return an [[Iteratee]] that writes any consumed bytes to `os`
-    */
-  def streamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Iteratee[Array[Byte], Long] =
-    byteConsumer(bytes => {
-      outStreams.foreach(_.write(bytes))
-    })
-
-  /**
-    * Builds an [[Iteratee]] that writes consumed bytes to all `outStreams`. The streams are closed when the [[Iteratee]] is done.
+  /** Builds a [[Sink]] that writes consumed bytes to all `outStreams`. The streams are closed when the [[Sink]] is done.
     *
-    * @return an [[Iteratee]] that writes to `outStream`
+    * @return a [[Sink]] that writes to `outStream`
     */
-  def closingStreamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Iteratee[Array[Byte], Long] =
-    streamWriter(outStreams: _*).map(bytes => {
+  def closingStreamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] = {
+    streamWriter(outStreams: _*).mapMaterializedValue(_.map { bytes =>
       outStreams.foreach(_.close())
       bytes
     })
+  }
 
+  /**
+    * @return an [[Iteratee]] that writes any consumed bytes to `os`
+    */
+  def streamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] =
+    byteConsumer(bytes => {
+      outStreams.foreach(_.write(bytes.asByteBuffer.array()))
+    })
   /**
     * @param f
     * @return an iteratee that consumes bytes by applying `f` and returns the total number of bytes consumed
     */
-  def byteConsumer(f: Array[Byte] => Unit)(implicit ec: ExecutionContext): Iteratee[Array[Byte], Long] =
-    Iteratee.fold[Array[Byte], Long](0)((count, bytes) => {
+  def byteConsumer(f: ByteString => Unit)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] =
+    Sink.fold[Long, ByteString](0)((count, bytes) => {
       f(bytes)
       count + bytes.length
     })
+
+  //  def byteConsumer(f: Array[Byte] => Unit)(implicit ec: ExecutionContext): Iteratee[Array[Byte], Long] =
+  //    Iteratee.fold[Array[Byte], Long](0)((count, bytes) => {
+  //      f(bytes)
+  //      count + bytes.length
+  //    })
 
   /**
     * @return an [[Iteratee]] that writes any consumed bytes to `os`
     */
   def fromOutputStream(os: OutputStream)(implicit ec: ExecutionContext) =
-    Iteratee.fold[Array[Byte], OutputStream](os)((state, data) => {
-      state.write(data)
+    Sink.fold[OutputStream, ByteString](os)((state, bytes) => {
+      state.write(bytes.asByteBuffer.array())
       state
     })
 
+  //  def fromOutputStream(os: OutputStream)(implicit ec: ExecutionContext) =
+  //    Iteratee.fold[Array[Byte], OutputStream](os)((state, data) => {
+  //      state.write(data)
+  //      state
+  //    })
+
   /**
     * @param file destination file
-    * @return an [[Iteratee]] that writes bytes to `file`, keeping track of the number of bytes written
+    * @return a [[Sink]] that writes bytes to `file`, keeping track of the number of bytes written
     */
-  def fileWriter(file: Path): Iteratee[Array[Byte], Long] = {
-    def fromStreamAcc(stream: OutputStream, bytesWritten: Long): Iteratee[Array[Byte], Long] = Cont {
-      case e@Input.EOF =>
-        stream.close()
-        Done(bytesWritten, e)
-      case Input.El(data) =>
-        stream.write(data)
-        fromStreamAcc(stream, bytesWritten + data.length)
-      case Input.Empty =>
-        fromStreamAcc(stream, bytesWritten)
-    }
-    val outputStream = new BufferedOutputStream(new FileOutputStream(file.toFile))
-    fromStreamAcc(outputStream, 0)
-  }
-
-  def fileWriter2(file: Path)(implicit ec: ExecutionContext): Iteratee[Array[Byte], Long] = {
-    val outputStream = new BufferedOutputStream(new FileOutputStream(file.toFile))
-    closingStreamWriter(outputStream)
-  }
+  def fileWriter2(file: Path) = FileIO.toFile(file.toFile)
 }
 
 object Streams extends Streams

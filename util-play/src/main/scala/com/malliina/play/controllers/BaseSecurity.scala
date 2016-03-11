@@ -2,11 +2,12 @@ package com.malliina.play.controllers
 
 import java.nio.file.{Files, Path, Paths}
 
+import akka.stream.Materializer
 import com.malliina.play.auth.{Auth, BasicCredentials}
 import com.malliina.play.controllers.BaseSecurity.log
 import com.malliina.play.http.{AuthRequest, AuthResult}
 import play.api.Logger
-import play.api.libs.iteratee.{Done, Input, Iteratee}
+import play.api.libs.streams.Accumulator
 import play.api.libs.{Files => PlayFiles}
 import play.api.mvc.Results._
 import play.api.mvc._
@@ -15,6 +16,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait BaseSecurity {
+
+  implicit def mat: Materializer
+
   def authenticateFromSession(implicit request: RequestHeader): Future[Option[String]] =
     fut(request.session.get(Security.username))
 
@@ -143,16 +147,15 @@ trait BaseSecurity {
     * @return an authenticated action
     */
   def authenticatedAsync[A](auth: RequestHeader => Future[Option[A]],
-                            onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction = {
-    EssentialAction(request => {
-      val futureIteratee = auth(request).map(maybeUser => {
+                            onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction =
+    EssentialAction { request =>
+      val futureAccumulator = auth(request) map { maybeUser =>
         maybeUser
-          .map(user => action(user)(request))
-          .getOrElse(Done(onUnauthorized(request), Input.Empty))
-      })
-      Iteratee.flatten(futureIteratee)
-    })
-  }
+          .map(user => action(user).apply(request))
+          .getOrElse(Accumulator.done(onUnauthorized(request)))
+      }
+      Accumulator.flatten(futureAccumulator)
+    }
 
   val uploadDir = Paths get sys.props("java.io.tmpdir")
 
