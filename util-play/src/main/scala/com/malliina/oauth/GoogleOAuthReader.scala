@@ -5,9 +5,6 @@ import java.nio.file.{Path, Paths}
 import com.malliina.file.StorageFile
 import com.malliina.util.BaseConfigReader
 
-/**
-  * @author Michael
-  */
 class GoogleOAuthReader extends BaseConfigReader[GoogleOAuthCredentials] {
   val defaultHomePath = userHome / "keys" / "google-oauth.txt"
 

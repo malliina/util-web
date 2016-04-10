@@ -3,10 +3,6 @@ package com.malliina.http
 import com.malliina.security.SSLUtils
 import org.apache.http.conn.ssl.{SSLConnectionSocketFactory, X509HostnameVerifier}
 
-/**
- *
- * @author mle
- */
 trait ApacheHttpHelper {
   /**
    *

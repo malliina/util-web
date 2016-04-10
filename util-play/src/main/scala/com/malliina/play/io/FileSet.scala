@@ -3,9 +3,6 @@ package com.malliina.play.io
 import com.malliina.file.FileUtilities
 import play.api.libs.json.Format
 
-/**
- * @author Michael
- */
 abstract class FileSet[T](file: String)(implicit format: Format[T])
   extends FileBackedSet[T](FileUtilities pathTo file) with LoggingList[T] {
   protected def id(elem: T): String

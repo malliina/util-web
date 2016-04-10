@@ -2,9 +2,6 @@ package com.malliina.maps
 
 import scala.collection.concurrent.TrieMap
 
-/**
- * @author mle
- */
 class TrieItemMap[K, V] extends ItemMap[K, V] {
   val inner = TrieMap.empty[K, V]
 

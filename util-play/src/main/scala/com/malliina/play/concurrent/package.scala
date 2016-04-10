@@ -3,9 +3,6 @@ package com.malliina.play
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-/**
- * @author mle
- */
 package object concurrent {
 
   implicit class FutureOps2[T](f: Future[T]) {

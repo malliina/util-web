@@ -2,9 +2,6 @@ package com.malliina.maps
 
 import scala.concurrent.stm.TMap
 
-/**
- * @author mle
- */
 class StmItemMap[K, V] extends ItemMap[K, V] {
   val inner = TMap.empty[K, V]
 

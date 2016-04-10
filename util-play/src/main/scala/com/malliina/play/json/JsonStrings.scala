@@ -1,9 +1,5 @@
 package com.malliina.play.json
 
-/**
- *
- * @author mle
- */
 trait JsonStrings {
   val EVENT = "event"
   val CMD = "cmd"

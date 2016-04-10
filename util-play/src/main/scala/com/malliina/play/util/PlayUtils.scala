@@ -4,10 +4,6 @@ import com.malliina.play.util.PlayUtils.log
 import play.api.Logger
 import play.api.mvc.RequestHeader
 
-/**
-  *
-  * @author mle
-  */
 trait PlayUtils {
   def formatHeaders(req: RequestHeader) =
     req.headers.toMap.map {

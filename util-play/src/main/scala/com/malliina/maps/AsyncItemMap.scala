@@ -2,9 +2,6 @@ package com.malliina.maps
 
 import scala.concurrent.Future
 
-/**
- * @author mle
- */
 trait AsyncItemMap[K, V] {
   def putAsync(key: K, value: V): Future[Unit]
 

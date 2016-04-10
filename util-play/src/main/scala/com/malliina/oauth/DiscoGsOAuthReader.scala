@@ -5,9 +5,6 @@ import java.nio.file.{Path, Paths}
 import com.malliina.file.StorageFile
 import com.malliina.util.BaseConfigReader
 
-/**
-  * @author Michael
-  */
 class DiscoGsOAuthReader extends BaseConfigReader[DiscoGsOAuthCredentials] {
   val defaultHomePath = userHome / "keys" / "discogs-oauth.txt"
 

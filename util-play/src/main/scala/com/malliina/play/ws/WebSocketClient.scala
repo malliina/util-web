@@ -1,11 +1,9 @@
 package com.malliina.play.ws
 
+import akka.stream.scaladsl.SourceQueue
 import play.api.libs.iteratee.Concurrent.Channel
 import play.api.libs.json.JsValue
 import play.api.mvc.RequestHeader
 
-/**
- * @author Michael
- */
-case class WebSocketClient(user: String, channel: Channel[JsValue], request: RequestHeader)
+case class WebSocketClient(user: String, channel: SourceQueue[JsValue], request: RequestHeader)
   extends SocketClient[JsValue]

@@ -5,9 +5,6 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import scala.concurrent.Future
 
-/**
- * @author Michael
- */
 trait TokenLogging extends TokenStore with Log {
   abstract override def persist(token: Token): Future[Unit] = {
     super.persist(token).map(_ => {

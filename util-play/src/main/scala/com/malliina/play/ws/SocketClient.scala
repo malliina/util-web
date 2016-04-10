@@ -1,10 +1,7 @@
 package com.malliina.play.ws
 
-import play.api.libs.iteratee.Concurrent
+import akka.stream.scaladsl.SourceQueue
 
-/**
- * @author Michael
- */
 trait SocketClient[T] {
-  def channel: Concurrent.Channel[T]
+  def channel: SourceQueue[T]
 }

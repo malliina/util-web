@@ -2,10 +2,6 @@ package com.malliina.http
 
 import java.net.URLEncoder
 
-/**
- *
- * @author mle
- */
 trait WebUtils {
   /**
    * Simulates JavaScript.encodeURIComponent(...)

@@ -3,10 +3,6 @@ package com.malliina.play.http
 import com.malliina.file.FileUtilities
 import play.api.mvc.RequestHeader
 
-/**
- *
- * @author mle
- */
 trait PlayUtils {
   def headersString(request: RequestHeader) =
     request.headers.toSimpleMap

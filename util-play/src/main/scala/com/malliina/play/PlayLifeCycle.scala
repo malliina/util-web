@@ -10,14 +10,11 @@ import play.api.Logger
 import play.api.routing.Router
 import play.core.server.{NettyServer, ServerConfig}
 
-/**
- * Starts Play Framework 2, does not create a RUNNING_PID file.
- *
- * An alternative to the official ways to start Play,
- * this integrates better with my more generic init scripts.
- *
- * @author mle
- */
+/** Starts Play Framework 2, does not create a RUNNING_PID file.
+  *
+  * An alternative to the official ways to start Play,
+  * this integrates better with my more generic init scripts.
+  */
 trait PlayLifeCycle extends KeyStores {
 
   protected val (httpPortKey, httpsPortKey, httpAddressKey) =
@@ -40,9 +37,9 @@ trait PlayLifeCycle extends KeyStores {
     validateKeyStoreIfSpecified()
 
     /**
-     * NettyServer.createServer insists on writing a RUNNING_PID file.
-     * Fuck that.
-     */
+      * NettyServer.createServer insists on writing a RUNNING_PID file.
+      * Fuck that.
+      */
     nettyServer = Some(createServer(rs))
   }
 
@@ -62,11 +59,11 @@ trait PlayLifeCycle extends KeyStores {
   }
 
   /**
-   * Reads a file named `confNameWithoutExtension`.conf if it exists.
-   *
-   * @param confNameWithoutExtension name of conf, typically the name of the app
-   * @return the key-value pairs from the conf file; an empty map if the file doesn't exist
-   */
+    * Reads a file named `confNameWithoutExtension`.conf if it exists.
+    *
+    * @param confNameWithoutExtension name of conf, typically the name of the app
+    * @return the key-value pairs from the conf file; an empty map if the file doesn't exist
+    */
   def readConfFile(confNameWithoutExtension: String): Map[String, String] = {
     // adds settings in app conf to system properties
     val confFile = FileUtilities.pathTo(s"$confNameWithoutExtension.conf")
@@ -75,9 +72,9 @@ trait PlayLifeCycle extends KeyStores {
   }
 
   /**
-   * @param params key-value pairs
-   * @return key-value pairs where key https.keyStore, if any, is an absolute path
-   */
+    * @param params key-value pairs
+    * @return key-value pairs where key https.keyStore, if any, is an absolute path
+    */
   def conformize(params: Map[String, String]): Map[String, String] = {
     params.get(keyStoreKey).map(keyStorePath => {
       val absKeyStorePath = FileUtilities.pathTo(keyStorePath).toAbsolutePath
