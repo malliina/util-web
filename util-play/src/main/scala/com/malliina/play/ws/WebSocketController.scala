@@ -1,8 +1,8 @@
 package com.malliina.play.ws
 
-import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
+import akka.{Done, NotUsed}
 import com.malliina.concurrent.FutureOps
 import com.malliina.play.ws.WebSocketController.log
 import play.api.Logger
@@ -80,7 +80,11 @@ trait WebSocketController extends WebSocketBase {
     val (queue, publisher) = Source.queue[Message](BufferSize, OverflowStrategy.backpressure)
       .toMat(Sink.asPublisher(fanout = true))(Keep.both).run()
     val client = newClient(user, queue)(req)
-    val sink = Sink.foreach[Message](msg => onMessage(msg, client))
+    onConnect(client)
+    val sink: Sink[Message, Future[Done]] = Sink.foreach[Message](msg => onMessage(msg, client)).mapMaterializedValue(_.map(done => {
+      onDisconnect(client)
+      done
+    }))
     val welcomeSource = welcomeMessage(client).map(Source.single).getOrElse(Source.empty)
     val source = welcomeSource concat Source.fromPublisher(publisher)
     Flow.fromSinkAndSource(sink, source)
