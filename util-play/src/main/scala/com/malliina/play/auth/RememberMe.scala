@@ -1,50 +1,40 @@
 package com.malliina.play.auth
 
+import com.malliina.play.auth.RememberMe._
 import com.malliina.play.http.AuthResult
-import com.malliina.util.Log
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.crypto.CookieSigner
 import play.api.mvc.{Cookie, CookieBaker, DiscardingCookie, RequestHeader}
 
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 /** Adapted from https://github.com/wsargent/play20-rememberme
   */
-object RememberMe extends CookieBaker[UnAuthToken] with Log {
-  val COOKIE_NAME = "REMEMBER_ME"
-  val SERIES_NAME = "series"
-  val USER_ID_NAME = "userId"
-  val TOKEN_NAME = "token"
-  val discardingCookie = DiscardingCookie(COOKIE_NAME)
+object RememberMe {
+  private val log = Logger(getClass)
 
-  import scala.concurrent.duration.DurationInt
+  val CookieName = "REMEMBER_ME"
+  val SeriesName = "series"
+  val UserIdName = "userId"
+  val TokenName = "token"
+  val discardingCookie = DiscardingCookie(CookieName)
+}
 
-  override def maxAge: Option[Int] = Some(365.days.toSeconds.toInt)
+class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends CookieBaker[UnAuthToken] {
 
-  /**
-    * @param req request
-    * @return the browser's possibly stored token
-    */
-  def readToken(req: RequestHeader): Option[UnAuthToken] = {
-    val cookie = req.cookies get COOKIE_NAME
-    log debug s"Reading cookie: $cookie"
-    val tokenMaybeEmpty = decodeFromCookie(cookie)
-    if (!tokenMaybeEmpty.isEmpty) {
-      log debug s"Read token: $tokenMaybeEmpty"
-    }
-    Option(tokenMaybeEmpty).filterNot(_.isEmpty)
-  }
-
+  override val COOKIE_NAME: String = CookieName
   override val emptyCookie: UnAuthToken = UnAuthToken.empty
 
   override protected def serialize(cookie: UnAuthToken): Map[String, String] = Map(
-    USER_ID_NAME -> cookie.user,
-    SERIES_NAME -> cookie.series.toString,
-    TOKEN_NAME -> cookie.token.toString
+    UserIdName -> cookie.user,
+    SeriesName -> cookie.series.toString,
+    TokenName -> cookie.token.toString
   )
 
-  /**
-    * The API says we must return a token, even if deserialization fails, so we introduce the concept of an "empty" token
+  /** The API says we must return a token, even if deserialization fails, so we introduce the concept of an "empty" token
     * and filter it away in `readToken(RequestHeader)`.
     *
     * @param data token data
@@ -53,17 +43,31 @@ object RememberMe extends CookieBaker[UnAuthToken] with Log {
   override protected def deserialize(data: Map[String, String]): UnAuthToken = try {
     val maybeToken =
       for {
-        u <- data get USER_ID_NAME
-        s <- data get SERIES_NAME
-        t <- data get TOKEN_NAME
+        u <- data get UserIdName
+        s <- data get SeriesName
+        t <- data get TokenName
       } yield UnAuthToken(u, s.toLong, t.toLong)
     maybeToken getOrElse UnAuthToken.empty
   } catch {
     case nfe: NumberFormatException => UnAuthToken.empty
   }
-}
 
-class RememberMe(store: TokenStore) extends Log {
+  /**
+    * @param req request
+    * @return the browser's possibly stored token
+    */
+  def readToken(req: RequestHeader): Option[UnAuthToken] = {
+    val cookie = req.cookies get COOKIE_NAME
+    log debug s"Reading cookie: $cookie"
+    val maybeEmptyToken = decodeFromCookie(cookie)
+    if (!maybeEmptyToken.isEmpty) {
+      log debug s"Read token: $maybeEmptyToken"
+    }
+    Option(maybeEmptyToken).filterNot(_.isEmpty)
+  }
+
+  override def maxAge: Option[Int] = Some(365.days.toSeconds.toInt)
+
   /**
     * @return the authenticated user, along with an optional cookie to include
     */
@@ -79,13 +83,13 @@ class RememberMe(store: TokenStore) extends Log {
   }
 
   def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] = {
-    RememberMe.readToken(req).map(cookieAuth) getOrElse {
+    readToken(req).map(cookieAuth) getOrElse {
       log debug s"Found no token in request: ${req.cookies}"
       Future.successful(Left(CookieMissing))
     }
   }
 
-  def cookify(token: Token) = RememberMe.encodeAsCookie(token.asUnAuth)
+  def cookify(token: Token) = encodeAsCookie(token.asUnAuth)
 
   def persistNewCookie(loggedInUser: String): Future[Cookie] = createToken(loggedInUser).map(cookify)
 

@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 trait WebSocketBase {
   type Message
-  type Client <: SourceQueue[Message]
+  type Client <: SocketClient[Message]
   type AuthSuccess
 
   def clients: Seq[Client]

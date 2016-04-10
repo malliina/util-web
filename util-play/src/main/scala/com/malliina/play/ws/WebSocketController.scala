@@ -25,7 +25,7 @@ trait WebSocketController extends WebSocketBase {
     openSocketCall.webSocketURL(request.secure)
 
   def broadcast(message: Message): Future[Seq[QueueOfferResult]] =
-    Future.traverse(clients)(_.offer(message))
+    Future.traverse(clients)(_.channel.offer(message))
 
   /** Opens a WebSocket connection.
     *
