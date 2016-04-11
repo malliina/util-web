@@ -44,10 +44,7 @@ trait Streams {
     * @return a [[Sink]] that writes to `outStream`
     */
   def closingStreamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] = {
-    streamWriter(outStreams: _*).mapMaterializedValue(_.map { bytes =>
-      outStreams.foreach(_.close())
-      bytes
-    })
+    streamWriter(outStreams: _*).mapMaterializedValue(_.andThen { case _ => outStreams.foreach(_.close()) })
   }
 
   /**
@@ -57,6 +54,7 @@ trait Streams {
     byteConsumer(bytes => {
       outStreams.foreach(_.write(bytes.asByteBuffer.array()))
     })
+
   /**
     * @param f
     * @return an iteratee that consumes bytes by applying `f` and returns the total number of bytes consumed

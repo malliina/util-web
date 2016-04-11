@@ -81,10 +81,8 @@ trait WebSocketController extends WebSocketBase {
       .toMat(Sink.asPublisher(fanout = true))(Keep.both).run()
     val client = newClient(user, queue)(req)
     onConnect(client)
-    val sink: Sink[Message, Future[Done]] = Sink.foreach[Message](msg => onMessage(msg, client)).mapMaterializedValue(_.map(done => {
-      onDisconnect(client)
-      done
-    }))
+    val sink: Sink[Message, Future[Done]] = Sink.foreach[Message](msg => onMessage(msg, client))
+      .mapMaterializedValue(_.andThen { case _ => onDisconnect(client) })
     val welcomeSource = welcomeMessage(client).map(Source.single).getOrElse(Source.empty)
     val source = welcomeSource concat Source.fromPublisher(publisher)
     Flow.fromSinkAndSource(sink, source)
