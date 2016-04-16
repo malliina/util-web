@@ -5,9 +5,6 @@ import play.core.PlayVersion
 import sbt.Keys._
 import sbt._
 
-/**
- * The build.
- */
 object PlayBuild extends Build {
 
   lazy val root = Project("root", file("."))
@@ -30,7 +27,7 @@ object PlayBuild extends Build {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = Seq(
-    version := "2.7.1",
+    version := "2.8.0",
     scalaVersion := "2.11.7",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
@@ -52,7 +49,7 @@ object PlayBuild extends Build {
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
       playGroup %% "play-netty-server" % playVersion,
-      malliinaGroup %% "util" % "2.1.0",
+      malliinaGroup %% "util" % "2.4.1",
       malliinaGroup %% "logback-rx" % "1.0.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpcore" % "4.4.4",
