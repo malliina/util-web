@@ -5,6 +5,7 @@ import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.{Done, NotUsed}
 import com.malliina.concurrent.FutureOps
 import com.malliina.play.ws.WebSocketController.log
+import com.malliina.services.AsyncStore
 import play.api.Logger
 import play.api.mvc.WebSocket.MessageFlowTransformer
 import play.api.mvc._
@@ -25,7 +26,7 @@ trait WebSocketController extends WebSocketBase {
     openSocketCall.webSocketURL(request.secure)
 
   def broadcast(message: Message): Future[Seq[QueueOfferResult]] =
-    Future.traverse(clients)(_.channel.offer(message))
+    clients.flatMap(cs => Future.traverse(cs)(_.channel.offer(message)))
 
   /** Opens a WebSocket connection.
     *
