@@ -6,13 +6,12 @@ import com.malliina.file.FileUtilities
 import play.api.libs.json.Format
 import play.api.libs.json.Json._
 
-/**
- * Persists the list to `file` by serializing at every modification.
- *
- * @param file backing storage
- * @param jsonFormat serialization instructions
- * @tparam T type of element
- */
+/** Persists the list to `file` by serializing at every modification.
+  *
+  * @param file       backing storage
+  * @param jsonFormat serialization instructions
+  * @tparam T type of element
+  */
 class FileBackedList[T](file: Path)(implicit val jsonFormat: Format[T]) extends PersistentList[T] {
   override protected def persist(items: Seq[T]): Unit = {
     this.synchronized(FileUtilities.stringToFile(stringify(toJson(items)), file))
@@ -28,4 +27,4 @@ class FileBackedList[T](file: Path)(implicit val jsonFormat: Format[T]) extends 
     }
 }
 
-class FileBackedSet[T](file: Path)(implicit jsonFormat: Format[T]) extends FileBackedList[T](file) with Distinctness[T]
+class FileBackedSet[T: Format](file: Path) extends FileBackedList[T](file) with Distinctness[T]

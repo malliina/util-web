@@ -1,8 +1,8 @@
 package com.malliina.play.http
 
 trait HttpConstants {
-  val NO_CACHE = "no-cache"
-  val AUDIO_MPEG = "audio/mpeg"
+  val NoCache = "no-cache"
+  val AudioMpeg = "audio/mpeg"
 }
 
 object HttpConstants extends HttpConstants

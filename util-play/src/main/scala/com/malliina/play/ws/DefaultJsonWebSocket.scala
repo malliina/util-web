@@ -2,45 +2,45 @@ package com.malliina.play.ws
 
 import akka.stream.scaladsl.SourceQueue
 import com.malliina.maps.{ItemMap, StmItemMap}
+import com.malliina.play.models.Username
 import com.malliina.play.ws.DefaultJsonWebSocket.log
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json, Writes}
 import play.api.mvc.RequestHeader
+
 import scala.concurrent.Future
 
-trait DefaultJsonWebSocket extends JsonWebSockets {
+trait DefaultJsonWebSocket extends JsonWebSockets with SyncSockets {
   override type Client = ClientInfo[Message]
   override type AuthSuccess = String
 
   val users: ItemMap[Client, Unit] = StmItemMap.empty[Client, Unit]
 
-  def clients: Seq[ClientInfo[JsValue]] = users.keys
+  def clientsSync: Seq[ClientInfo[JsValue]] = users.keys
 
-  override def newClient(user: AuthSuccess, channel: SourceQueue[Message])(implicit request: RequestHeader): Client =
+  override def newClient(user: AuthSuccess, channel: SourceQueue[Message], request: RequestHeader): Client =
     ClientInfo(channel, request, user)
 
   /** Called when a client has connected.
     *
     * @param client the client channel, can be used to push messages to the client
     */
-  override def onConnect(client: Client): Unit = {
-    users.put(client, ())
-  }
+  override def onConnect(client: Client): Future[Unit] =
+    Future.successful(users.put(client, ()))
 
   /** Called when a client has disconnected.
     *
     * @param client the disconnected client channel
     */
-  override def onDisconnect(client: Client): Unit = {
-    users.remove(client)
-  }
+  override def onDisconnect(client: Client): Future[Unit] =
+    Future.successful(users.remove(client))
 
   /** Sends `message` to each connection authenticated as `user`.
     *
     * @return true if at least one `user` existed and the message was sent, false otherwise
     */
-  def unicast(user: String, message: Message): Boolean = {
-    val users = clients.filter(_.user == user)
+  def unicast(user: Username, message: Message): Boolean = {
+    val users = clientsSync.filter(_.user == user)
     implicit val ec = mat.executionContext
     Future.traverse(users)(_.channel offer message)
     val userCount = users.size
@@ -50,7 +50,7 @@ trait DefaultJsonWebSocket extends JsonWebSockets {
     userCount > 0
   }
 
-  def unicastJson[T](user: String, message: T)(implicit writer: Writes[T]) =
+  def unicastJson[T: Writes](user: Username, message: T) =
     unicast(user, Json.toJson(message))
 }
 

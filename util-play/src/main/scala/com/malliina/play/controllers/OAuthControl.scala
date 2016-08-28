@@ -4,30 +4,29 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import akka.stream.Materializer
-import com.malliina.oauth.GoogleOAuth.{CODE, STATE}
+import com.malliina.oauth.GoogleOAuth.{Code, State}
 import com.malliina.oauth.{GoogleOAuth, GoogleOAuthReader}
 import com.malliina.play.controllers.OAuthControl.log
 import com.malliina.play.json.JsonMessages
 import play.api.Logger
+import play.api.mvc.Results.{Redirect, Unauthorized}
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-/** A [[Controller]] to handle the Google OAuth2 authentication flow.
+/** A template to handle the Google OAuth2 authentication flow.
   *
   * 1) User is sent to initiate()
   * 2) initiate() sends (redirects) user to Google
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-trait OAuthControl extends Controller {
+abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."
   val creds = GoogleOAuthReader.load
-  val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret)
-
-  implicit def mat: Materializer
+  val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret, mat)
 
   def isAuthorized(email: String): Boolean
 
@@ -39,28 +38,29 @@ trait OAuthControl extends Controller {
 
   def ejectCall: Call
 
-  def redirURL(implicit req: RequestHeader) = oAuthRedir.absoluteURL(req.secure)
+  def redirURL(request: RequestHeader) = oAuthRedir.absoluteURL(request.secure)(request)
 
   def discover() = oauth.discover()
 
-  def initiate = Action.async(implicit request => {
-    discover().map(conf => {
+  def initiate = Action.async { request =>
+    discover() map { conf =>
+      // TODO document
       val state = new BigInteger(130, new SecureRandom()).toString(32)
       log debug s"Redirecting user to Google OAuth..."
-      Redirect(oauth.authRequestUri(conf.authorizationEndpoint, redirURL, state))
-        .withSession(STATE -> state)
-    })
-  })
+      Results.Redirect(oauth.authRequestUri(conf.authorizationEndpoint, redirURL(request), state))
+        .withSession(State -> state)
+    }
+  }
 
-  def redirResponse = Action.async(implicit request => {
-    request.getQueryString(CODE).fold(fut(noConsentFailure))(code => {
-      val requestState = request.getQueryString(STATE)
-      val sessionState = request.session.get(STATE)
+  def redirResponse = Action.async { request =>
+    request.getQueryString(Code).fold(fut(noConsentFailure)) { code =>
+      val requestState = request.getQueryString(State)
+      val sessionState = request.session.get(State)
       val isStateOk = requestState.exists(rs => sessionState.contains(rs))
       if (isStateOk) {
-        discover().flatMap(conf => {
+        discover() flatMap { conf =>
           // exchanges code for token, which contains the user's email address
-          oauth.resolveEmail(conf.tokenEndpoint, code, redirURL).map(email => {
+          oauth.resolveEmail(conf.tokenEndpoint, code, redirURL(request)).map { email =>
             if (isAuthorized(email)) {
               log info s"User: $email logged in."
               Redirect(onOAuthSuccess).withSession(sessionUserKey -> email)
@@ -68,21 +68,19 @@ trait OAuthControl extends Controller {
               log warn s"User: $email authenticated successfully but is not authorized."
               onOAuthUnauthorized(email)
             }
-          })
-        })
+          }
+        }
       } else {
         val msg = "Invalid state parameter in OAuth callback."
         log warn msg
         fut(fail(msg))
       }
-    })
-  })
+    }
+  }
 
   def sessionUserKey = Security.username
 
-  //  protected override def onUnauthorized(implicit headers: RequestHeader): Result = Redirect(initiateOAuth)
-
-  def onOAuthUnauthorized(email: String) = ejectWith(unauthorizedMessage(email)) //fail(unauthorizedMessage(email))
+  def onOAuthUnauthorized(email: String) = ejectWith(unauthorizedMessage(email))
 
   protected def ejectWith(message: String) = Redirect(ejectCall).flashing(messageKey -> message)
 
@@ -97,6 +95,8 @@ trait OAuthControl extends Controller {
   def fail(msg: String) = Unauthorized(JsonMessages failure msg)
 
   def fut[T](item: T) = Future successful item
+
+  override def close(): Unit = oauth.close()
 }
 
 object OAuthControl {

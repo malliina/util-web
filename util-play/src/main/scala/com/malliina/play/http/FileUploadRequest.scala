@@ -4,5 +4,5 @@ import java.nio.file.Path
 
 import play.api.mvc.Request
 
-class FileUploadRequest[A](val files: Seq[Path], user: String, request: Request[A])
-  extends AuthRequest(user, request)
+class FileUploadRequest[A, U](val files: Seq[Path], user: U, request: Request[A])
+  extends CookiedRequest(user, request)

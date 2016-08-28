@@ -11,11 +11,15 @@ trait WebSocketBase {
   type Client <: SocketClient[Message]
   type AuthSuccess
 
-  def clients: Seq[Client]
+  /**
+    *
+    * @return the currently connected clients
+    */
+  def clients: Future[Seq[Client]]
 
-  def newClient(authResult: AuthSuccess, channel: SourceQueue[Message])(implicit request: RequestHeader): Client
+  def newClient(authResult: AuthSuccess, channel: SourceQueue[Message], request: RequestHeader): Client
 
-  def wsUrl(implicit request: RequestHeader): String
+  def wsUrl(request: RequestHeader): String
 
   /** Called when the client sends a message to the server.
     *
@@ -29,13 +33,13 @@ trait WebSocketBase {
     *
     * @param client the client channel, can be used to push messages to the client
     */
-  def onConnect(client: Client): Unit
+  def onConnect(client: Client): Future[Unit]
 
   /** Called when a client has disconnected.
     *
     * @param client the disconnected client channel
     */
-  def onDisconnect(client: Client): Unit
+  def onDisconnect(client: Client): Future[Unit]
 
   def broadcast(message: Message): Future[Seq[QueueOfferResult]]
 }

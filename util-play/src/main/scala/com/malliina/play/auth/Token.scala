@@ -1,8 +1,9 @@
 package com.malliina.play.auth
 
+import com.malliina.play.models.Username
 import play.api.libs.json.Json
 
-case class Token(user: String, series: Long, token: Long) {
+case class Token(user: Username, series: Long, token: Long) {
   val asUnAuth = UnAuthToken(user, series, token)
 }
 

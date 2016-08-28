@@ -1,7 +1,8 @@
 package com.malliina.play.auth
 
 import com.malliina.play.auth.RememberMe._
-import com.malliina.play.http.AuthResult
+import com.malliina.play.http.AuthedRequest
+import com.malliina.play.models.Username
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.crypto.CookieSigner
@@ -29,7 +30,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
   override val emptyCookie: UnAuthToken = UnAuthToken.empty
 
   override protected def serialize(cookie: UnAuthToken): Map[String, String] = Map(
-    UserIdName -> cookie.user,
+    UserIdName -> cookie.user.name,
     SeriesName -> cookie.series.toString,
     TokenName -> cookie.token.toString
   )
@@ -46,7 +47,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
         u <- data get UserIdName
         s <- data get SeriesName
         t <- data get TokenName
-      } yield UnAuthToken(u, s.toLong, t.toLong)
+      } yield UnAuthToken(Username(u), s.toLong, t.toLong)
     maybeToken getOrElse UnAuthToken.empty
   } catch {
     case nfe: NumberFormatException => UnAuthToken.empty
@@ -71,29 +72,28 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
   /**
     * @return the authenticated user, along with an optional cookie to include
     */
-  def authenticateFromCookie(req: RequestHeader): Future[Option[AuthResult]] = {
-    authenticateToken(req) map (maybeToken => maybeToken.map(token => AuthResult(token.user, Some(cookify(token)))))
-  }
+  def authenticateFromCookie(request: RequestHeader): Future[Option[AuthedRequest]] =
+    authenticateToken(request) map  { maybeToken =>
+      maybeToken.map(token => AuthedRequest(token.user, request, Some(cookify(token))))
+    }
 
   /**
     * @return an authenticated token
     */
-  def authenticateToken(req: RequestHeader): Future[Option[Token]] = {
+  def authenticateToken(req: RequestHeader): Future[Option[Token]] =
     authenticate(req).map(_.right.toOption)
-  }
 
-  def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] = {
+  def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] =
     readToken(req).map(cookieAuth) getOrElse {
       log debug s"Found no token in request: ${req.cookies}"
       Future.successful(Left(CookieMissing))
     }
-  }
 
   def cookify(token: Token) = encodeAsCookie(token.asUnAuth)
 
-  def persistNewCookie(loggedInUser: String): Future[Cookie] = createToken(loggedInUser).map(cookify)
+  def persistNewCookie(loggedInUser: Username): Future[Cookie] = createToken(loggedInUser).map(cookify)
 
-  private def createToken(loggedInUser: String): Future[Token] = {
+  private def createToken(loggedInUser: Username): Future[Token] = {
     val token = Token(loggedInUser, Random.nextLong(), Random.nextLong())
     (store persist token).map(_ => token)
   }
@@ -101,8 +101,8 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
   private def cookieAuth(attempt: UnAuthToken): Future[Either[AuthFailure, Token]] = {
     log debug s"Authenticating: $attempt"
     val user = attempt.user
-    store.findToken(user, attempt.series).flatMap(maybeToken => {
-      maybeToken.map(savedToken => {
+    store.findToken(user, attempt.series).flatMap { maybeToken =>
+      maybeToken.map { savedToken =>
         if (savedToken.token == attempt.token) {
           /**
             * I believe the intention is to ensure that a browser cannot reuse another browser's token.
@@ -122,10 +122,10 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
           log warn s"The saved token did not match the one from the request. Refusing access."
           (store removeAll user).map(_ => Left(InvalidCookie))
         }
-      }).getOrElse {
+      }.getOrElse {
         log debug s"Unable to authenticate token: $attempt"
         Future.successful(Left(InvalidCredentials))
       }
-    })
+    }
   }
 }

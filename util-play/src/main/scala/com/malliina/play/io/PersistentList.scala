@@ -2,18 +2,16 @@ package com.malliina.play.io
 
 trait PersistentList[T] {
   /**
-   *
-   * @return true if the collection was modified, false otherwise
-   */
+    * @return true if the collection was modified, false otherwise
+    */
   def add(item: T): Boolean = {
     persist(load() :+ item)
     true
   }
 
   /**
-   *
-   * @return true if the collection was modified, false otherwise
-   */
+    * @return true if the collection was modified, false otherwise
+    */
   def remove(item: T): Boolean = {
     val saved = load()
     val remaining = filterNot(item, saved)

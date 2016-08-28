@@ -1,6 +1,6 @@
 package com.malliina.play.json
 
-import play.api.libs.json.{JsSuccess, _}
+import play.api.libs.json._
 
 trait JsonEnum[T] {
   def all: Seq[T]
