@@ -4,6 +4,7 @@ import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import play.core.PlayVersion
 import sbt.Keys._
 import sbt._
+import bintray.Plugin.bintraySettings
 
 object PlayBuild extends Build {
 
@@ -13,11 +14,11 @@ object PlayBuild extends Build {
 
   lazy val playBase = PlayProject("play-base", file("play-base"))
     .settings(baseSettings: _*)
-    .enablePlugins(bintray.BintrayPlugin)
+//    .enablePlugins(bintray.BintrayPlugin)
     .dependsOn(utilPlay)
 
   lazy val utilPlay = SbtProjects.testableProject("util-play", file("util-play"))
-    .enablePlugins(bintray.BintrayPlugin)
+//    .enablePlugins(bintray.BintrayPlugin)
     .settings(utilPlaySettings: _*)
 
   val httpGroup = "org.apache.httpcomponents"
@@ -26,15 +27,14 @@ object PlayBuild extends Build {
   val playVersion = PlayVersion.current
   val malliinaGroup = "com.malliina"
 
-  lazy val baseSettings = Seq(
+  lazy val baseSettings = bintraySettings ++ Seq(
     version := "2.9.0",
     scalaVersion := "2.11.8",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     organization := s"com.${gitUserName.value}",
     resolvers ++= Seq(
-      sbt.Resolver.jcenterRepo,
-      "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
+      sbt.Resolver.jcenterRepo
     ),
     licenses +=("MIT", url("http://opensource.org/licenses/MIT"))
   )
