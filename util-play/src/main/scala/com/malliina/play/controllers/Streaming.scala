@@ -12,8 +12,6 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
 
-import scala.concurrent.Future
-
 trait Streaming extends JsonWebSockets with SyncSockets {
   override type AuthSuccess = AuthedRequest
   override type Client = JsonSocketClient[Username]
@@ -43,10 +41,10 @@ trait Streaming extends JsonWebSockets with SyncSockets {
     }).isSuccess
   }
 
-  override def onConnect(client: Client): Future[Unit] =
-    Future.successful(writeLog(client, "connected"))
+  override def onConnectSync(client: Client): Unit =
+    writeLog(client, "connected")
 
-  override def onDisconnect(client: Client): Future[Unit] = Future.successful {
+  override def onDisconnectSync(client: Client): Unit = {
     subscriptions.get(client).foreach(_.unsubscribe())
     subscriptions.remove(client)
     writeLog(client, "disconnected")
