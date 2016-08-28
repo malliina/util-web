@@ -14,6 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait WebSocketController extends WebSocketBase {
+  // 1000 what?
   val BufferSize = 10000
 
   implicit def mat: Materializer
@@ -22,8 +23,8 @@ trait WebSocketController extends WebSocketBase {
     */
   def openSocketCall: Call
 
-  def wsUrl(implicit request: RequestHeader): String =
-    openSocketCall.webSocketURL(request.secure)
+  def wsUrl(request: RequestHeader): String =
+    openSocketCall.webSocketURL(request.secure)(request)
 
   def broadcast(message: Message): Future[Seq[QueueOfferResult]] =
     clients.flatMap(cs => Future.traverse(cs)(_.channel.offer(message)))
@@ -42,7 +43,7 @@ trait WebSocketController extends WebSocketBase {
     *
     * The Java-WebSocket client library hangs if an Unauthorized result is returned after a websocket connection attempt.
     *
-    * @return
+    * @return a websocket connection using messages of type Message
     */
   def ws2(transformer: MessageFlowTransformer[Message, Message]) =
     wsBase(req => Right(unauthorizedFlow(req)), transformer)
@@ -67,20 +68,10 @@ trait WebSocketController extends WebSocketBase {
     */
   def authenticateAsync(req: RequestHeader): Future[AuthSuccess]
 
-  //  private def authorizedSocket(user: AuthSuccess, req: RequestHeader): (Iteratee[Message, _], Enumerator[Message]) = {
-  //    val (out, channel) = Concurrent.broadcast[Message]
-  //    val clientInfo: Client = newClient(user, channel)(req)
-  //    onConnect(clientInfo)
-  //    // iteratee that eats client messages (input)
-  //    val in = Iteratee.foreach[Message](msg => onMessage(msg, clientInfo)).map(_ => onDisconnect(clientInfo))
-  //    val enumerator = Enumerator.interleave(welcomeEnumerator(clientInfo), out)
-  //    (in, enumerator)
-  //  }
-
   private def authorizedFlow(user: AuthSuccess, req: RequestHeader): Flow[Message, Message, NotUsed] = {
     val (queue, publisher) = Source.queue[Message](BufferSize, OverflowStrategy.backpressure)
       .toMat(Sink.asPublisher(fanout = true))(Keep.both).run()
-    val client = newClient(user, queue)(req)
+    val client = newClient(user, queue, req)
     onConnect(client)
     val sink: Sink[Message, Future[Done]] = Sink.foreach[Message](msg => onMessage(msg, client))
       .mapMaterializedValue(_.andThen { case _ => onDisconnect(client) })

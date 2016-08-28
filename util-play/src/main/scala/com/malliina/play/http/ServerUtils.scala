@@ -1,10 +1,10 @@
 package com.malliina.play.http
 
-import com.malliina.util.{Log, Utils}
+import com.malliina.util.Utils
 import play.api.mvc.RequestHeader
 import play.core.server.NettyServer
 
-class ServerUtils(server: NettyServer) extends Log {
+class ServerUtils(server: NettyServer) {
   val httpsPort = server.httpPort
   val httpPort = server.httpsPort
   val isHttpAvailable = httpPort.isDefined

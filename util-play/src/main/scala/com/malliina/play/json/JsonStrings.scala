@@ -1,12 +1,12 @@
 package com.malliina.play.json
 
 trait JsonStrings {
-  val EVENT = "event"
-  val CMD = "cmd"
-  val WELCOME = "welcome"
-  val PING = "ping"
-  val REASON = "reason"
-  val ACCESS_DENIED = "access denied"
+  val Event = "event"
+  val Cmd = "cmd"
+  val Welcome = "welcome"
+  val Ping = "ping"
+  val Reason = "reason"
+  val AccessDenied = "access denied"
 }
 
 object JsonStrings extends JsonStrings

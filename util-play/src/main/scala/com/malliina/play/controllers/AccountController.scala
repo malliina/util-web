@@ -7,9 +7,9 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.mvc.{AnyContent, Controller, Request, RequestHeader}
 
-trait AccountController extends Controller with BaseSecurity {
-  val INTENDED_URI = "intended_uri"
-  val FEEDBACK = "feedback"
+trait AccountController extends BaseSecurity {
+  val intendedUri = "intended_uri"
+  val feedback = "feedback"
   val userFormKey = "username"
   val passFormKey = "password"
   val rememberMeKey = "remember"
@@ -23,7 +23,7 @@ trait AccountController extends Controller with BaseSecurity {
     passFormKey -> nonEmptyText
   )(BasicCredentials.apply)(BasicCredentials.unapply))
 
-  def changePasswordForm(implicit request: Request[AnyContent]) = Form(tuple(
+  def changePasswordForm(request: Request[AnyContent]) = Form(tuple(
     oldPassKey -> nonEmptyText,
     newPassKey -> nonEmptyText,
     newPassAgainKey -> nonEmptyText
@@ -31,7 +31,7 @@ trait AccountController extends Controller with BaseSecurity {
     case (_, newPass, newPassAgain) => newPass == newPassAgain
   }))
 
-  protected def logUnauthorized(implicit request: RequestHeader) {
+  protected def logUnauthorized(request: RequestHeader) {
     log warn s"Unauthorized request: ${request.path} from: ${request.remoteAddress}"
   }
 }

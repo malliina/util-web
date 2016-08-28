@@ -51,40 +51,28 @@ trait Streams {
     * @return an [[Iteratee]] that writes any consumed bytes to `os`
     */
   def streamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] =
-    byteConsumer(bytes => {
+    byteConsumer { bytes =>
       outStreams.foreach(_.write(bytes.asByteBuffer.array()))
-    })
+    }
 
   /**
     * @param f
     * @return an iteratee that consumes bytes by applying `f` and returns the total number of bytes consumed
     */
   def byteConsumer(f: ByteString => Unit)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] =
-    Sink.fold[Long, ByteString](0)((count, bytes) => {
+    Sink.fold[Long, ByteString](0) { (count, bytes) =>
       f(bytes)
       count + bytes.length
-    })
-
-  //  def byteConsumer(f: Array[Byte] => Unit)(implicit ec: ExecutionContext): Iteratee[Array[Byte], Long] =
-  //    Iteratee.fold[Array[Byte], Long](0)((count, bytes) => {
-  //      f(bytes)
-  //      count + bytes.length
-  //    })
+    }
 
   /**
     * @return an [[Iteratee]] that writes any consumed bytes to `os`
     */
   def fromOutputStream(os: OutputStream)(implicit ec: ExecutionContext) =
-    Sink.fold[OutputStream, ByteString](os)((state, bytes) => {
+    Sink.fold[OutputStream, ByteString](os) { (state, bytes) =>
       state.write(bytes.asByteBuffer.array())
       state
-    })
-
-  //  def fromOutputStream(os: OutputStream)(implicit ec: ExecutionContext) =
-  //    Iteratee.fold[Array[Byte], OutputStream](os)((state, data) => {
-  //      state.write(data)
-  //      state
-  //    })
+    }
 
   /**
     * @param file destination file

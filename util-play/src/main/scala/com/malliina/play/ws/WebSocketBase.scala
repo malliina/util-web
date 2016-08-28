@@ -17,9 +17,9 @@ trait WebSocketBase {
     */
   def clients: Future[Seq[Client]]
 
-  def newClient(authResult: AuthSuccess, channel: SourceQueue[Message])(implicit request: RequestHeader): Client
+  def newClient(authResult: AuthSuccess, channel: SourceQueue[Message], request: RequestHeader): Client
 
-  def wsUrl(implicit request: RequestHeader): String
+  def wsUrl(request: RequestHeader): String
 
   /** Called when the client sends a message to the server.
     *

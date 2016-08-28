@@ -33,10 +33,10 @@ class MultipartRequest(uri: String, buildInstructions: HttpClientBuilder => Http
   }
 
   def addKeyValues(kvs: (String, String)*): Unit =
-    kvs.foreach(kv => {
+    kvs.foreach{ kv =>
       val (key, value) = kv
       reqContent.addTextBody(key, value)
-    })
+    }
 
   /** Executes the request.
     *
