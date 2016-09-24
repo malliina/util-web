@@ -6,7 +6,7 @@ import sbt.Keys._
 import sbt._
 import bintray.Plugin.bintraySettings
 
-object PlayBuild extends Build {
+object PlayBuild {
 
   lazy val root = Project("root", file("."))
     .aggregate(utilPlay, playBase)
@@ -28,13 +28,13 @@ object PlayBuild extends Build {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = bintraySettings ++ Seq(
-    version := "2.9.1",
+    version := "3.0.0",
     scalaVersion := "2.11.8",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     organization := s"com.${gitUserName.value}",
     resolvers ++= Seq(
-      sbt.Resolver.jcenterRepo
+      Resolver.jcenterRepo
     ),
     licenses +=("MIT", url("http://opensource.org/licenses/MIT"))
   )

@@ -12,7 +12,6 @@ import play.api.Logger
 import play.api.mvc.Results.{Redirect, Unauthorized}
 import play.api.mvc._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /** A template to handle the Google OAuth2 authentication flow.
@@ -23,6 +22,7 @@ import scala.concurrent.Future
   * 4) redirResponse() extracts email, authenticates
   */
 abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
+  implicit val ec = mat.executionContext
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."
   val creds = GoogleOAuthReader.load
@@ -60,7 +60,7 @@ abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
       if (isStateOk) {
         discover() flatMap { conf =>
           // exchanges code for token, which contains the user's email address
-          oauth.resolveEmail(conf.tokenEndpoint, code, redirURL(request)).map { email =>
+          oauth.resolveEmail(conf.tokenEndpoint, code, redirURL(request)) map { email =>
             if (isAuthorized(email)) {
               log info s"User: $email logged in."
               Redirect(onOAuthSuccess).withSession(sessionUserKey -> email)

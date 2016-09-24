@@ -1,5 +1,6 @@
 package com.malliina.play.ws
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.SourceQueue
 import com.malliina.maps.{ItemMap, StmItemMap}
 import com.malliina.play.models.Username
@@ -10,7 +11,7 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 
-trait DefaultJsonWebSocket extends JsonWebSockets with SyncSockets {
+abstract class DefaultJsonWebSocket(mat: Materializer) extends JsonWebSockets(mat) with SyncSockets {
   override type Client = ClientInfo[Message]
   override type AuthSuccess = String
 

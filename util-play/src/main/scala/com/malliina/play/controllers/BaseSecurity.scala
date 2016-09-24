@@ -1,7 +1,5 @@
 package com.malliina.play.controllers
 
-import java.nio.file.{Files, Path, Paths}
-
 import akka.stream.Materializer
 import com.malliina.play.auth.{Auth, BasicCredentials}
 import com.malliina.play.controllers.BaseSecurity.log
@@ -9,19 +7,18 @@ import com.malliina.play.http.{AuthedRequest, CookiedRequest, FullRequest}
 import com.malliina.play.models.Username
 import play.api.Logger
 import play.api.libs.streams.Accumulator
-import play.api.libs.{Files => PlayFiles}
 import play.api.mvc.Results._
 import play.api.mvc._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait BaseSecurity {
+class BaseSecurity(sessionUserKey: String, val mat: Materializer) {
+  def this(mat: Materializer) = this(Security.username, mat)
 
-  implicit def mat: Materializer
+  implicit val ec = mat.executionContext
 
   def authenticateFromSession(request: RequestHeader): Future[Option[Username]] =
-    fut(request.session.get(Security.username).map(Username.apply))
+    fut(request.session.get(sessionUserKey).map(Username.apply))
 
   /** Basic HTTP authentication.
     *
@@ -158,17 +155,7 @@ trait BaseSecurity {
           .map(user => action(user).apply(request))
           .getOrElse(Accumulator.done(onUnauthorized(request)))
       }
-      Accumulator.flatten(futureAccumulator)
-    }
-
-  val uploadDir = Paths get sys.props("java.io.tmpdir")
-
-  protected def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
-    request.body.files.map { file =>
-      val dest = uploadDir resolve file.filename
-      if (!Files.exists(dest))
-        file.ref.moveTo(dest.toFile, replace = true)
-      dest
+      Accumulator.flatten(futureAccumulator)(mat)
     }
 
   protected def lift(user: Username, request: RequestHeader) = AuthedRequest(user, request)

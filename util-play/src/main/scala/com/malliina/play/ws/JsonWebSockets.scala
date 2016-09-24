@@ -1,14 +1,14 @@
 package com.malliina.play.ws
 
+import akka.stream.Materializer
 import com.malliina.play.json.JsonMessages
 import play.api.libs.json.JsValue
-import play.api.mvc.WebSocket
-import play.api.mvc.WebSocket.{MessageFlowTransformer, FrameFormatter}
+import play.api.mvc.WebSocket.MessageFlowTransformer
 import rx.lang.scala.Observable
 
 import scala.concurrent.duration.DurationInt
 
-trait JsonWebSockets extends WebSocketController {
+abstract class JsonWebSockets(mat: Materializer) extends WebSocketController(mat) {
   override type Message = JsValue
   // prevents connections being dropped after 30s of inactivity; i don't know how to modify that timeout
   val pinger = Observable.interval(20.seconds).subscribe(_ => broadcast(JsonMessages.ping))

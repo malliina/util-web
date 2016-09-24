@@ -5,19 +5,16 @@ import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.{Done, NotUsed}
 import com.malliina.concurrent.FutureOps
 import com.malliina.play.ws.WebSocketController.log
-import com.malliina.services.AsyncStore
 import play.api.Logger
 import play.api.mvc.WebSocket.MessageFlowTransformer
 import play.api.mvc._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-trait WebSocketController extends WebSocketBase {
+abstract class WebSocketController(mat: Materializer) extends WebSocketBase {
+  implicit val ec = mat.executionContext
   // 1000 what?
   val BufferSize = 10000
-
-  implicit def mat: Materializer
 
   /** Implement this like `routes.YourController.openSocket()`.
     */
@@ -70,7 +67,7 @@ trait WebSocketController extends WebSocketBase {
 
   private def authorizedFlow(user: AuthSuccess, req: RequestHeader): Flow[Message, Message, NotUsed] = {
     val (queue, publisher) = Source.queue[Message](BufferSize, OverflowStrategy.backpressure)
-      .toMat(Sink.asPublisher(fanout = true))(Keep.both).run()
+      .toMat(Sink.asPublisher(fanout = true))(Keep.both).run()(mat)
     val client = newClient(user, queue, req)
     onConnect(client)
     val sink: Sink[Message, Future[Done]] = Sink.foreach[Message](msg => onMessage(msg, client))
