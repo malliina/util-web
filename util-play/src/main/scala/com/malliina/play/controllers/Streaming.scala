@@ -1,5 +1,6 @@
 package com.malliina.play.controllers
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.SourceQueue
 import com.malliina.maps.ItemMap
 import com.malliina.play.controllers.Streaming.log
@@ -12,7 +13,7 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
 
-trait Streaming extends JsonWebSockets with SyncSockets {
+abstract class Streaming(mat: Materializer) extends JsonWebSockets(mat) with SyncSockets {
   override type AuthSuccess = AuthedRequest
   override type Client = JsonSocketClient[Username]
   val SUBSCRIBE = "subscribe"

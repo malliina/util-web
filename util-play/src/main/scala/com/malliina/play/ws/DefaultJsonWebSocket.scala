@@ -13,7 +13,7 @@ import scala.concurrent.Future
 
 abstract class DefaultJsonWebSocket(mat: Materializer) extends JsonWebSockets(mat) with SyncSockets {
   override type Client = ClientInfo[Message]
-  override type AuthSuccess = String
+  override type AuthSuccess = Username
 
   val users: ItemMap[Client, Unit] = StmItemMap.empty[Client, Unit]
 

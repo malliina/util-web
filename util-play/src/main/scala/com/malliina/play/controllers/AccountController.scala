@@ -1,13 +1,16 @@
 package com.malliina.play.controllers
 
+import akka.stream.Materializer
 import com.malliina.play.auth.BasicCredentials
 import com.malliina.play.controllers.AccountController.log
 import play.api.Logger
 import play.api.data.Form
 import play.api.data.Forms._
-import play.api.mvc.{AnyContent, Controller, Request, RequestHeader}
+import play.api.mvc._
 
-trait AccountController extends BaseSecurity {
+abstract class AccountController(auth: BaseSecurity) {
+  def this(mat: Materializer) = this(new BaseSecurity(Security.username, mat))
+
   val intendedUri = "intended_uri"
   val feedback = "feedback"
   val userFormKey = "username"
@@ -31,9 +34,8 @@ trait AccountController extends BaseSecurity {
     case (_, newPass, newPassAgain) => newPass == newPassAgain
   }))
 
-  protected def logUnauthorized(request: RequestHeader) {
+  protected def logUnauthorized(request: RequestHeader): Unit =
     log warn s"Unauthorized request: ${request.path} from: ${request.remoteAddress}"
-  }
 }
 
 object AccountController {

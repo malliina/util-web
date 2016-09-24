@@ -1,6 +1,7 @@
 package com.malliina.play.ws
 
 import akka.stream.scaladsl.SourceQueue
+import com.malliina.play.models.Username
 import play.api.mvc.RequestHeader
 
 /**
@@ -9,7 +10,9 @@ import play.api.mvc.RequestHeader
   * @param user    the authenticated username
   * @tparam T type of message
   */
-case class ClientInfo[T](channel: SourceQueue[T], request: RequestHeader, user: String) extends SocketClient[T] {
+case class ClientInfo[T](channel: SourceQueue[T], request: RequestHeader, user: Username)
+  extends SocketClient[T] {
+
   val protocol = if (request.secure) "wss" else "ws"
   val remoteAddress = request.remoteAddress
   val describe = s"$protocol://$user@$remoteAddress"

@@ -82,7 +82,7 @@ abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
 
   def onOAuthUnauthorized(email: String) = ejectWith(unauthorizedMessage(email))
 
-  protected def ejectWith(message: String) = Redirect(ejectCall).flashing(messageKey -> message)
+  def ejectWith(message: String) = Redirect(ejectCall).flashing(messageKey -> message)
 
   def unauthorizedMessage(email: String) = s"Hi $email, you're not authorized."
 
