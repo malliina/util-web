@@ -44,7 +44,7 @@ class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer) ext
 
     val query = stringify(
       Code -> code,
-      clientId -> clientId,
+      ClientId -> clientId,
       ClientSecret -> clientSecret,
       RedirectUri -> redirectUri,
       GrantType -> AuthorizationCode
@@ -62,7 +62,7 @@ class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer) ext
     client.url(url).get().map(response => response.json.as[T])
 
   def authRequestUri(authEndpoint: String, redirectUri: String, state: String) = {
-    s"$authEndpoint?$clientId=$clientId&$ResponseType=$Code&$Scope=openid%20email&$RedirectUri=$redirectUri&$State=$state&$LoginHint=sub"
+    s"$authEndpoint?$ClientId=$clientId&$ResponseType=$Code&$Scope=openid%20email&$RedirectUri=$redirectUri&$State=$state&$LoginHint=sub"
   }
 
   def email(tokenResponse: TokenResponse): String = {

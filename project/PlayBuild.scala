@@ -28,7 +28,7 @@ object PlayBuild {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = bintraySettings ++ Seq(
-    version := "3.1.2",
+    version := "3.1.4",
     scalaVersion := "2.11.8",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
