@@ -1,9 +1,13 @@
 package com.malliina.play.json
 
+import play.api.data.format.Formatter
+import play.api.data.{Forms, Mapping}
 import play.api.libs.json.{Format, Json, Reads, Writes}
 import play.api.mvc.PathBindable
 
-abstract class SimpleCompanion[Raw, T](implicit rawBindable: PathBindable[Raw], f: Format[Raw]) {
+abstract class SimpleCompanion[Raw, T](implicit rawBindable: PathBindable[Raw],
+                                       jsonFormat: Format[Raw],
+                                       formFormat: Formatter[Raw]) {
   def apply(raw: Raw): T
 
   def raw(t: T): Raw
@@ -14,4 +18,6 @@ abstract class SimpleCompanion[Raw, T](implicit rawBindable: PathBindable[Raw], 
   )
 
   implicit val bindable: PathBindable[T] = rawBindable.transform(apply, raw)
+
+  val mapping: Mapping[T] = Forms.of[Raw].transform(apply, raw)
 }

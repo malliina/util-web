@@ -43,7 +43,7 @@ class BaseSecurity(sessionUserKey: String, val mat: Materializer) {
     creds.map(validateUser).getOrElse(fut(None))
 
   def validateUser(creds: BasicCredentials): Future[Option[Username]] =
-    validateCredentials(creds).map(isValid => if (isValid) Option(Username(creds.username)) else None)
+    validateCredentials(creds).map(isValid => if (isValid) Option(creds.username) else None)
 
   /** Override if you intend to use password authentication.
     *

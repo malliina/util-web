@@ -7,7 +7,7 @@ import play.api.mvc.{MultipartFormData, Request}
 
 class Uploads(uploadDir: Path) {
 
-  protected def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
+  def saveFiles(request: Request[MultipartFormData[PlayFiles.TemporaryFile]]): Seq[Path] =
     request.body.files.map { file =>
       val dest = uploadDir resolve file.filename
       if (!Files.exists(dest))
