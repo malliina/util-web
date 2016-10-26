@@ -11,10 +11,8 @@ import play.api.mvc._
 
 import scala.concurrent.Future
 
-abstract class WebSocketController(mat: Materializer) extends WebSocketBase {
+abstract class WebSocketController(mat: Materializer, socketQueueSize: Int = 10000) extends WebSocketBase {
   implicit val ec = mat.executionContext
-  // 1000 what?
-  val BufferSize = 10000
 
   /** Implement this like `routes.YourController.openSocket()`.
     */
@@ -35,18 +33,8 @@ abstract class WebSocketController(mat: Materializer) extends WebSocketBase {
   def ws(transformer: WebSocket.MessageFlowTransformer[Message, Message]) =
     wsBase(req => Left(onUnauthorized(req)), transformer)
 
-  /** Instead of returning an Unauthorized result upon authentication failures, this opens then immediately closes a
-    * connection connections, sends no messages and ignores any messages.
-    *
-    * The Java-WebSocket client library hangs if an Unauthorized result is returned after a websocket connection attempt.
-    *
-    * @return a websocket connection using messages of type Message
-    */
-  def ws2(transformer: MessageFlowTransformer[Message, Message]) =
-    wsBase(req => Right(unauthorizedFlow(req)), transformer)
-
-  private def wsBase(onFailure: RequestHeader => Either[Result, Flow[Message, Message, NotUsed]],
-                     transformer: MessageFlowTransformer[Message, Message]) =
+  protected def wsBase(onFailure: RequestHeader => Either[Result, Flow[Message, Message, NotUsed]],
+                       transformer: MessageFlowTransformer[Message, Message]) =
     WebSocket.acceptOrResult[Message, Message] { request =>
       authenticateAsync(request)
         .map(res => Right(authorizedFlow(res, request)))
@@ -66,7 +54,7 @@ abstract class WebSocketController(mat: Materializer) extends WebSocketBase {
   def authenticateAsync(req: RequestHeader): Future[AuthSuccess]
 
   private def authorizedFlow(user: AuthSuccess, req: RequestHeader): Flow[Message, Message, NotUsed] = {
-    val (queue, publisher) = Source.queue[Message](BufferSize, OverflowStrategy.backpressure)
+    val (queue, publisher) = Source.queue[Message](socketQueueSize, OverflowStrategy.backpressure)
       .toMat(Sink.asPublisher(fanout = true))(Keep.both).run()(mat)
     val client = newClient(user, queue, req)
     onConnect(client)
@@ -75,11 +63,6 @@ abstract class WebSocketController(mat: Materializer) extends WebSocketBase {
     val welcomeSource = welcomeMessage(client).map(Source.single).getOrElse(Source.empty)
     val source = welcomeSource concat Source.fromPublisher(publisher)
     Flow.fromSinkAndSource(sink, source)
-  }
-
-  private def unauthorizedFlow(req: RequestHeader): Flow[Any, Nothing, NotUsed] = {
-    onUnauthorized(req)
-    Flow.fromSinkAndSource(Sink.ignore, Source.empty)
   }
 
   def onUnauthorized(req: RequestHeader): Result = {

@@ -14,6 +14,4 @@ abstract class JsonWebSockets(mat: Materializer) extends WebSocketController(mat
   val pinger = Observable.interval(20.seconds).subscribe(_ => broadcast(JsonMessages.ping))
 
   def openSocket = ws(MessageFlowTransformer.jsonMessageFlowTransformer)
-
-  def openSocket2 = ws2(MessageFlowTransformer.jsonMessageFlowTransformer)
 }
