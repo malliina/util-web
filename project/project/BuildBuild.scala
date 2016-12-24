@@ -1,9 +1,9 @@
 import sbt.Keys._
 import sbt._
 
-object BuildBuild extends Build {
+object BuildBuild {
 
-  override lazy val settings = super.settings ++ sbtPlugins ++ Seq(
+  val settings = sbtPlugins ++ Seq(
     Keys.scalaVersion := "2.10.6",
     resolvers ++= Seq(
       Resolver.url("bintray-sbt-plugin-releases",
@@ -14,10 +14,7 @@ object BuildBuild extends Build {
   )
 
   def sbtPlugins = Seq(
-    "com.malliina" %% "sbt-play" % "0.8.2",
+    "com.malliina" %% "sbt-play" % "0.9.1",
     "me.lessis" % "bintray-sbt" % "0.2.1"
   ) map addSbtPlugin
-
-  override lazy val projects = Seq(root)
-  lazy val root = Project("plugins", file("."))
 }
