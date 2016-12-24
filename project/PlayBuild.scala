@@ -2,8 +2,8 @@ import bintray.Plugin.bintraySettings
 import com.malliina.sbtplay.PlayProject
 import play.core.PlayVersion
 import play.routes.compiler.InjectedRoutesGenerator
+import play.sbt.PlayScala
 import play.sbt.routes.RoutesKeys
-import play.sbt.{PlayImport, PlayScala}
 import sbt.Keys._
 import sbt._
 
@@ -28,7 +28,7 @@ object PlayBuild {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = bintraySettings ++ Seq(
-    version := "3.3.0",
+    version := "3.3.1",
     scalaVersion := "2.11.8",
     RoutesKeys.routesGenerator := InjectedRoutesGenerator,
     organization := s"com.malliina",
@@ -42,6 +42,7 @@ object PlayBuild {
   )
 
   lazy val utilPlaySettings = baseSettings ++ Seq(
+    publishArtifact in Test := true,
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
