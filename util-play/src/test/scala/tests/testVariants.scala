@@ -1,9 +1,16 @@
 package tests
 
 import com.malliina.play.app.WithComponents
-import org.scalatest.{Suite, TestData}
+import org.scalatest.{FunSuite, Suite, TestData}
 import org.scalatestplus.play.{OneAppPerSuite, OneAppPerTest, OneServerPerSuite, OneServerPerTest}
+import play.api.ApplicationLoader.Context
 import play.api.{Application, BuiltInComponents}
+
+class AppSuite[T <: BuiltInComponents](build: Context => T)
+  extends FunSuite
+    with OneAppPerSuite2[T] {
+  override def createComponents(context: Context): T = build(context)
+}
 
 // Similar to https://github.com/gmethvin/play-2.5.x-scala-compile-di-with-tests/blob/master/test/ScalaTestWithComponents.scala
 

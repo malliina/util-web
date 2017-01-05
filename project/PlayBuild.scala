@@ -28,7 +28,7 @@ object PlayBuild {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = bintraySettings ++ Seq(
-    version := "3.3.2",
+    version := "3.3.3",
     scalaVersion := "2.11.8",
     RoutesKeys.routesGenerator := InjectedRoutesGenerator,
     organization := s"com.malliina",
