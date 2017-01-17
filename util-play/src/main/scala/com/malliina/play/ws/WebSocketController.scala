@@ -4,6 +4,7 @@ import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy, QueueOfferResult}
 import akka.{Done, NotUsed}
 import com.malliina.concurrent.FutureOps
+import com.malliina.play.http.Proxies
 import com.malliina.play.ws.WebSocketController.log
 import play.api.Logger
 import play.api.mvc.WebSocket.MessageFlowTransformer
@@ -19,7 +20,7 @@ abstract class WebSocketController(mat: Materializer, socketQueueSize: Int = 100
   def openSocketCall: Call
 
   def wsUrl(request: RequestHeader): String =
-    openSocketCall.webSocketURL(request.secure)(request)
+    openSocketCall.webSocketURL(Proxies.isSecure(request))(request)
 
   def broadcast(message: Message): Future[Seq[QueueOfferResult]] =
     clients.flatMap(cs => Future.traverse(cs)(_.channel.offer(message)))

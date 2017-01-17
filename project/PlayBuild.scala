@@ -28,7 +28,7 @@ object PlayBuild {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = bintraySettings ++ Seq(
-    version := "3.3.3",
+    version := "3.4.0",
     scalaVersion := "2.11.8",
     RoutesKeys.routesGenerator := InjectedRoutesGenerator,
     organization := s"com.malliina",
@@ -52,7 +52,6 @@ object PlayBuild {
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpcore" % "4.4.4",
       httpGroup % "httpmime" % httpVersion
-    ),
-    fork in Test := true
+    )
   )
 }

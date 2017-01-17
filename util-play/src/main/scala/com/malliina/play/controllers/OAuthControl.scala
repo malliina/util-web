@@ -7,6 +7,7 @@ import akka.stream.Materializer
 import com.malliina.oauth.GoogleOAuth.{Code, State}
 import com.malliina.oauth.{GoogleOAuth, GoogleOAuthReader}
 import com.malliina.play.controllers.OAuthControl.log
+import com.malliina.play.http.Proxies
 import com.malliina.play.json.JsonMessages
 import play.api.Logger
 import play.api.mvc.Results.{Redirect, Unauthorized}
@@ -38,7 +39,8 @@ abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
 
   def ejectCall: Call
 
-  def redirURL(request: RequestHeader) = oAuthRedir.absoluteURL(request.secure)(request)
+  def redirURL(request: RequestHeader) =
+    oAuthRedir.absoluteURL(Proxies.isSecure(request))(request)
 
   def discover() = oauth.discover()
 
