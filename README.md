@@ -1,4 +1,7 @@
-# util-play #
+[![Build Status](https://travis-ci.org/malliina/util-play.png?branch=master)](https://travis-ci.org/malliina/util-play)
+[![Maven Central](https://img.shields.io/maven-central/v/com.malliina/util-play_2.11.svg)]()
+
+# util-play
 
 Useful code for Play Framework. A selection of what is provided:
 
