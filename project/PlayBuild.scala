@@ -17,7 +17,7 @@ object PlayBuild {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = mavenSettings ++ Seq(
-    version := "3.5.0",
+    version := "3.5.1",
     scalaVersion := "2.11.8",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
@@ -33,7 +33,7 @@ object PlayBuild {
       playGroup %% "play-ws" % playVersion,
       playGroup %% "play-netty-server" % playVersion,
       malliinaGroup %% "util" % "2.5.0",
-      malliinaGroup %% "logback-rx" % "1.0.2",
+      malliinaGroup %% "logback-rx" % "1.1.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpcore" % "4.4.4",
       httpGroup % "httpmime" % httpVersion
