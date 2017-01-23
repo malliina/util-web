@@ -1,8 +1,6 @@
 import com.malliina.sbtplay.PlayProject
 import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName, mavenSettings}
 import play.core.PlayVersion
-import play.routes.compiler.InjectedRoutesGenerator
-import play.sbt.routes.RoutesKeys
 import sbt.Keys._
 import sbt._
 
@@ -17,13 +15,10 @@ object PlayBuild {
   val malliinaGroup = "com.malliina"
 
   lazy val baseSettings = mavenSettings ++ Seq(
-    version := "3.5.1",
     scalaVersion := "2.11.8",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
-    organization := s"com.malliina",
-    RoutesKeys.routesGenerator := InjectedRoutesGenerator,
-    resolvers += Resolver.jcenterRepo
+    organization := "com.malliina"
   )
 
   lazy val utilPlaySettings = baseSettings ++ Seq(
