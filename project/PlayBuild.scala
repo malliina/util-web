@@ -27,7 +27,7 @@ object PlayBuild {
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
       playGroup %% "play-netty-server" % playVersion,
-      malliinaGroup %% "util" % "2.5.0",
+      malliinaGroup %% "util" % "2.5.5",
       malliinaGroup %% "logback-rx" % "1.1.0",
       httpGroup % "httpclient" % httpVersion,
       httpGroup % "httpcore" % "4.4.4",

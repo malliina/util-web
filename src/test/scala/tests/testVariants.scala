@@ -6,10 +6,16 @@ import org.scalatestplus.play.{OneAppPerSuite, OneAppPerTest, OneServerPerSuite,
 import play.api.ApplicationLoader.Context
 import play.api.{Application, BuiltInComponents}
 
-class AppSuite[T <: BuiltInComponents](build: Context => T)
+abstract class AppSuite[T <: BuiltInComponents](build: Context => T)
   extends FunSuite
     with OneAppPerSuite2[T] {
   override def createComponents(context: Context): T = build(context)
+}
+
+abstract class ServerSuite[T <: BuiltInComponents](build: Context => T)
+  extends FunSuite
+    with OneServerPerSuite2[T] {
+  override def createComponents(context: Context) = build(context)
 }
 
 // Similar to https://github.com/gmethvin/play-2.5.x-scala-compile-di-with-tests/blob/master/test/ScalaTestWithComponents.scala

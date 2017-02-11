@@ -5,7 +5,7 @@ import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.twirl.api.Html
 
-trait ContentController extends Controller with BaseController {
+trait ContentController extends Controller with Caching {
 
   def respond(request: RequestHeader)(html: => Result, json: => JsValue): Result =
     respondResult(request)(html, Ok(json))

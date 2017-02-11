@@ -5,6 +5,8 @@ import com.malliina.play.models.{Password, PasswordChange, Username}
 import play.api.data.Form
 import play.api.data.Forms._
 
+object AccountForms extends AccountForms
+
 class AccountForms {
   val intendedUri = "intended_uri"
   val feedback = "feedback"

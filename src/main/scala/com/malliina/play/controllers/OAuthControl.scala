@@ -5,7 +5,7 @@ import java.security.SecureRandom
 
 import akka.stream.Materializer
 import com.malliina.oauth.GoogleOAuth.{Code, State}
-import com.malliina.oauth.{GoogleOAuth, GoogleOAuthReader}
+import com.malliina.oauth.{GoogleOAuth, GoogleOAuthCredentials, GoogleOAuthReader}
 import com.malliina.play.controllers.OAuthControl.log
 import com.malliina.play.http.Proxies
 import com.malliina.play.json.JsonMessages
@@ -22,12 +22,14 @@ import scala.concurrent.Future
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
+abstract class OAuthControl(creds: GoogleOAuthCredentials, mat: Materializer) extends AutoCloseable {
+  def this(mat: Materializer) = this(GoogleOAuthReader.load, mat)
   implicit val ec = mat.executionContext
+  val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret, mat)
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."
-  val creds = GoogleOAuthReader.load
-  val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret, mat)
+
+  def sessionUserKey = Security.username
 
   def isAuthorized(email: String): Boolean
 
@@ -39,7 +41,7 @@ abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
 
   def ejectCall: Call
 
-  def redirURL(request: RequestHeader) =
+  def redirURL(request: RequestHeader): String =
     oAuthRedir.absoluteURL(Proxies.isSecure(request))(request)
 
   def discover() = oauth.discover()
@@ -80,9 +82,9 @@ abstract class OAuthControl(mat: Materializer) extends AutoCloseable {
     }
   }
 
-  def sessionUserKey = Security.username
-
   def onOAuthUnauthorized(email: String) = ejectWith(unauthorizedMessage(email))
+
+  def eject: Result = ejectWith(logoutMessage)
 
   def ejectWith(message: String) = Redirect(ejectCall).flashing(messageKey -> message)
 
