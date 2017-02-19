@@ -31,12 +31,12 @@ object FullUrl extends ValidatingCompanion[String, FullUrl] {
 
   /** Ignores the uri of `request`.
     *
-    * @param request source
+    * @param rh source
     * @return a url of the host component of `request`
     */
-  def hostOnly(request: RequestHeader): FullUrl = {
-    val maybeS = if (request.secure) "s" else ""
-    FullUrl(s"http$maybeS", request.host, "")
+  def hostOnly(rh: RequestHeader): FullUrl = {
+    val maybeS = if (Proxies.isSecure(rh)) "s" else ""
+    FullUrl(s"http$maybeS", rh.host, "")
   }
 
   override def build(input: String): Option[FullUrl] = {

@@ -11,7 +11,7 @@ class ServerUtils(server: NettyServer) {
   val isHttpsAvailable = httpsPort.isDefined
 
   def port(req: RequestHeader): Int =
-    (if (req.secure) httpsPort else httpPort) orElse ServerUtils.portFromHost(req) getOrElse 80
+    (if (Proxies.isSecure(req)) httpsPort else httpPort) orElse ServerUtils.portFromHost(req) getOrElse 80
 }
 
 object ServerUtils {
