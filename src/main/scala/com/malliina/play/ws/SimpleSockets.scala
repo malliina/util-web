@@ -7,6 +7,11 @@ import com.malliina.play.ws.SimpleSockets.log
 import play.api.Logger
 import play.api.mvc.{RequestHeader, Result, Results}
 
+/** Manages websockets.
+  *
+  * To send a message to all connected clients:
+  * `mediator ! Broadcast(myJsonMessage)`
+  */
 class SimpleSockets[User](auth: Authenticator[User],
                           actorSystem: ActorSystem,
                           materializer: Materializer)

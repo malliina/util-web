@@ -16,7 +16,7 @@ object Sockets {
   private val log = Logger(getClass)
 
   val DefaultActorBufferSize = 1000
-  val DefaultOverflowStrategy = OverflowStrategy.dropHead
+  val DefaultOverflowStrategy = OverflowStrategy.fail
 }
 
 abstract class Sockets[User](actorSystem: ActorSystem,
