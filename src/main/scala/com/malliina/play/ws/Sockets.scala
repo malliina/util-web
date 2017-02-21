@@ -1,16 +1,15 @@
 package com.malliina.play.ws
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, Props}
+import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
-import akka.stream.{Materializer, OverflowStrategy}
-import com.malliina.play.auth.AuthFailure
-import com.malliina.play.ws.Sockets.{DefaultActorBufferSize, DefaultOverflowStrategy}
+import com.malliina.play.ActorContext
+import com.malliina.play.auth.{AuthFailure, Authenticator}
+import com.malliina.play.ws.Sockets.{DefaultActorBufferSize, DefaultOverflowStrategy, log}
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.{RequestHeader, Result, WebSocket}
-
-import scala.concurrent.Future
+import play.api.mvc.{RequestHeader, Result, Results, WebSocket}
 
 object Sockets {
   private val log = Logger(getClass)
@@ -19,13 +18,13 @@ object Sockets {
   val DefaultOverflowStrategy = OverflowStrategy.fail
 }
 
-abstract class Sockets[User](actorSystem: ActorSystem,
-                             materializer: Materializer,
+abstract class Sockets[User](auth: Authenticator[User],
+                             ctx: ActorContext,
                              actorBufferSize: Int = DefaultActorBufferSize,
                              overflowStrategy: OverflowStrategy = DefaultOverflowStrategy) {
-  implicit val as = actorSystem
-  implicit val mat = materializer
-  implicit val ec = mat.executionContext
+  implicit val actorSystem = ctx.actorSystem
+  implicit val mat = ctx.materializer
+  implicit val ec = ctx.executionContext
 
   /** Builds actor Props of an authenticated client.
     *
@@ -36,12 +35,13 @@ abstract class Sockets[User](actorSystem: ActorSystem,
     */
   def props(out: ActorRef, user: User, rh: RequestHeader): Props
 
-  def authenticate(rh: RequestHeader): Future[Either[AuthFailure, User]]
-
-  def onUnauthorized(rh: RequestHeader, failure: AuthFailure): Result
+  def onUnauthorized(rh: RequestHeader, failure: AuthFailure): Result = {
+    log warn s"Unauthorized request $rh"
+    Results.Unauthorized
+  }
 
   def newSocket = WebSocket.acceptOrResult[JsValue, JsValue] { rh =>
-    authenticate(rh) map { authResult =>
+    auth.authenticate(rh) map { authResult =>
       authResult.fold(
         failure => Left(onUnauthorized(rh, failure)),
         user => Right(actorFlow(user, rh))

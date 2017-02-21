@@ -1,22 +1,23 @@
 package com.malliina.play.ws
 
-import akka.actor.{ActorRef, ActorSystem, Props}
-import akka.stream.Materializer
-import com.malliina.play.auth.{AuthFailure, Authenticator}
-import com.malliina.play.ws.SimpleSockets.log
-import play.api.Logger
-import play.api.mvc.{RequestHeader, Result, Results}
+import akka.actor.{ActorRef, Props}
+import com.malliina.play.ActorContext
+import com.malliina.play.auth.Authenticator
+import play.api.mvc.RequestHeader
 
 /** Manages websockets.
   *
   * To send a message to all connected clients:
   * `mediator ! Broadcast(myJsonMessage)`
+  *
+  * The actor created from `mediatorProps` will receive any
+  * messages sent from connected websockets.
   */
-class SimpleSockets[User](auth: Authenticator[User],
-                          actorSystem: ActorSystem,
-                          materializer: Materializer)
-  extends Sockets[User](actorSystem, materializer) {
-  val mediator = actorSystem.actorOf(Mediator.props())
+class SimpleSockets[User](mediatorProps: Props,
+                          auth: Authenticator[User],
+                          ctx: ActorContext)
+  extends Sockets[User](auth, ctx) {
+  val mediator = actorSystem.actorOf(mediatorProps)
 
   /** Builds actor Props of an authenticated client.
     *
@@ -27,15 +28,4 @@ class SimpleSockets[User](auth: Authenticator[User],
     */
   override def props(out: ActorRef, user: User, rh: RequestHeader): Props =
     ClientActor.props(SimpleClientContext(out, rh, mediator))
-
-  override def authenticate(rh: RequestHeader) = auth.authenticate(rh)
-
-  override def onUnauthorized(rh: RequestHeader, failure: AuthFailure): Result = {
-    log warn s"Unauthorized request $rh"
-    Results.Unauthorized
-  }
-}
-
-object SimpleSockets {
-  private val log = Logger(getClass)
 }

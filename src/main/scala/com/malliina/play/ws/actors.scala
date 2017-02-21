@@ -3,7 +3,7 @@ package com.malliina.play.ws
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
 import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
 import play.api.http.HeaderNames
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsResult, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 
 case class SimpleClientContext(out: ActorRef, rh: RequestHeader, mediator: ActorRef)
@@ -23,8 +23,19 @@ class ClientActor(ctx: ClientContext) extends JsonActor(ctx.rh) {
   override def preStart(): Unit =
     mediator ! Mediator.ClientJoined(ctx.out)
 
-  override def onMessage(message: JsValue): Unit =
-    mediator ! Mediator.ClientMessage(message, rh)
+  override def onMessage(message: JsValue): Unit = {
+    transform(message).fold(
+      error => log.error(s"Validation of '$message' failed. $error"),
+      json => mediator ! ClientMessage(json, rh)
+    )
+  }
+
+  /** Transforms an incoming message before sending it to the mediator.
+    *
+    * @param message incoming message
+    * @return the transformed message, or an error message
+    */
+  def transform(message: JsValue): JsResult[JsValue] = JsSuccess(message)
 }
 
 object ClientActor {

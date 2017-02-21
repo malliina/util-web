@@ -84,9 +84,9 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
     authenticate(req).map(_.right.toOption)
 
   def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] =
-    readToken(req).map(cookieAuth) getOrElse {
+    readToken(req).map(t => cookieAuth(t, req)) getOrElse {
       log debug s"Found no token in request: ${req.cookies}"
-      Future.successful(Left(CookieMissing))
+      Future.successful(Left(CookieMissing(req)))
     }
 
   def cookify(token: Token) = encodeAsCookie(token.asUnAuth)
@@ -98,7 +98,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
     (store persist token).map(_ => token)
   }
 
-  private def cookieAuth(attempt: UnAuthToken): Future[Either[AuthFailure, Token]] = {
+  private def cookieAuth(attempt: UnAuthToken, rh: RequestHeader): Future[Either[AuthFailure, Token]] = {
     log debug s"Authenticating: $attempt"
     val user = attempt.user
     store.findToken(user, attempt.series).flatMap { maybeToken =>
@@ -120,11 +120,11 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
           } yield Right(newToken)
         } else {
           log warn s"The saved token did not match the one from the request. Refusing access."
-          (store removeAll user).map(_ => Left(InvalidCookie))
+          (store removeAll user).map(_ => Left(InvalidCookie(rh)))
         }
       }.getOrElse {
         log debug s"Unable to authenticate token: $attempt"
-        Future.successful(Left(InvalidCredentials))
+        Future.successful(Left(InvalidCredentials(rh)))
       }
     }
   }
