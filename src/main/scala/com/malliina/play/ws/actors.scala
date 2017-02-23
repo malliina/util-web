@@ -1,6 +1,7 @@
 package com.malliina.play.ws
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import com.malliina.collections.BoundedList
 import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
 import play.api.http.HeaderNames
 import play.api.libs.json.{JsResult, JsSuccess, JsValue}
@@ -53,6 +54,17 @@ class JsonActor(val rh: RequestHeader) extends Actor with ActorLogging {
   def address: String = rh.headers.get(HeaderNames.X_FORWARDED_FOR) getOrElse rh.remoteAddress
 }
 
+class ReplayMediator(bufferSize: Int) extends Mediator {
+  val broadcastHistory = BoundedList.empty[JsValue](bufferSize)
+
+  override def onJoined(ref: ActorRef): Unit = {
+    broadcastHistory foreach { json => ref ! json }
+  }
+
+  override def onBroadcast(message: JsValue): Unit = {
+    broadcastHistory += message
+  }
+}
 
 class ForwardingMediator(sink: ActorRef) extends Mediator {
   override def onClientMessage(message: JsValue, rh: RequestHeader): Unit =
@@ -84,6 +96,7 @@ class Mediator extends Actor with ActorLogging {
   override def receive: Receive = {
     case Broadcast(message) =>
       clients foreach { out => out ! message }
+      onBroadcast(message)
     case ClientMessage(message, rh) =>
       onClientMessage(message, rh)
     case ClientJoined(ref) =>
@@ -98,11 +111,13 @@ class Mediator extends Actor with ActorLogging {
       onLeft(ref)
   }
 
+  def onBroadcast(message: JsValue): Unit = ()
+
+  def onClientMessage(message: JsValue, rh: RequestHeader): Unit = ()
+
   def onJoined(ref: ActorRef): Unit = ()
 
   def onLeft(ref: ActorRef): Unit = ()
-
-  def onClientMessage(message: JsValue, rh: RequestHeader): Unit = ()
 }
 
 object Mediator {
