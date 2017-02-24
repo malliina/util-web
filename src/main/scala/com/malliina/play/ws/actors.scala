@@ -1,25 +1,62 @@
 package com.malliina.play.ws
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Terminated}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
 import com.malliina.collections.BoundedList
 import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
 import play.api.http.HeaderNames
-import play.api.libs.json.{JsResult, JsSuccess, JsValue}
+import play.api.libs.json._
 import play.api.mvc.RequestHeader
+import rx.lang.scala.{Observable, Subscription}
 
-case class SimpleClientContext(out: ActorRef, rh: RequestHeader, mediator: ActorRef)
-  extends ClientContext
+case class MediatorClient(ctx: ActorMeta, mediator: ActorRef)
+  extends ClientContext {
+  override def out = ctx.out
 
-trait ClientContext {
+  override def rh = ctx.rh
+}
+
+trait ClientContext extends ActorMeta {
+  def mediator: ActorRef
+}
+
+case class ActorInfo(out: ActorRef, rh: RequestHeader) extends ActorMeta
+
+trait ActorMeta {
   def out: ActorRef
 
   def rh: RequestHeader
+}
 
-  def mediator: ActorRef
+case class DefaultActorConfig[U](out: ActorRef, rh: RequestHeader, user: U)
+  extends ActorConfig[U]
+
+trait ActorConfig[U] extends ActorMeta {
+  def user: U
+}
+
+class ObserverActor(events: Observable[JsValue], ctx: ActorMeta) extends JsonActor(ctx.rh) {
+  var subscription: Option[Subscription] = None
+
+  override def preStart() = {
+    super.preStart()
+    val sub = events.subscribe(
+      json => ctx.out ! json,
+      _ => self ! PoisonPill,
+      () => self ! PoisonPill
+    )
+    subscription = Option(sub)
+  }
+
+  override def postStop() = {
+    super.postStop()
+    subscription foreach { sub => sub.unsubscribe() }
+    subscription = None
+  }
 }
 
 class ClientActor(ctx: ClientContext) extends JsonActor(ctx.rh) {
   val mediator = ctx.mediator
+  val out = ctx.out
 
   override def preStart(): Unit =
     mediator ! Mediator.ClientJoined(ctx.out)
@@ -37,6 +74,8 @@ class ClientActor(ctx: ClientContext) extends JsonActor(ctx.rh) {
     * @return the transformed message, or an error message
     */
   def transform(message: JsValue): JsResult[JsValue] = JsSuccess(message)
+
+  def sendOut[C: Writes](c: C) = out ! Json.toJson(c)
 }
 
 object ClientActor {

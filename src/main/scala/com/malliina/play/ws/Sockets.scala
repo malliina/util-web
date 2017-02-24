@@ -1,9 +1,9 @@
 package com.malliina.play.ws
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.Props
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
-import com.malliina.play.ActorContext
+import com.malliina.play.ActorExecution
 import com.malliina.play.auth.{AuthFailure, Authenticator}
 import com.malliina.play.ws.Sockets.{DefaultActorBufferSize, DefaultOverflowStrategy, log}
 import play.api.Logger
@@ -19,7 +19,7 @@ object Sockets {
 }
 
 abstract class Sockets[User](auth: Authenticator[User],
-                             ctx: ActorContext,
+                             ctx: ActorExecution,
                              actorBufferSize: Int = DefaultActorBufferSize,
                              overflowStrategy: OverflowStrategy = DefaultOverflowStrategy) {
   implicit val actorSystem = ctx.actorSystem
@@ -28,12 +28,10 @@ abstract class Sockets[User](auth: Authenticator[User],
 
   /** Builds actor Props of an authenticated client.
     *
-    * @param out  outgoing messages
-    * @param user the authenticated user
-    * @param rh   the request headers
+    * @param conf context for the client connection
     * @return Props of an actor that receives incoming messages
     */
-  def props(out: ActorRef, user: User, rh: RequestHeader): Props
+  def props(conf: ActorConfig[User]): Props
 
   def onUnauthorized(rh: RequestHeader, failure: AuthFailure): Result = {
     log warn s"Unauthorized request $rh"
@@ -50,5 +48,5 @@ abstract class Sockets[User](auth: Authenticator[User],
   }
 
   def actorFlow(user: User, rh: RequestHeader): Flow[JsValue, JsValue, _] =
-    ActorFlow.actorRef[JsValue, JsValue](out => props(out, user, rh), actorBufferSize, overflowStrategy)
+    ActorFlow.actorRef[JsValue, JsValue](out => props(DefaultActorConfig(out, rh, user)), actorBufferSize, overflowStrategy)
 }
