@@ -34,7 +34,7 @@ trait ActorConfig[U] extends ActorMeta {
   def user: U
 }
 
-class ObserverActor(events: Observable[JsValue], ctx: ActorMeta) extends JsonActor(ctx.rh) {
+class ObserverActor(events: Observable[JsValue], ctx: ActorMeta) extends JsonActor(ctx) {
   var subscription: Option[Subscription] = None
 
   override def preStart() = {
@@ -54,9 +54,8 @@ class ObserverActor(events: Observable[JsValue], ctx: ActorMeta) extends JsonAct
   }
 }
 
-class ClientActor(ctx: ClientContext) extends JsonActor(ctx.rh) {
+class ClientActor(ctx: ClientContext) extends JsonActor(ctx) {
   val mediator = ctx.mediator
-  val out = ctx.out
 
   override def preStart(): Unit =
     mediator ! Mediator.ClientJoined(ctx.out)
@@ -74,15 +73,16 @@ class ClientActor(ctx: ClientContext) extends JsonActor(ctx.rh) {
     * @return the transformed message, or an error message
     */
   def transform(message: JsValue): JsResult[JsValue] = JsSuccess(message)
-
-  def sendOut[C: Writes](c: C) = out ! Json.toJson(c)
 }
 
 object ClientActor {
   def props(ctx: ClientContext) = Props(new ClientActor(ctx))
 }
 
-class JsonActor(val rh: RequestHeader) extends Actor with ActorLogging {
+class JsonActor(ctx: ActorMeta) extends Actor with ActorLogging {
+  val out = ctx.out
+  val rh = ctx.rh
+
   override def receive: Receive = {
     case json: JsValue => onMessage(json)
   }
@@ -91,6 +91,8 @@ class JsonActor(val rh: RequestHeader) extends Actor with ActorLogging {
     log.info(s"Client $address says: $message")
 
   def address: String = rh.headers.get(HeaderNames.X_FORWARDED_FOR) getOrElse rh.remoteAddress
+
+  def sendOut[C: Writes](c: C) = out ! Json.toJson(c)
 }
 
 class ReplayMediator(bufferSize: Int) extends Mediator {
