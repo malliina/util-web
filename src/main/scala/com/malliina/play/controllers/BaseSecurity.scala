@@ -1,49 +1,21 @@
 package com.malliina.play.controllers
 
 import akka.stream.Materializer
-import com.malliina.play.auth.{Auth, BasicCredentials}
+import com.malliina.play.auth._
 import com.malliina.play.controllers.BaseSecurity.log
-import com.malliina.play.http.{AuthedRequest, CookiedRequest, FullRequest}
+import com.malliina.play.http.{AuthedRequest, CookiedRequest, FullRequest, Proxies}
 import com.malliina.play.models.Username
 import play.api.Logger
 import play.api.libs.streams.Accumulator
-import play.api.mvc.Results._
 import play.api.mvc._
 
 import scala.concurrent.Future
 
-class BaseSecurity(sessionUserKey: String, val mat: Materializer) {
-  def this(mat: Materializer) = this(Security.username, mat)
-
+class BaseSecurity(val mat: Materializer, auth: AuthBundle[Username]) {
   implicit val ec = mat.executionContext
-
-  def authenticateFromSession(request: RequestHeader): Future[Option[Username]] =
-    fut(request.session.get(sessionUserKey).map(Username.apply))
-
-  /** Basic HTTP authentication.
-    *
-    * The "Authorization" request header should be like: "Basic base64(username:password)", where
-    * base64(x) means x base64-encoded.
-    *
-    * @param request request from which the Authorization header is validated
-    * @return the username wrapped in an Option if successfully authenticated, None otherwise
-    */
-  def authenticateFromHeader(request: RequestHeader): Future[Option[Username]] =
-    performAuthentication(Auth.basicCredentials(request))
-
-  /** Authenticates based on the "u" and "p" query string parameters.
-    *
-    * @param request request
-    * @return the username, if successfully authenticated
-    */
-  def authenticateFromQueryString(request: RequestHeader): Future[Option[Username]] =
-    performAuthentication(Auth.credentialsFromQuery(request))
-
-  def performAuthentication(creds: Option[BasicCredentials]) =
-    creds.map(validateUser).getOrElse(fut(None))
-
-  def validateUser(creds: BasicCredentials): Future[Option[Username]] =
-    validateCredentials(creds).map(isValid => if (isValid) Option(creds.username) else None)
+  val authenticator = auth.authenticator.transform { (req, user) =>
+    Right(AuthedRequest(user, req))
+  }
 
   /** Override if you intend to use password authentication.
     *
@@ -51,49 +23,31 @@ class BaseSecurity(sessionUserKey: String, val mat: Materializer) {
     */
   def validateCredentials(creds: BasicCredentials): Future[Boolean] = fut(false)
 
+  /** Called when an unauthorized request has been made. Also
+    * called when a failed authentication attempt is made.
+    *
+    * @param failure header auth failure, including request headers
+    * @return "auth failed" result
+    */
+  protected def onUnauthorized(failure: AuthFailure): Result =
+    auth.onUnauthorized(failure)
+
   /** Retrieves the authenticated username from the request.
     *
     * Attempts to read the "username" session variable, but if no such thing exists,
     * attempts to authenticate based on the the HTTP Authorization header,
     * finally if that also fails, authenticates based on credentials in the query string.
     *
-    * @return the authentication result wrapped in an [[scala.Option]] if successfully authenticated, [[scala.None]] otherwise
+    * @return the authentication result
     */
-  def authenticate(request: RequestHeader): Future[Option[AuthedRequest]] = {
-    import com.malliina.play.concurrent.FutureOps2
-    authenticateFromSession(request)
-      .checkOrElse(_.nonEmpty, authenticateFromHeader(request))
-      .checkOrElse(_.nonEmpty, authenticateFromQueryString(request))
-      .map(_.map(user => lift(user, request)))
-  }
+  def authenticate(rh: RequestHeader): Future[Either[AuthFailure, AuthedRequest]] =
+    authenticator.authenticate(rh)
 
   def checkOrElse[T, U >: T](f: Future[T], orElse: => Future[U], check: T => Boolean): Future[U] =
     f.flatMap(t => if (check(t)) fut(t) else orElse)
 
-  /** Called when an unauthorized request has been made. Also
-    * called when a failed authentication attempt is made.
-    *
-    * Returns HTTP 401 by default; override to handle unauthorized
-    * requests in a more app-specific manner.
-    *
-    * @param request header of request which failed authentication
-    * @return "auth failed" result
-    */
-  protected def onUnauthorized(request: RequestHeader): Result = {
-    val ip = request.remoteAddress
-    val resource = request.path
-    log warn s"Unauthorized request to: $resource from: $ip"
-    Unauthorized
-  }
-
-  def loggedSecureAction[U](authFunction: RequestHeader => Option[U])(authAction: U => EssentialAction): EssentialAction =
-    Security.Authenticated(req => authFunction(req), req => onUnauthorized(req))(user => logged(authAction(user)))
-
   def authActionAsync(f: CookiedRequest[AnyContent, AuthedRequest] => Future[Result]) =
     authenticatedLogged(user => Action.async(req => f(new CookiedRequest(user, req, user.cookie))))
-
-  def loggedSecureActionAsync[U](authFunction: RequestHeader => Future[U])(authAction: U => EssentialAction) =
-    authenticatedAsync2(authFunction, req => onUnauthorized(req))(user => logged(authAction(user)))
 
   def authAction(f: FullRequest => Result) =
     authenticatedLogged(user => Action(req => f(user.fillAny(req))))
@@ -105,38 +59,29 @@ class BaseSecurity(sessionUserKey: String, val mat: Materializer) {
     authenticatedLogged(_ => f)
 
   def authenticated(f: => EssentialAction): EssentialAction =
-    authenticated(user => f)
+    authenticated(_ => f)
 
   def authenticated(f: AuthedRequest => EssentialAction): EssentialAction =
-    authenticatedAsync(req => authenticate(req), unAuthorizedRequest => onUnauthorized(unAuthorizedRequest))(f)
+    authenticatedAsync(req => authenticate(req), failure => onUnauthorized(failure))(f)
 
   /** Logs authenticated requests.
     */
   def logged(user: AuthedRequest, f: AuthedRequest => EssentialAction) =
-    EssentialAction { request =>
-      val qString = request.rawQueryString
+    EssentialAction { rh =>
+      val qString = rh.rawQueryString
+
       // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
       def queryString =
         if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
         else ""
-      log info s"User: ${user.user} from: ${request.remoteAddress} requests: ${request.path}$queryString"
-      f(user)(request)
+
+      log info s"User '${user.user}' from '${Proxies.realAddress(rh)}' requests '${rh.path}$queryString'."
+      f(user)(rh)
     }
 
-  def logged(action: EssentialAction): EssentialAction = EssentialAction { req =>
-    log debug s"Request: ${req.path} from: ${req.remoteAddress}"
-    action(req)
-  }
-
-  /**
-    * @param authFunction authentication that fails the Future if authentication fails
-    * @return an authenticated action
-    */
-  def authenticatedAsync2[A](authFunction: RequestHeader => Future[A],
-                             onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction = {
-    import com.malliina.concurrent.FutureOps
-    val f2: RequestHeader => Future[Option[A]] = req => authFunction(req).map(a => Some(a)).recoverAll(_ => None)
-    authenticatedAsync(f2, onUnauthorized)(action)
+  def logged(action: EssentialAction): EssentialAction = EssentialAction { rh =>
+    log debug s"Request '${rh.path}' from '${Proxies.realAddress(rh)}'."
+    action(rh)
   }
 
   /** Async version of Security.Authenticated.
@@ -147,13 +92,14 @@ class BaseSecurity(sessionUserKey: String, val mat: Materializer) {
     * @tparam A type of user+request
     * @return an authenticated action
     */
-  def authenticatedAsync[A](auth: RequestHeader => Future[Option[A]],
-                            onUnauthorized: RequestHeader => Result)(action: A => EssentialAction): EssentialAction =
-    EssentialAction { request =>
-      val futureAccumulator = auth(request) map { maybeUser =>
-        maybeUser
-          .map(user => action(user).apply(request))
-          .getOrElse(Accumulator.done(onUnauthorized(request)))
+  def authenticatedAsync[A](auth: RequestHeader => Future[Either[AuthFailure, A]],
+                            onUnauthorized: AuthFailure => Result)(action: A => EssentialAction): EssentialAction =
+    EssentialAction { rh =>
+      val futureAccumulator = auth(rh) map { authResult =>
+        authResult.fold(
+          failure => Accumulator.done(onUnauthorized(failure)),
+          success => action(success).apply(rh)
+        )
       }
       Accumulator.flatten(futureAccumulator)(mat)
     }

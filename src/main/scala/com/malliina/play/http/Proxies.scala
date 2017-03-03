@@ -51,4 +51,7 @@ object Proxies {
 
   def xForwardedProto(headers: Headers): Option[String] =
     headers.get(HeaderNames.X_FORWARDED_PROTO)
+
+  def realAddress(rh: RequestHeader): String =
+    rh.headers.get(HeaderNames.X_FORWARDED_FOR) getOrElse rh.remoteAddress
 }

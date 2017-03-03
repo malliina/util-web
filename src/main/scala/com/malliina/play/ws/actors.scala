@@ -2,6 +2,7 @@ package com.malliina.play.ws
 
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
 import com.malliina.collections.BoundedList
+import com.malliina.play.http.Proxies
 import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
 import play.api.http.HeaderNames
 import play.api.libs.json._
@@ -90,7 +91,7 @@ class JsonActor(ctx: ActorMeta) extends Actor with ActorLogging {
   def onMessage(message: JsValue): Unit =
     log.info(s"Client $address says: $message")
 
-  def address: String = rh.headers.get(HeaderNames.X_FORWARDED_FOR) getOrElse rh.remoteAddress
+  def address: String = Proxies.realAddress(rh)
 
   def sendOut[C: Writes](c: C) = out ! Json.toJson(c)
 }

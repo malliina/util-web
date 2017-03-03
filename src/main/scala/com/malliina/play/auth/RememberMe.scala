@@ -86,7 +86,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
   def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] =
     readToken(req).map(t => cookieAuth(t, req)) getOrElse {
       log debug s"Found no token in request: ${req.cookies}"
-      Future.successful(Left(CookieMissing(req)))
+      Future.successful(Left(MissingCookie(req)))
     }
 
   def cookify(token: Token) = encodeAsCookie(token.asUnAuth)

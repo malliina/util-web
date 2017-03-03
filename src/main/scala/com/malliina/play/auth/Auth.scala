@@ -25,10 +25,11 @@ object Auth {
   def authHeaderParser[T](request: RequestHeader)(f: String => Option[T]): Option[T] = {
     request.headers.get(HeaderNames.AUTHORIZATION) flatMap { authInfo =>
       authInfo.split(" ") match {
-        case Array(authMethod, encodedCredentials) =>
+        case Array(_, encodedCredentials) =>
           val decoded = new String(Base64.decodeBase64(encodedCredentials.getBytes))
           f(decoded)
-        case _ => None
+        case _ =>
+          None
       }
     }
   }
@@ -43,6 +44,7 @@ object Auth {
     ) yield BasicCredentials(Username(user), Password(pass))
   }
 
-  def authenticateFromSession(request: RequestHeader): Option[Username] =
-    request.session.get(Security.username).map(Username.apply) //.filter(_.nonEmpty)
+  def authenticateFromSession(rh: RequestHeader,
+                              sessionKey: String = Security.username): Option[Username] =
+    rh.session.get(sessionKey).map(Username.apply)
 }

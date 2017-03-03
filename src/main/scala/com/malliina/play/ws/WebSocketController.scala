@@ -66,8 +66,8 @@ abstract class WebSocketController(mat: Materializer, socketQueueSize: Int = 100
     Flow.fromSinkAndSource(sink, source)
   }
 
-  def onUnauthorized(req: RequestHeader): Result = {
-    log warn s"Unauthorized WebSocket connection attempt from: ${req.remoteAddress}"
+  def onUnauthorized(rh: RequestHeader): Result = {
+    log warn s"Unauthorized WebSocket connection attempt from: ${Proxies.realAddress(rh)}"
     Results.Unauthorized
   }
 

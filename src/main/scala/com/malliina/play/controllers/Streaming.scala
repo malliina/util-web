@@ -4,7 +4,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.SourceQueue
 import com.malliina.maps.ItemMap
 import com.malliina.play.controllers.Streaming.log
-import com.malliina.play.http.AuthedRequest
+import com.malliina.play.http.{AuthedRequest, Proxies}
 import com.malliina.play.json.SimpleCommand
 import com.malliina.play.models.Username
 import com.malliina.play.ws.{JsonSocketClient, JsonWebSockets, SyncSockets}
@@ -32,7 +32,7 @@ abstract class Streaming(mat: Materializer) extends JsonWebSockets(mat) with Syn
       case SUBSCRIBE =>
         val subscription = jsonEvents.subscribe(
           e => client.channel.offer(e),
-          (err: Throwable) => log.error(s"WebSocket error for user ${client.user} from ${client.request.remoteAddress}", err),
+          (err: Throwable) => log.error(s"WebSocket error for user ${client.user} from ${Proxies.realAddress(client.request)}", err),
           () => ())
         subscriptions.put(client, subscription)
         writeLog(client, s"subscribed. Subscriptions in total: ${subscriptions.size}")
@@ -52,7 +52,7 @@ abstract class Streaming(mat: Materializer) extends JsonWebSockets(mat) with Syn
   }
 
   protected def writeLog(client: Client, suffix: String): Unit =
-    log.info(s"User: ${client.user} from: ${client.request.remoteAddress} $suffix.")
+    log.info(s"User: ${client.user} from: ${Proxies.realAddress(client.request)} $suffix.")
 }
 
 object Streaming {
