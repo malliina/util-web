@@ -1,10 +1,10 @@
 package com.malliina.play.ws
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
 import com.malliina.collections.BoundedList
 import com.malliina.play.http.Proxies
 import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
-import play.api.http.HeaderNames
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
@@ -63,7 +63,7 @@ class ClientActor(ctx: ClientContext) extends JsonActor(ctx) {
 
   override def onMessage(message: JsValue): Unit = {
     transform(message).fold(
-      error => log.error(s"Validation of '$message' failed. $error"),
+      error => ClientActor.log.error(s"Validation of '$message' failed. $error"),
       json => mediator ! ClientMessage(json, rh)
     )
   }
@@ -77,10 +77,12 @@ class ClientActor(ctx: ClientContext) extends JsonActor(ctx) {
 }
 
 object ClientActor {
+  private val log = Logger(getClass)
+
   def props(ctx: ClientContext) = Props(new ClientActor(ctx))
 }
 
-class JsonActor(ctx: ActorMeta) extends Actor with ActorLogging {
+class JsonActor(ctx: ActorMeta) extends Actor {
   val out = ctx.out
   val rh = ctx.rh
 
@@ -89,11 +91,17 @@ class JsonActor(ctx: ActorMeta) extends Actor with ActorLogging {
   }
 
   def onMessage(message: JsValue): Unit =
-    log.info(s"Client $address says: $message")
+    JsonActor.log.info(s"Client '$address' says '$message'.")
 
   def address: String = Proxies.realAddress(rh)
 
   def sendOut[C: Writes](c: C) = out ! Json.toJson(c)
+}
+
+object JsonActor {
+  private val log = Logger(getClass)
+
+  def props(ctx: ActorMeta) = Props(new JsonActor(ctx))
 }
 
 class ReplayMediator(bufferSize: Int) extends Mediator {
@@ -132,7 +140,7 @@ object SelfMediator {
   * Calls `onClientMessage` when a message is received
   * from a client.
   */
-class Mediator extends Actor with ActorLogging {
+class Mediator extends Actor {
   var clients: Set[ActorRef] = Set.empty
 
   override def receive: Receive = {
