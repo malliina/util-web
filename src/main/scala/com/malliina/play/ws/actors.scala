@@ -1,13 +1,16 @@
 package com.malliina.play.ws
 
-import akka.actor.{Actor, ActorRef, PoisonPill, Props, Terminated}
+import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props, Terminated}
 import com.malliina.collections.BoundedList
 import com.malliina.play.http.Proxies
+import com.malliina.play.json.JsonMessages
 import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
+
+import scala.concurrent.duration.DurationInt
 
 case class MediatorClient(ctx: ActorMeta, mediator: ActorRef)
   extends ClientContext {
@@ -83,8 +86,21 @@ object ClientActor {
 }
 
 class JsonActor(ctx: ActorMeta) extends Actor {
+  implicit val ec = context.dispatcher
   val out = ctx.out
   val rh = ctx.rh
+  var pinger: Option[Cancellable] = None
+
+  override def preStart() = {
+    super.preStart()
+    val healthCheck = context.system.scheduler.schedule(
+      initialDelay = 10.seconds,
+      interval = 30.seconds,
+      receiver = out,
+      message = JsonMessages.ping
+    )
+    pinger = Option(healthCheck)
+  }
 
   override def receive: Receive = {
     case json: JsValue => onMessage(json)
@@ -96,6 +112,11 @@ class JsonActor(ctx: ActorMeta) extends Actor {
   def address: String = Proxies.realAddress(rh)
 
   def sendOut[C: Writes](c: C) = out ! Json.toJson(c)
+
+  override def postStop() = {
+    super.postStop()
+    pinger foreach { p => p.cancel() }
+  }
 }
 
 object JsonActor {
