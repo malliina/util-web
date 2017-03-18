@@ -22,6 +22,8 @@ object PlayBuild {
   )
 
   lazy val utilPlaySettings = baseSettings ++ Seq(
+    // temp hack due to SHA1 mismatch on Maven Central
+    // http://stackoverflow.com/a/42211230
     publishArtifact in Test := true,
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,

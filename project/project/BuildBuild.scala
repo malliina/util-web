@@ -5,6 +5,9 @@ object BuildBuild {
   lazy val settings = sbtPlugins ++ Seq(
     scalaVersion := "2.10.6",
     resolvers ++= Seq(
+      // temporary hack
+      // http://stackoverflow.com/a/42211230
+      "JBoss" at "https://repository.jboss.org/",
       ivyRepo("bintray-sbt-plugin-releases",
         "http://dl.bintray.com/content/sbt/sbt-plugin-releases"),
       ivyRepo("malliina bintray sbt",

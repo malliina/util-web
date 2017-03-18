@@ -3,25 +3,28 @@ package com.malliina.play.controllers
 import akka.stream.Materializer
 import com.malliina.play.auth._
 import com.malliina.play.controllers.BaseSecurity.log
-import com.malliina.play.http.{AuthedRequest, CookiedRequest, FullRequest, Proxies}
-import com.malliina.play.models.Username
+import com.malliina.play.http._
 import play.api.Logger
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class BaseSecurity(val mat: Materializer, auth: AuthBundle[Username]) {
+object BaseSecurity {
+  private val log = Logger(getClass)
+
+  def checkOrElse[T, U >: T](f: Future[T], orElse: => Future[U], check: T => Boolean)(implicit ec: ExecutionContext): Future[U] =
+    f.flatMap(t => if (check(t)) Future.successful(t) else orElse)
+}
+
+/**
+  *
+  * @param mat  materilalizer
+  * @param auth authenticator
+  * @tparam A type of authenticated user
+  */
+class BaseSecurity[A](auth: AuthBundle[A], val mat: Materializer) {
   implicit val ec = mat.executionContext
-  val authenticator = auth.authenticator.transform { (req, user) =>
-    Right(AuthedRequest(user, req))
-  }
-
-  /** Override if you intend to use password authentication.
-    *
-    * @return True if the credentials are valid; false otherwise. False by default.
-    */
-  def validateCredentials(creds: BasicCredentials): Future[Boolean] = fut(false)
 
   /** Called when an unauthorized request has been made. Also
     * called when a failed authentication attempt is made.
@@ -40,19 +43,16 @@ class BaseSecurity(val mat: Materializer, auth: AuthBundle[Username]) {
     *
     * @return the authentication result
     */
-  def authenticate(rh: RequestHeader): Future[Either[AuthFailure, AuthedRequest]] =
-    authenticator.authenticate(rh)
+  def authenticate(rh: RequestHeader): Future[Either[AuthFailure, A]] =
+    auth.authenticator.authenticate(rh)
 
-  def checkOrElse[T, U >: T](f: Future[T], orElse: => Future[U], check: T => Boolean): Future[U] =
-    f.flatMap(t => if (check(t)) fut(t) else orElse)
+  def authActionAsync(f: A => Future[Result]) =
+    authenticatedLogged(user => Action.async(_ => f(user)))
 
-  def authActionAsync(f: CookiedRequest[AnyContent, AuthedRequest] => Future[Result]) =
-    authenticatedLogged(user => Action.async(req => f(new CookiedRequest(user, req, user.cookie))))
+  def authAction(f: A => Result) =
+    authenticatedLogged(user => Action(_ => f(user)))
 
-  def authAction(f: FullRequest => Result) =
-    authenticatedLogged(user => Action(req => f(user.fillAny(req))))
-
-  def authenticatedLogged(f: AuthedRequest => EssentialAction): EssentialAction =
+  def authenticatedLogged(f: A => EssentialAction): EssentialAction =
     authenticated(user => logged(user, f))
 
   def authenticatedLogged(f: => EssentialAction): EssentialAction =
@@ -61,23 +61,27 @@ class BaseSecurity(val mat: Materializer, auth: AuthBundle[Username]) {
   def authenticated(f: => EssentialAction): EssentialAction =
     authenticated(_ => f)
 
-  def authenticated(f: AuthedRequest => EssentialAction): EssentialAction =
+  def authenticated(f: A => EssentialAction): EssentialAction =
     authenticatedAsync(req => authenticate(req), failure => onUnauthorized(failure))(f)
 
   /** Logs authenticated requests.
     */
-  def logged(user: AuthedRequest, f: AuthedRequest => EssentialAction) =
+  def logged(user: A, f: A => EssentialAction) =
     EssentialAction { rh =>
-      val qString = rh.rawQueryString
-
-      // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
-      def queryString =
-        if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
-        else ""
-
-      log info s"User '${user.user}' from '${Proxies.realAddress(rh)}' requests '${rh.path}$queryString'."
+      logAuth(user, rh)
       f(user)(rh)
     }
+
+  def logAuth(user: A, rh: RequestHeader) = {
+    val qString = rh.rawQueryString
+
+    // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
+    def queryString =
+      if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
+      else ""
+
+    log info s"Authenticated user from '${Proxies.realAddress(rh)}' requests '${rh.path}$queryString'."
+  }
 
   def logged(action: EssentialAction): EssentialAction = EssentialAction { rh =>
     log debug s"Request '${rh.path}' from '${Proxies.realAddress(rh)}'."
@@ -89,11 +93,10 @@ class BaseSecurity(val mat: Materializer, auth: AuthBundle[Username]) {
     * @param auth           auth function
     * @param onUnauthorized callback if auth fails
     * @param action         authenticated action
-    * @tparam A type of user+request
     * @return an authenticated action
     */
-  def authenticatedAsync[A](auth: RequestHeader => Future[Either[AuthFailure, A]],
-                            onUnauthorized: AuthFailure => Result)(action: A => EssentialAction): EssentialAction =
+  def authenticatedAsync(auth: RequestHeader => Future[Either[AuthFailure, A]],
+                         onUnauthorized: AuthFailure => Result)(action: A => EssentialAction): EssentialAction =
     EssentialAction { rh =>
       val futureAccumulator = auth(rh) map { authResult =>
         authResult.fold(
@@ -103,12 +106,4 @@ class BaseSecurity(val mat: Materializer, auth: AuthBundle[Username]) {
       }
       Accumulator.flatten(futureAccumulator)(mat)
     }
-
-  protected def lift(user: Username, request: RequestHeader) = AuthedRequest(user, request)
-
-  private def fut[T](t: T): Future[T] = Future.successful(t)
-}
-
-object BaseSecurity {
-  private val log = Logger(getClass)
 }

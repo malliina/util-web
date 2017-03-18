@@ -1,11 +1,13 @@
 package com.malliina.play.controllers
 
 import com.malliina.play.auth.{AuthFailure, Authenticator, UserAuthenticator}
-import com.malliina.play.http.Proxies
+import com.malliina.play.http.{AuthedRequest, Proxies}
 import com.malliina.play.models.Username
 import play.api.Logger
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{Call, Result, Results}
+
+import scala.concurrent.ExecutionContext
 
 trait AuthBundle[U] {
   def authenticator: Authenticator[U]

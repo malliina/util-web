@@ -11,12 +11,13 @@ trait UserAuthenticator extends Authenticator[Username]
 
 object UserAuthenticator {
   // Can I somehow reduce the repetition with Authenticator.apply?
-  def apply(auth: RequestHeader => Future[Outcome[Username]]) =
+  def apply(auth: RequestHeader => Future[Outcome[Username]]): UserAuthenticator =
     new UserAuthenticator {
-      override def authenticate(rh: RequestHeader) = auth(rh)
+      override def authenticate(rh: RequestHeader): Future[Outcome[Username]] =
+        auth(rh)
     }
 
-  def default(isValid: BasicCredentials => Future[Outcome[Username]])(implicit ec: ExecutionContext): Authenticator[Username] =
+  def default(isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext): Authenticator[Username] =
     Authenticator.anyOne(session(), header(isValid), query(isValid))
 
   def session(key: String = Security.username): UserAuthenticator =
@@ -33,7 +34,7 @@ object UserAuthenticator {
     * @param isValid validator of credentials
     * @return the username wrapped in an Option if successfully authenticated, None otherwise
     */
-  def header(isValid: BasicCredentials => Future[Outcome[Username]]) =
+  def header(isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext) =
     basic(Auth.basicCredentials, isValid)
 
   /** Authenticates based on the "u" and "p" query string parameters.
@@ -41,18 +42,27 @@ object UserAuthenticator {
     * @param isValid validator
     * @return the username, if successfully authenticated
     */
-  def query(isValid: BasicCredentials => Future[Outcome[Username]]) =
+  def query(isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext) =
     basic(rh => Auth.credentialsFromQuery(rh), isValid)
 
   def basic(read: RequestHeader => Option[BasicCredentials],
-            isValid: BasicCredentials => Future[Outcome[Username]]): UserAuthenticator =
+            isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext): UserAuthenticator =
     UserAuthenticator { rh =>
       read(rh).map { creds =>
-        isValid(creds)
+        isValid(creds).map { maybeUser =>
+          maybeUser.map { user =>
+            Right(user)
+          }.getOrElse {
+            Left(InvalidCredentials(rh))
+          }
+        }
       }.getOrElse {
         Future.successful(Left(MissingCredentials(rh)))
       }
     }
+
+  def readCreds(rh: RequestHeader): Option[BasicCredentials] =
+    Auth.basicCredentials(rh) orElse Auth.credentialsFromQuery(rh)
 }
 
 /**
