@@ -13,6 +13,7 @@ import play.api.libs.json.{JsError, JsSuccess, JsValue}
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
 
+@deprecated("Use actors", "3.6.6")
 abstract class Streaming(mat: Materializer) extends JsonWebSockets(mat) with SyncSockets {
   override type AuthSuccess = AuthedRequest
   override type Client = JsonSocketClient[Username]

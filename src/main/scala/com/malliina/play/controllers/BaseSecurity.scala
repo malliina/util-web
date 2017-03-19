@@ -8,13 +8,10 @@ import play.api.Logger
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 object BaseSecurity {
   private val log = Logger(getClass)
-
-  def checkOrElse[T, U >: T](f: Future[T], orElse: => Future[U], check: T => Boolean)(implicit ec: ExecutionContext): Future[U] =
-    f.flatMap(t => if (check(t)) Future.successful(t) else orElse)
 }
 
 /**

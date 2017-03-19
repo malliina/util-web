@@ -22,7 +22,9 @@ import scala.concurrent.Future
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-abstract class OAuthControl(creds: GoogleOAuthCredentials, mat: Materializer) extends AutoCloseable {
+abstract class OAuthControl(creds: GoogleOAuthCredentials, val mat: Materializer)
+  extends AutoCloseable {
+
   def this(mat: Materializer) = this(GoogleOAuthReader.load, mat)
   implicit val ec = mat.executionContext
   val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret, mat)
@@ -66,10 +68,10 @@ abstract class OAuthControl(creds: GoogleOAuthCredentials, mat: Materializer) ex
           // exchanges code for token, which contains the user's email address
           oauth.resolveEmail(conf.tokenEndpoint, code, redirURL(request)) map { email =>
             if (isAuthorized(email)) {
-              log info s"User: $email logged in."
+              log info s"User '$email' logged in."
               Redirect(onOAuthSuccess).withSession(sessionUserKey -> email)
             } else {
-              log warn s"User: $email authenticated successfully but is not authorized."
+              log warn s"User '$email' authenticated successfully but is not authorized."
               onOAuthUnauthorized(email)
             }
           }
