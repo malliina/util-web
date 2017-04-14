@@ -9,7 +9,7 @@ object PlayBuild {
     .settings(utilPlaySettings: _*)
 
   val httpGroup = "org.apache.httpcomponents"
-  val httpVersion = "4.5.2"
+  val httpVersion = "4.5.3"
   val playGroup = "com.typesafe.play"
   val playVersion = PlayVersion.current
   val malliinaGroup = "com.malliina"
@@ -27,10 +27,10 @@ object PlayBuild {
       playGroup %% "play" % playVersion,
       playGroup %% "play-ws" % playVersion,
       playGroup %% "play-netty-server" % playVersion,
-      malliinaGroup %% "util" % "2.5.5",
+      malliinaGroup %% "util" % "2.5.6",
       malliinaGroup %% "logback-rx" % "1.1.0",
       httpGroup % "httpclient" % httpVersion,
-      httpGroup % "httpcore" % "4.4.4",
+      httpGroup % "httpcore" % "4.4.6",
       httpGroup % "httpmime" % httpVersion
     )
   )
