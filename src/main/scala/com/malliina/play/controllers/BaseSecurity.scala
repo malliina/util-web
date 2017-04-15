@@ -4,6 +4,7 @@ import akka.stream.Materializer
 import com.malliina.play.auth._
 import com.malliina.play.controllers.BaseSecurity.log
 import com.malliina.play.http._
+import com.malliina.play.models.AuthInfo
 import play.api.Logger
 import play.api.libs.streams.Accumulator
 import play.api.mvc._
@@ -12,6 +13,11 @@ import scala.concurrent.Future
 
 object BaseSecurity {
   private val log = Logger(getClass)
+
+  def logged(action: EssentialAction): EssentialAction = EssentialAction { rh =>
+    log debug s"Request '${rh.path}' from '${Proxies.realAddress(rh)}'."
+    action(rh)
+  }
 }
 
 /**
@@ -20,7 +26,7 @@ object BaseSecurity {
   * @param auth authenticator
   * @tparam A type of authenticated user
   */
-class BaseSecurity[A](auth: AuthBundle[A], val mat: Materializer) {
+class BaseSecurity[A <: AuthInfo](auth: AuthBundle[A], val mat: Materializer) {
   implicit val ec = mat.executionContext
 
   /** Called when an unauthorized request has been made. Also
@@ -63,13 +69,13 @@ class BaseSecurity[A](auth: AuthBundle[A], val mat: Materializer) {
 
   /** Logs authenticated requests.
     */
-  def logged(user: A, f: A => EssentialAction) =
+  def logged(user: A, f: A => EssentialAction): EssentialAction =
     EssentialAction { rh =>
       logAuth(user, rh)
       f(user)(rh)
     }
 
-  def logAuth(user: A, rh: RequestHeader) = {
+  def logAuth(user: A, rh: RequestHeader): Unit = {
     val qString = rh.rawQueryString
 
     // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
@@ -80,10 +86,8 @@ class BaseSecurity[A](auth: AuthBundle[A], val mat: Materializer) {
     log info s"Authenticated user from '${Proxies.realAddress(rh)}' requests '${rh.path}$queryString'."
   }
 
-  def logged(action: EssentialAction): EssentialAction = EssentialAction { rh =>
-    log debug s"Request '${rh.path}' from '${Proxies.realAddress(rh)}'."
-    action(rh)
-  }
+  def logged(action: EssentialAction): EssentialAction =
+    BaseSecurity.logged(action)
 
   /** Async version of Security.Authenticated.
     *

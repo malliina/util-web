@@ -5,5 +5,5 @@ import play.api.mvc.RequestHeader
 trait BaseAuthRequest[U] {
   def user: U
 
-  def request: RequestHeader
+  def rh: RequestHeader
 }

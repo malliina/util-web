@@ -2,12 +2,15 @@ package com.malliina.play.auth
 
 import com.malliina.play.auth.Authenticator.Outcome
 import com.malliina.play.concurrent.FutureUtils
-import com.malliina.play.models.Username
+import com.malliina.play.models.{AuthRequest, Username}
 import play.api.mvc.{RequestHeader, Security}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-trait UserAuthenticator extends Authenticator[Username]
+trait UserAuthenticator extends Authenticator[Username] {
+  def withRequest()(implicit ec: ExecutionContext): Authenticator[AuthRequest] =
+    transform[AuthRequest]((req, user) => Right(new AuthRequest(user, req)))
+}
 
 object UserAuthenticator {
   // Can I somehow reduce the repetition with Authenticator.apply?
@@ -73,6 +76,9 @@ trait Authenticator[T] {
 
   def map[U](f: T => U)(implicit ec: ExecutionContext): Authenticator[U] =
     transform((_, t) => Right(f(t)))
+
+  def mapAuth[U](f: (RequestHeader, T) => U)(implicit ec: ExecutionContext) =
+    transform((req, t) => Right(f(req, t)))
 
   def transform[U](f: (RequestHeader, T) => Outcome[U])(implicit ec: ExecutionContext): Authenticator[U] =
     Authenticator[U] { rh =>

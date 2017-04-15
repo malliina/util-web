@@ -11,14 +11,19 @@ case class FullUrl(proto: String, hostAndPort: String, uri: String) {
   val url = s"$protoAndHost$uri"
 
   def absolute(call: Call): FullUrl = {
-    val fragment = Option(call.fragment).filter(_.trim.nonEmpty).map(f => s"#$f") getOrElse ""
+    val fragment = Option(call.fragment)
+      .filter(_.trim.nonEmpty)
+      .map(f => s"#$f")
+      .getOrElse("")
     val callUri = s"${call.url}$fragment"
     FullUrl(proto, hostAndPort, callUri)
   }
 
+  def /(more: String) = append(more.dropWhile(_ == '/'))
+
   def +(more: String) = append(more)
 
-  def append(more: String) = FullUrl(proto, hostAndPort, s"$uri$more")
+  def append(more: String): FullUrl = FullUrl(proto, hostAndPort, s"$uri$more")
 
   override def toString: String = url
 }

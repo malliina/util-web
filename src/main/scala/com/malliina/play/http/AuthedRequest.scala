@@ -1,10 +1,12 @@
 package com.malliina.play.http
 
-import com.malliina.play.models.Username
+import com.malliina.play.models.{AuthRequest, Username}
 import play.api.mvc.{AnyContent, Cookie, Request, RequestHeader}
 
-class AuthedRequest(val user: Username, val request: RequestHeader, val cookie: Option[Cookie] = None)
-  extends BaseAuthRequest[Username] {
+class AuthedRequest(user: Username,
+                    rh: RequestHeader,
+                    val cookie: Option[Cookie] = None)
+  extends AuthRequest(user, rh) {
 
   def fillAny(completeRequest: Request[AnyContent]): FullRequest =
     new FullRequest(user, completeRequest, cookie)
