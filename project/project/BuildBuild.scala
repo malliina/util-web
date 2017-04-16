@@ -21,6 +21,6 @@ object BuildBuild {
 
   def sbtPlugins = Seq(
     "com.malliina" %% "sbt-utils" % "0.6.1",
-    "com.malliina" %% "sbt-play" % "0.9.5"
+    "com.malliina" %% "sbt-play" % "0.9.7"
   ) map addSbtPlugin
 }
