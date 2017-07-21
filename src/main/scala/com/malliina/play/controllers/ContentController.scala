@@ -1,12 +1,12 @@
 package com.malliina.play.controllers
 
-import play.api.http.MimeTypes
+import play.api.http.MimeTypes.{HTML, JSON}
 import play.api.libs.json.JsValue
+import play.api.mvc.Results.{NotAcceptable, Ok}
 import play.api.mvc._
 import play.twirl.api.Html
 
-trait ContentController extends Controller with Caching {
-
+trait ContentController extends Caching {
   def respond(request: RequestHeader)(html: => Result, json: => JsValue): Result =
     respondResult(request)(html, Ok(json))
 
@@ -21,8 +21,8 @@ trait ContentController extends Controller with Caching {
     * Otherwise you might send JSON to a browser that also accepts HTML.
     */
   private def respondIgnoreQueryParam(request: RequestHeader)(html: => Result, json: => Result): Result = {
-    if (request accepts MimeTypes.HTML) html
-    else if (request accepts MimeTypes.JSON) json
+    if (request accepts HTML) html
+    else if (request accepts JSON) json
     else NotAcceptable
   }
 

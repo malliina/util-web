@@ -22,16 +22,17 @@ import scala.concurrent.Future
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-abstract class OAuthControl(creds: GoogleOAuthCredentials, val mat: Materializer)
+abstract class OAuthControl(actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, val mat: Materializer)
   extends AutoCloseable {
 
-  def this(mat: Materializer) = this(GoogleOAuthReader.load, mat)
+  def this(actions: ActionBuilder[Request, AnyContent], mat: Materializer) = this(actions, GoogleOAuthReader.load, mat)
+
   implicit val ec = mat.executionContext
   val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret, mat)
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."
 
-  def sessionUserKey = Security.username
+  def sessionUserKey = "username"
 
   def isAuthorized(email: String): Boolean
 
@@ -48,7 +49,7 @@ abstract class OAuthControl(creds: GoogleOAuthCredentials, val mat: Materializer
 
   def discover() = oauth.discover()
 
-  def initiate = Action.async { request =>
+  def initiate = actions.async { request =>
     discover() map { conf =>
       // TODO document
       val state = new BigInteger(130, new SecureRandom()).toString(32)
@@ -58,7 +59,7 @@ abstract class OAuthControl(creds: GoogleOAuthCredentials, val mat: Materializer
     }
   }
 
-  def redirResponse = Action.async { request =>
+  def redirResponse = actions.async { request =>
     request.getQueryString(Code).fold(fut(noConsentFailure)) { code =>
       val requestState = request.getQueryString(State)
       val sessionState = request.session.get(State)
