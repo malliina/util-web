@@ -6,7 +6,7 @@ import com.malliina.play.models.Username
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.crypto.CookieSigner
-import play.api.mvc.{Cookie, CookieBaker, DiscardingCookie, RequestHeader}
+import play.api.mvc._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -24,7 +24,8 @@ object RememberMe {
   val discardingCookie = DiscardingCookie(CookieName)
 }
 
-class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends CookieBaker[UnAuthToken] {
+class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends CookieBaker[UnAuthToken] with UrlEncodedCookieDataCodec {
+  override def path: String = "/"
 
   override val COOKIE_NAME: String = CookieName
   override val emptyCookie: UnAuthToken = UnAuthToken.empty

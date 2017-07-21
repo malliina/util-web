@@ -50,19 +50,19 @@ class BaseSecurity[A <: AuthInfo](auth: AuthBundle[A], val mat: Materializer) {
     auth.authenticator.authenticate(rh)
 
   def authActionAsync(f: A => Future[Result]) =
-    authenticatedLogged(user => Action.async(_ => f(user)))
+    authenticatedLogged((user: A) => Action.async(_ => f(user)))
 
   def authAction(f: A => Result) =
-    authenticatedLogged(user => Action(_ => f(user)))
+    authenticatedLogged((user: A) => Action(_ => f(user)))
 
   def authenticatedLogged(f: A => EssentialAction): EssentialAction =
-    authenticated(user => logged(user, f))
+    authenticated((user: A) => logged(user, f))
 
   def authenticatedLogged(f: => EssentialAction): EssentialAction =
-    authenticatedLogged(_ => f)
+    authenticatedLogged((_: A) => f)
 
   def authenticated(f: => EssentialAction): EssentialAction =
-    authenticated(_ => f)
+    authenticated((_: A) => f)
 
   def authenticated(f: A => EssentialAction): EssentialAction =
     authenticatedAsync(req => authenticate(req), failure => onUnauthorized(failure))(f)
@@ -72,18 +72,11 @@ class BaseSecurity[A <: AuthInfo](auth: AuthBundle[A], val mat: Materializer) {
   def logged(user: A, f: A => EssentialAction): EssentialAction =
     EssentialAction { rh =>
       logAuth(user, rh)
-      f(user)(rh)
+      f(user).apply(rh)
     }
 
   def logAuth(user: A, rh: RequestHeader): Unit = {
-    val qString = rh.rawQueryString
-
-    // removes query string from logged line if it contains a password, assumes password is in 'p' parameter
-    def queryString =
-      if (qString != null && qString.length > 0 && !qString.contains("p=")) s"?$qString"
-      else ""
-
-    log info s"Authenticated user from '${Proxies.realAddress(rh)}' requests '${rh.path}$queryString'."
+    log info s"User '${user.user}' from '${Proxies.realAddress(rh)}' requests '${rh.uri}'."
   }
 
   def logged(action: EssentialAction): EssentialAction =

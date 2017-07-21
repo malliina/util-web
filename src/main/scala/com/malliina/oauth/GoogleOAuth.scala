@@ -6,7 +6,8 @@ import org.apache.commons.codec.binary.Base64
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
-import play.api.libs.ws.ahc.AhcWSClient
+import play.api.libs.ws.JsonBodyReadables.readableAsJson
+import play.api.libs.ws.ahc.StandaloneAhcWSClient
 
 import scala.concurrent.Future
 
@@ -33,7 +34,7 @@ object GoogleOAuth {
 class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer) extends AutoCloseable {
   implicit val ec = mat.executionContext
 
-  implicit val client = AhcWSClient()(mat)
+  implicit val client = StandaloneAhcWSClient()(mat)
 
   def discover(): Future[GoogleOAuthConf] = jsonRequest[GoogleOAuthConf](GoogleOAuth.DiscoverUri)
 
@@ -50,16 +51,16 @@ class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer) ext
       GrantType -> AuthorizationCode
     )
     client.url(tokenEndpoint)
-      .withHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.FORM)
+      .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.FORM)
       .post(query)
-      .map(response => response.json.as[TokenResponse])
+      .map(response => response.body[JsValue].as[TokenResponse])
   }
 
   def resolveEmail(tokenEndpoint: String, code: String, redirectUri: String): Future[String] =
     tokenRequest(tokenEndpoint, code, redirectUri) map email
 
   private def jsonRequest[T: Reads](url: String) =
-    client.url(url).get().map(response => response.json.as[T])
+    client.url(url).get().map(response => response.body[JsValue].as[T])
 
   def authRequestUri(authEndpoint: String, redirectUri: String, state: String) = {
     s"$authEndpoint?$ClientId=$clientId&$ResponseType=$Code&$Scope=openid%20email&$RedirectUri=$redirectUri&$State=$state&$LoginHint=sub"

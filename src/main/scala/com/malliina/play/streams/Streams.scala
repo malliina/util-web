@@ -3,33 +3,19 @@ package com.malliina.play.streams
 import java.io._
 import java.nio.file.Path
 
-import akka.NotUsed
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import com.malliina.storage.{StorageInt, StorageSize}
-import play.api.libs.iteratee.{Cont, Done, Input, Iteratee}
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
+
+object Streams extends Streams
 
 trait Streams {
-  //  /**
-  //   * http://stackoverflow.com/questions/12066993/uploading-file-as-stream-in-play-framework-2-0
-  //   *
-  //   * @return an [[InputStream]] and an [[Iteratee]] such that any bytes consumed by the Iteratee are made available to the InputStream
-  //   */
-  //  def joinedStream()(implicit ec: ExecutionContext): (InputStream, Iteratee[Array[Byte], OutputStream]) = {
-  //    val outStream = new PipedOutputStream()
-  //    val inStream = new PipedInputStream(outStream)
-  //    val iteratee = fromOutputStream(outStream).map(os => {
-  //      os.close()
-  //      os
-  //    })
-  //    (inStream, iteratee)
-  //  }
   /**
     * http://stackoverflow.com/questions/12066993/uploading-file-as-stream-in-play-framework-2-0
     *
-    * @return an [[InputStream]] and an [[Iteratee]] such that any bytes consumed by the Iteratee are made available to the InputStream
+    * @return an [[InputStream]] and a [[Sink]] such that any bytes consumed by the Iteratee are made available to the InputStream
     */
   def joinedStream(inputBuffer: StorageSize = 10.megs)(implicit ec: ExecutionContext): (PipedInputStream, Sink[ByteString, Future[Long]]) = {
     val outStream = new PipedOutputStream()
@@ -48,7 +34,7 @@ trait Streams {
   }
 
   /**
-    * @return an [[Iteratee]] that writes any consumed bytes to `os`
+    * @return a [[Sink]] that writes any consumed bytes to `os`
     */
   def streamWriter(outStreams: OutputStream*)(implicit ec: ExecutionContext): Sink[ByteString, Future[Long]] =
     byteConsumer { bytes =>
@@ -66,9 +52,9 @@ trait Streams {
     }
 
   /**
-    * @return an [[Iteratee]] that writes any consumed bytes to `os`
+    * @return a [[Sink]] that writes any consumed bytes to `os`
     */
-  def fromOutputStream(os: OutputStream)(implicit ec: ExecutionContext) =
+  def fromOutputStream(os: OutputStream)(implicit ec: ExecutionContext): Sink[ByteString, Future[OutputStream]] =
     Sink.fold[OutputStream, ByteString](os) { (state, bytes) =>
       state.write(bytes.asByteBuffer.array())
       state
@@ -80,5 +66,3 @@ trait Streams {
     */
   def fileWriter2(file: Path) = FileIO.toFile(file.toFile)
 }
-
-object Streams extends Streams

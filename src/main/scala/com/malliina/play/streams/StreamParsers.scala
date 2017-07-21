@@ -6,6 +6,7 @@ import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import com.malliina.storage.StorageSize
+import play.api.http.HttpErrorHandler
 import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData._
 import play.api.mvc.{BodyParser, MultipartFormData}
@@ -19,24 +20,24 @@ trait StreamParsers {
     *
     * @param dest channel to push to
     */
-  def multiPartChannelStreaming(dest: SourceQueue[ByteString], maxLength: StorageSize)(implicit mat: Materializer): BodyParser[MultipartFormData[Long]] =
-    multiPartByteStreaming(bytes => (dest offer bytes).map(_ => ())(mat.executionContext), maxLength)
+  def multiPartChannelStreaming(dest: SourceQueue[ByteString], maxLength: StorageSize, errorHandler: HttpErrorHandler)(implicit mat: Materializer): BodyParser[MultipartFormData[Long]] =
+    multiPartByteStreaming(bytes => (dest offer bytes).map(_ => ())(mat.executionContext), maxLength, errorHandler)
 
-  def multiPartByteStreaming(f: ByteString => Future[Unit], maxLength: StorageSize)(implicit mat: Materializer): BodyParser[MultipartFormData[Long]] =
-    Multipart.multipartParser(maxLength.toBytes.toInt, byteArrayPartConsumer(f))
+  def multiPartByteStreaming(f: ByteString => Future[Unit], maxLength: StorageSize, errorHandler: HttpErrorHandler)(implicit mat: Materializer): BodyParser[MultipartFormData[Long]] =
+    Multipart.multipartParser(maxLength.toBytes.toInt, byteArrayPartConsumer(f), errorHandler)
 
   /** Parses a multipart form-data upload in such a way that any parsed bytes are made available to the returned [[InputStream]].
     *
     * @return
     */
-  def multiPartStreamPiping(maxLength: StorageSize)(implicit mat: Materializer): (InputStream, BodyParser[MultipartFormData[Long]]) = {
+  def multiPartStreamPiping(maxLength: StorageSize, errorHandler: HttpErrorHandler)(implicit mat: Materializer): (InputStream, BodyParser[MultipartFormData[Long]]) = {
     val (inStream, iteratee) = Streams.joinedStream()(mat.executionContext)
-    val parser = multiPartBodyParser(iteratee, maxLength)
+    val parser = multiPartBodyParser(iteratee, maxLength, errorHandler)
     (inStream, parser)
   }
 
-  def multiPartBodyParser[T](sink: Sink[ByteString, Future[T]], maxLength: StorageSize)(implicit mat: Materializer): BodyParser[MultipartFormData[T]] =
-    Multipart.multipartParser(maxLength.toBytes.toInt, byteArrayPartHandler(sink)(mat.executionContext))
+  def multiPartBodyParser[T](sink: Sink[ByteString, Future[T]], maxLength: StorageSize, errorHandler: HttpErrorHandler)(implicit mat: Materializer): BodyParser[MultipartFormData[T]] =
+    Multipart.multipartParser(maxLength.toBytes.toInt, byteArrayPartHandler(sink)(mat.executionContext), errorHandler)
 
   /** Builds a part handler that applies the supplied function to the array of bytes as they are received.
     *

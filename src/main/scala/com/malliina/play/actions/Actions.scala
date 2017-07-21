@@ -11,14 +11,14 @@ trait Actions {
   /**
     * Executes the work on a large thread pool suitable for synchronous IO.
     */
-  class SyncAction(actorSystem: ActorSystem) extends DefaultActionBuilder {
+  abstract class SyncAction(actorSystem: ActorSystem) extends DefaultActionBuilder[AnyContent] {
     override protected val executionContext = new ExecutionContexts(actorSystem).synchronousIO
   }
 
   /**
     * Default action builder, override what you need.
     */
-  abstract class DefaultActionBuilder extends ActionBuilder[Request] {
+  abstract class DefaultActionBuilder[B] extends ActionBuilder[Request, B] {
     def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]): Future[Result] =
       block(request)
   }
