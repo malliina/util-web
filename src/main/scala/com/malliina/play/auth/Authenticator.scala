@@ -95,7 +95,9 @@ object Authenticator {
   type Outcome[+T] = Either[AuthFailure, T]
 
   def apply[T](auth: RequestHeader => Future[Outcome[T]]): Authenticator[T] =
-    (rh: RequestHeader) => auth(rh)
+    new Authenticator[T] {
+      override def authenticate(rh: RequestHeader) = auth(rh)
+    }
 
   def negative[T]: Authenticator[T] = apply { rh =>
     Future.successful(Left(InvalidCredentials(rh)))
