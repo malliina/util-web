@@ -64,5 +64,5 @@ trait Streams {
     * @param file destination file
     * @return a [[Sink]] that writes bytes to `file`, keeping track of the number of bytes written
     */
-  def fileWriter2(file: Path) = FileIO.toFile(file.toFile)
+  def fileWriter(file: Path) = FileIO.toPath(file)
 }

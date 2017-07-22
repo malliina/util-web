@@ -13,6 +13,7 @@ lazy val utilPlay = PlayProject.library("util-play")
 scalaVersion := "2.12.2"
 crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 releaseCrossBuild := true
+scalacOptions := Seq("-unchecked", "-deprecation")
 gitUserName := "malliina"
 developerName := "Michael Skogberg"
 organization := "com.malliina"

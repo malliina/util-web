@@ -22,11 +22,12 @@ object BaseSecurity {
 
 /**
   *
-  * @param mat  materilalizer
-  * @param auth authenticator
+  * @param actions action builder
+  * @param mat     materilalizer
+  * @param auth    authenticator
   * @tparam A type of authenticated user
   */
-class BaseSecurity[A <: AuthInfo](auth: AuthBundle[A], val mat: Materializer) {
+class BaseSecurity[A <: AuthInfo](actions: DefaultActionBuilder, auth: AuthBundle[A], val mat: Materializer) {
   implicit val ec = mat.executionContext
 
   /** Called when an unauthorized request has been made. Also
@@ -50,10 +51,10 @@ class BaseSecurity[A <: AuthInfo](auth: AuthBundle[A], val mat: Materializer) {
     auth.authenticator.authenticate(rh)
 
   def authActionAsync(f: A => Future[Result]) =
-    authenticatedLogged((user: A) => Action.async(_ => f(user)))
+    authenticatedLogged((user: A) => actions.async(_ => f(user)))
 
   def authAction(f: A => Result) =
-    authenticatedLogged((user: A) => Action(_ => f(user)))
+    authenticatedLogged((user: A) => actions(_ => f(user)))
 
   def authenticatedLogged(f: A => EssentialAction): EssentialAction =
     authenticated((user: A) => logged(user, f))

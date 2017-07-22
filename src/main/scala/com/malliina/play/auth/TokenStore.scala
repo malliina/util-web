@@ -2,9 +2,11 @@ package com.malliina.play.auth
 
 import com.malliina.play.models.Username
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait TokenStore {
+  implicit def ec: ExecutionContext
+
   def persist(token: Token): Future[Unit]
 
   def remove(token: Token): Future[Unit]

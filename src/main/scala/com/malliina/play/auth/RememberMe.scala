@@ -4,11 +4,10 @@ import com.malliina.play.auth.RememberMe._
 import com.malliina.play.http.AuthedRequest
 import com.malliina.play.models.Username
 import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.crypto.CookieSigner
 import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
@@ -24,7 +23,10 @@ object RememberMe {
   val discardingCookie = DiscardingCookie(CookieName)
 }
 
-class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends CookieBaker[UnAuthToken] with UrlEncodedCookieDataCodec {
+class RememberMe(store: TokenStore, val cookieSigner: CookieSigner)(implicit ec: ExecutionContext)
+  extends CookieBaker[UnAuthToken]
+    with UrlEncodedCookieDataCodec {
+
   override def path: String = "/"
 
   override val COOKIE_NAME: String = CookieName
@@ -51,7 +53,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner) extends Cook
       } yield UnAuthToken(Username(u), s.toLong, t.toLong)
     maybeToken getOrElse UnAuthToken.empty
   } catch {
-    case nfe: NumberFormatException => UnAuthToken.empty
+    case _: NumberFormatException => UnAuthToken.empty
   }
 
   /**

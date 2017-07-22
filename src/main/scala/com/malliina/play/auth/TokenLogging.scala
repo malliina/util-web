@@ -2,7 +2,6 @@ package com.malliina.play.auth
 
 import com.malliina.play.auth.TokenLogging.log
 import play.api.Logger
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import scala.concurrent.Future
 

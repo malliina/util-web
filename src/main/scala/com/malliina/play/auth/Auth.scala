@@ -6,6 +6,8 @@ import play.api.http.HeaderNames
 import play.api.mvc.{RequestHeader, Security}
 
 object Auth {
+  val DefaultSessionKey = "username"
+
   def basicCredentials(request: RequestHeader): Option[BasicCredentials] = {
     authHeaderParser(request) { decoded =>
       decoded.split(":", 2) match {
@@ -45,6 +47,6 @@ object Auth {
   }
 
   def authenticateFromSession(rh: RequestHeader,
-                              sessionKey: String = Security.username): Option[Username] =
+                              sessionKey: String = DefaultSessionKey): Option[Username] =
     rh.session.get(sessionKey).map(Username.apply)
 }

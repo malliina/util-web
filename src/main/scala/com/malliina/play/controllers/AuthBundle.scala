@@ -6,9 +6,10 @@ import com.malliina.play.models.{AuthInfo, Username}
 import play.api.Logger
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{Call, RequestHeader, Result, Results}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-trait AuthBundle[U] {
+import scala.concurrent.ExecutionContext
+
+trait AuthBundle[+U] {
   def authenticator: Authenticator[U]
 
   def onUnauthorized(failure: AuthFailure): Result
@@ -19,9 +20,9 @@ object AuthBundle {
 
   def default[U](auth: Authenticator[U]): AuthBundle[U] =
     new AuthBundle[U] {
-      override val authenticator = auth
+      override val authenticator: Authenticator[U] = auth
 
-      override def onUnauthorized(failure: AuthFailure) = {
+      override def onUnauthorized(failure: AuthFailure): Result = {
         val rh = failure.rh
         val ip = Proxies.realAddress(rh)
         val resource = rh.path
@@ -30,15 +31,15 @@ object AuthBundle {
       }
     }
 
-  def forOAuth(ctrl: OAuthControl): AuthBundle[AuthInfo] =
-    oauth((req, user) => AuthedRequest(user, req), ctrl.startOAuth, ctrl.sessionUserKey)
+  def forOAuth(ctrl: OAuthControl): AuthBundle[AuthedRequest] =
+    oauth[AuthedRequest]((req, user) => AuthedRequest(user, req), ctrl.startOAuth, ctrl.sessionUserKey)(ctrl.mat.executionContext)
 
-  def oauthUser(initiateFlow: Call, sessionKey: String): AuthBundle[Username] =
+  def oauthUser(initiateFlow: Call, sessionKey: String)(implicit ec: ExecutionContext): AuthBundle[Username] =
     oauth[Username]((_, u) => u, initiateFlow, sessionKey)
 
   def oauth[T](map: (RequestHeader, Username) => T,
                initiateFlow: Call,
-               sessionKey: String): AuthBundle[T] =
+               sessionKey: String)(implicit ec: ExecutionContext): AuthBundle[T] =
     new AuthBundle[T] {
       override val authenticator: Authenticator[T] = UserAuthenticator.session(sessionKey)
         .transform((r, u) => Right(map(r, u)))

@@ -23,7 +23,7 @@ object UserAuthenticator {
   def default(isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext): Authenticator[Username] =
     Authenticator.anyOne(session(), header(isValid), query(isValid))
 
-  def session(key: String = Security.username): UserAuthenticator =
+  def session(key: String = Auth.DefaultSessionKey): UserAuthenticator =
     apply { rh =>
       val outcome = Auth.authenticateFromSession(rh, key).toRight(MissingCredentials(rh))
       Future.successful(outcome)
@@ -71,7 +71,7 @@ object UserAuthenticator {
 /**
   * @tparam T type of successful auth, for example a username
   */
-trait Authenticator[T] {
+trait Authenticator[+T] {
   def authenticate(rh: RequestHeader): Future[Outcome[T]]
 
   def map[U](f: T => U)(implicit ec: ExecutionContext): Authenticator[U] =
@@ -92,12 +92,10 @@ trait Authenticator[T] {
 }
 
 object Authenticator {
-  type Outcome[T] = Either[AuthFailure, T]
+  type Outcome[+T] = Either[AuthFailure, T]
 
   def apply[T](auth: RequestHeader => Future[Outcome[T]]): Authenticator[T] =
-    new Authenticator[T] {
-      override def authenticate(rh: RequestHeader) = auth(rh)
-    }
+    (rh: RequestHeader) => auth(rh)
 
   def negative[T]: Authenticator[T] = apply { rh =>
     Future.successful(Left(InvalidCredentials(rh)))
