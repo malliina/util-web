@@ -1,4 +1,5 @@
 import com.malliina.sbtplay.PlayProject
+import com.malliina.sbtutils.SbtUtils
 import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import play.core.PlayVersion
 
@@ -8,7 +9,7 @@ val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
 
-lazy val utilPlay = PlayProject.library("util-play")
+lazy val utilPlay = PlayProject.library("util-play").settings(SbtUtils.mavenSettings: _*)
 
 scalaVersion := "2.12.2"
 crossScalaVersions := Seq("2.11.11", scalaVersion.value)
