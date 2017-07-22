@@ -27,7 +27,7 @@ object BaseSecurity {
   * @param auth    authenticator
   * @tparam A type of authenticated user
   */
-class BaseSecurity[A <: AuthInfo](actions: DefaultActionBuilder, auth: AuthBundle[A], val mat: Materializer) {
+class BaseSecurity[A <: AuthInfo](actions: ActionBuilder[Request, AnyContent], auth: AuthBundle[A], val mat: Materializer) {
   implicit val ec = mat.executionContext
 
   /** Called when an unauthorized request has been made. Also
