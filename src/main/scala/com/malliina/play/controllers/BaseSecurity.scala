@@ -50,6 +50,8 @@ class BaseSecurity[A <: AuthInfo](actions: ActionBuilder[Request, AnyContent], a
   def authenticate(rh: RequestHeader): Future[Either[AuthFailure, A]] =
     auth.authenticator.authenticate(rh)
 
+  // TODO make an ActionBuilder of A instead, then remove dependency on ActionBuilder in this class
+
   def authActionAsync(f: A => Future[Result]) =
     authenticatedLogged((user: A) => actions.async(_ => f(user)))
 
