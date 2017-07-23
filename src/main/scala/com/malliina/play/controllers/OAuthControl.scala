@@ -22,7 +22,7 @@ import scala.concurrent.Future
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-abstract class OAuthControl(actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, val mat: Materializer)
+abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, val mat: Materializer)
   extends AutoCloseable {
 
   def this(actions: ActionBuilder[Request, AnyContent], mat: Materializer) = this(actions, GoogleOAuthReader.load, mat)
