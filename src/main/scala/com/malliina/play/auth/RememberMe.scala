@@ -4,6 +4,7 @@ import com.malliina.play.auth.RememberMe._
 import com.malliina.play.http.AuthedRequest
 import com.malliina.play.models.Username
 import play.api.Logger
+import play.api.http.{JWTConfiguration, SecretConfiguration}
 import play.api.libs.crypto.CookieSigner
 import play.api.mvc._
 
@@ -23,14 +24,14 @@ object RememberMe {
   val discardingCookie = DiscardingCookie(CookieName)
 }
 
-class RememberMe(store: TokenStore, val cookieSigner: CookieSigner)(implicit ec: ExecutionContext)
+class RememberMe(store: TokenStore, val cookieSigner: CookieSigner, val secretConfiguration: SecretConfiguration)(implicit ec: ExecutionContext)
   extends CookieBaker[UnAuthToken]
-    with UrlEncodedCookieDataCodec {
-
-  override def path: String = "/"
-
+    with JWTCookieDataCodec {
+  override val jwtConfiguration = JWTConfiguration()
+  override val path: String = "/"
   override val COOKIE_NAME: String = CookieName
   override val emptyCookie: UnAuthToken = UnAuthToken.empty
+  override val maxAge: Option[Int] = Some(365.days.toSeconds.toInt)
 
   override protected def serialize(cookie: UnAuthToken): Map[String, String] = Map(
     UserIdName -> cookie.user.name,
@@ -70,7 +71,6 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner)(implicit ec:
     Option(maybeEmptyToken).filterNot(_.isEmpty)
   }
 
-  override def maxAge: Option[Int] = Some(365.days.toSeconds.toInt)
 
   /**
     * @return the authenticated user, along with an optional cookie to include
