@@ -1,11 +1,12 @@
 package com.malliina.oauth
 
+import com.malliina.play.http.FullUrl
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads}
 
 case class GoogleOAuthConf(issuer: String,
-                           authorizationEndpoint: String,
-                           tokenEndpoint: String,
+                           authorizationEndpoint: FullUrl,
+                           tokenEndpoint: FullUrl,
                            userInfoEndpoint: String,
                            revocationEndpoint: String,
                            jwksUri: String,
@@ -19,8 +20,8 @@ case class GoogleOAuthConf(issuer: String,
 object GoogleOAuthConf {
   implicit val jsonReader: Reads[GoogleOAuthConf] = (
     (JsPath \ "issuer").read[String] and
-      (JsPath \ "authorization_endpoint").read[String] and
-      (JsPath \ "token_endpoint").read[String] and
+      (JsPath \ "authorization_endpoint").read[FullUrl] and
+      (JsPath \ "token_endpoint").read[FullUrl] and
       (JsPath \ "userinfo_endpoint").read[String] and
       (JsPath \ "revocation_endpoint").read[String] and
       (JsPath \ "jwks_uri").read[String] and

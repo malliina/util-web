@@ -32,7 +32,7 @@ object AuthBundle {
     }
 
   def forOAuth(ctrl: OAuthControl): AuthBundle[AuthedRequest] =
-    oauth[AuthedRequest]((req, user) => AuthedRequest(user, req), ctrl.startOAuth, ctrl.sessionUserKey)(ctrl.mat.executionContext)
+    oauth[AuthedRequest]((req, user) => AuthedRequest(user, req), ctrl.startOAuth, ctrl.sessionUserKey)(ctrl.ec)
 
   def oauthUser(initiateFlow: Call, sessionKey: String)(implicit ec: ExecutionContext): AuthBundle[Username] =
     oauth[Username]((_, u) => u, initiateFlow, sessionKey)

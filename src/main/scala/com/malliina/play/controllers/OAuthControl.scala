@@ -5,15 +5,16 @@ import java.security.SecureRandom
 
 import akka.stream.Materializer
 import com.malliina.oauth.GoogleOAuth.{Code, State}
-import com.malliina.oauth.{GoogleOAuth, GoogleOAuthCredentials, GoogleOAuthReader}
+import com.malliina.oauth.{GoogleOAuth, GoogleOAuthCredentials, GoogleOAuthLike, GoogleOAuthReader}
 import com.malliina.play.controllers.OAuthControl.log
-import com.malliina.play.http.Proxies
+import com.malliina.play.http.FullUrl
 import com.malliina.play.json.JsonMessages
+import com.malliina.play.models.Email
 import play.api.Logger
 import play.api.mvc.Results.{Redirect, Unauthorized}
 import play.api.mvc._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 /** A template to handle the Google OAuth2 authentication flow.
   *
@@ -22,19 +23,21 @@ import scala.concurrent.Future
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, val mat: Materializer)
+abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], val oauth: GoogleOAuthLike, val ec: ExecutionContext)
   extends AutoCloseable {
+  def this(actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, mat: Materializer) =
+    this(actions, new GoogleOAuth(creds.clientId, creds.clientSecret, mat), mat.executionContext)
+  def this(actions: ActionBuilder[Request, AnyContent], mat: Materializer) =
+    this(actions, GoogleOAuthReader.load, mat)
 
-  def this(actions: ActionBuilder[Request, AnyContent], mat: Materializer) = this(actions, GoogleOAuthReader.load, mat)
 
-  implicit val ec = mat.executionContext
-  val oauth = new GoogleOAuth(creds.clientId, creds.clientSecret, mat)
+  implicit val exec = ec
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."
 
   def sessionUserKey = "username"
 
-  def isAuthorized(email: String): Boolean
+  def isAuthorized(email: Email): Boolean
 
   def startOAuth: Call
 
@@ -44,8 +47,8 @@ abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], cre
 
   def ejectCall: Call
 
-  def redirURL(request: RequestHeader): String =
-    oAuthRedir.absoluteURL(Proxies.isSecure(request))(request)
+  def redirURL(request: RequestHeader): FullUrl =
+    FullUrl(oAuthRedir, request)
 
   def discover() = oauth.discover()
 
@@ -54,7 +57,7 @@ abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], cre
       // TODO document
       val state = new BigInteger(130, new SecureRandom()).toString(32)
       log debug s"Redirecting user to Google OAuth..."
-      Results.Redirect(oauth.authRequestUri(conf.authorizationEndpoint, redirURL(request), state))
+      Results.Redirect(oauth.authRequestUri(conf.authorizationEndpoint, redirURL(request), state).url)
         .withSession(State -> state)
     }
   }
@@ -70,7 +73,7 @@ abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], cre
           oauth.resolveEmail(conf.tokenEndpoint, code, redirURL(request)) map { email =>
             if (isAuthorized(email)) {
               log info s"User '$email' logged in."
-              Redirect(onOAuthSuccess).withSession(sessionUserKey -> email)
+              Redirect(onOAuthSuccess).withSession(sessionUserKey -> email.email)
             } else {
               log warn s"User '$email' authenticated successfully but is not authorized."
               onOAuthUnauthorized(email)
@@ -85,13 +88,13 @@ abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], cre
     }
   }
 
-  def onOAuthUnauthorized(email: String) = ejectWith(unauthorizedMessage(email))
+  def onOAuthUnauthorized(email: Email) = ejectWith(unauthorizedMessage(email))
 
   def eject: Result = ejectWith(logoutMessage)
 
   def ejectWith(message: String) = Redirect(ejectCall).flashing(messageKey -> message)
 
-  def unauthorizedMessage(email: String) = s"Hi $email, you're not authorized."
+  def unauthorizedMessage(email: Email) = s"Hi $email, you're not authorized."
 
   def noConsentFailure = {
     val msg = "The user did not consent to the OAuth request."
