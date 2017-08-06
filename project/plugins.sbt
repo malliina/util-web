@@ -15,5 +15,5 @@ def ivyRepo(name: String, urlString: String) =
 
 Seq(
   "com.malliina" %% "sbt-utils" % "0.6.3",
-  "com.malliina" %% "sbt-play" % "1.0.0"
+  "com.malliina" %% "sbt-play" % "1.1.0"
 ) map addSbtPlugin

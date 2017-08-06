@@ -11,7 +11,7 @@ val malliinaGroup = "com.malliina"
 
 lazy val utilPlay = PlayProject.library("util-play").settings(SbtUtils.mavenSettings: _*)
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 crossScalaVersions := Seq("2.11.11", scalaVersion.value)
 releaseCrossBuild := true
 scalacOptions := Seq("-unchecked", "-deprecation")
@@ -24,8 +24,8 @@ publishArtifact in Test := true
 libraryDependencies ++= Seq(
   playGroup %% "play" % playVersion,
   playGroup %% "play-netty-server" % playVersion,
-  playGroup %% "play-ahc-ws-standalone" % "1.0.1",
-  playGroup %% "play-ws-standalone-json" % "1.0.1",
+  playGroup %% "play-ahc-ws-standalone" % "1.0.4",
+  playGroup %% "play-ws-standalone-json" % "1.0.4",
   malliinaGroup %% "util" % "2.6.0",
   malliinaGroup %% "logback-rx" % "1.2.0",
   httpGroup % "httpclient" % httpVersion,

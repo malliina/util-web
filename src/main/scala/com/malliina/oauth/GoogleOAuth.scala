@@ -7,7 +7,8 @@ import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
 import play.api.libs.ws.JsonBodyReadables.readableAsJson
-import play.api.libs.ws.ahc.StandaloneAhcWSClient
+import play.api.libs.ws.StandaloneWSClient
+import play.api.libs.ws.ahc.{AhcWSClientConfig, StandaloneAhcWSClient}
 
 import scala.concurrent.Future
 
@@ -31,10 +32,13 @@ object GoogleOAuth {
 /**
   * @see https://developers.google.com/accounts/docs/OAuth2Login
   */
-class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer) extends AutoCloseable {
+class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer, clientConf: AhcWSClientConfig = AhcWSClientConfig())
+  extends AutoCloseable {
+  def this(creds: GoogleOAuthCredentials, mat: Materializer) = this(creds.clientId, creds.clientSecret, mat)
+
   implicit val ec = mat.executionContext
 
-  implicit val client = StandaloneAhcWSClient()(mat)
+  implicit val client: StandaloneWSClient = StandaloneAhcWSClient(clientConf)(mat)
 
   def discover(): Future[GoogleOAuthConf] = jsonRequest[GoogleOAuthConf](GoogleOAuth.DiscoverUri)
 
