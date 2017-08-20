@@ -1,6 +1,6 @@
 package com.malliina.oauth
 
-import com.malliina.play.http.FullUrl
+import com.malliina.http.FullUrl
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsPath, Reads}
 

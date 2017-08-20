@@ -4,10 +4,11 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import akka.stream.Materializer
+import com.malliina.http.FullUrl
 import com.malliina.oauth.GoogleOAuth.{Code, State}
 import com.malliina.oauth.{GoogleOAuth, GoogleOAuthCredentials, GoogleOAuthLike, GoogleOAuthReader}
 import com.malliina.play.controllers.OAuthControl.log
-import com.malliina.play.http.FullUrl
+import com.malliina.play.http.FullUrls
 import com.malliina.play.json.JsonMessages
 import com.malliina.play.models.Email
 import play.api.Logger
@@ -23,7 +24,9 @@ import scala.concurrent.{ExecutionContext, Future}
   * 3) Google redirects user to redirResponse() after consent
   * 4) redirResponse() extracts email, authenticates
   */
-abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], val oauth: GoogleOAuthLike, val ec: ExecutionContext)
+abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent],
+                            val oauth: GoogleOAuthLike,
+                            val ec: ExecutionContext)
   extends AutoCloseable {
   def this(actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, mat: Materializer) =
     this(actions, new GoogleOAuth(creds.clientId, creds.clientSecret, mat), mat.executionContext)
@@ -48,7 +51,7 @@ abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent], val
   def ejectCall: Call
 
   def redirURL(request: RequestHeader): FullUrl =
-    FullUrl(oAuthRedir, request)
+    FullUrls(oAuthRedir, request)
 
   def discover() = oauth.discover()
 

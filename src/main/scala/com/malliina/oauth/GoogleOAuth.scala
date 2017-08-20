@@ -2,7 +2,7 @@ package com.malliina.oauth
 
 import akka.stream.Materializer
 import com.malliina.oauth.GoogleOAuth._
-import com.malliina.play.http.FullUrl
+import com.malliina.http.FullUrl
 import com.malliina.play.models.Email
 import org.apache.commons.codec.binary.Base64
 import play.api.Logger

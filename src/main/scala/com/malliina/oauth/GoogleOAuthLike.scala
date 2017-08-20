@@ -1,6 +1,6 @@
 package com.malliina.oauth
 
-import com.malliina.play.http.FullUrl
+import com.malliina.http.FullUrl
 import com.malliina.play.models.Email
 
 import scala.concurrent.Future
