@@ -23,7 +23,6 @@ publishArtifact in Test := true
 
 libraryDependencies ++= Seq(
   playGroup %% "play" % playVersion,
-  playGroup %% "play-netty-server" % playVersion,
   playGroup %% "play-ahc-ws-standalone" % "1.0.4",
   playGroup %% "play-ws-standalone-json" % "1.0.4",
   malliinaGroup %% "util" % "2.8.2",

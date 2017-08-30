@@ -1,14 +1,11 @@
 package com.malliina.play
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 import com.malliina.file.FileUtilities
-import com.malliina.play.PlayLifeCycle.log
 import com.malliina.security.KeyStores
 import com.malliina.util.{Util, Utils}
 import play.api.Logger
-import play.api.routing.Router
-import play.core.server.{NettyServer, ServerConfig}
 
 /** Starts Play Framework 2, does not create a RUNNING_PID file.
   *
@@ -22,7 +19,7 @@ trait PlayLifeCycle extends KeyStores {
   protected val defaultHttpPort = 9000
   protected val defaultHttpAddress = "0.0.0.0"
 
-  var nettyServer: Option[NettyServer] = None
+//  var nettyServer: Option[NettyServer] = None
 
   def isHttpAvailable = tryReadInt(httpPortKey).isDefined
 
@@ -30,33 +27,33 @@ trait PlayLifeCycle extends KeyStores {
 
   def appName: String
 
-  def start(rs: Router.Routes) {
-    FileUtilities.basePath = Paths get sys.props.get(s"$appName.home").getOrElse(sys.props("user.dir"))
-    log info s"Starting $appName... app home: ${FileUtilities.basePath}"
-    sys.props ++= conformize(readConfFile(appName))
-    validateKeyStoreIfSpecified()
-
-    /**
-      * NettyServer.createServer insists on writing a RUNNING_PID file.
-      * Fuck that.
-      */
-    nettyServer = Some(createServer(rs))
-  }
+//  def start(rs: Router.Routes) {
+//    FileUtilities.basePath = Paths get sys.props.get(s"$appName.home").getOrElse(sys.props("user.dir"))
+//    log info s"Starting $appName... app home: ${FileUtilities.basePath}"
+//    sys.props ++= conformize(readConfFile(appName))
+//    validateKeyStoreIfSpecified()
+//
+//    /**
+//      * NettyServer.createServer insists on writing a RUNNING_PID file.
+//      * Fuck that.
+//      */
+//    nettyServer = Some(createServer(rs))
+//  }
 
   protected def tryReadInt(key: String) =
     sys.props.get(key).filter(_ != "disabled").flatMap(ps => Utils.opt[Int, NumberFormatException](Integer.parseInt(ps)))
 
-  protected def createServer(rs: Router.Routes): NettyServer = {
-    val serverConfig = ServerConfig(
-      classLoader = this.getClass.getClassLoader,
-      rootDir = FileUtilities.basePath.toFile,
-      port = tryReadInt(httpPortKey),
-      sslPort = tryReadInt(httpsPortKey),
-      address = sys.props.get(httpAddressKey) getOrElse defaultHttpAddress)
-    val server = NettyServer.fromRouter(serverConfig)(rs)
-    Util.addShutdownHook(server.stop())
-    server
-  }
+//  protected def createServer(rs: Router.Routes): NettyServer = {
+//    val serverConfig = ServerConfig(
+//      classLoader = this.getClass.getClassLoader,
+//      rootDir = FileUtilities.basePath.toFile,
+//      port = tryReadInt(httpPortKey),
+//      sslPort = tryReadInt(httpsPortKey),
+//      address = sys.props.get(httpAddressKey) getOrElse defaultHttpAddress)
+//    val server = NettyServer.fromRouter(serverConfig)(rs)
+//    Util.addShutdownHook(server.stop())
+//    server
+//  }
 
   /**
     * Reads a file named `confNameWithoutExtension`.conf if it exists.
