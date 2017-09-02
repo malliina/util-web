@@ -7,7 +7,7 @@ import com.malliina.concurrent.ExecutionContexts
 import com.malliina.file.FileUtilities
 import com.malliina.play.PlayLifeCycle.log
 import com.malliina.rmi.{RmiClient, RmiServer, RmiUtil}
-import com.malliina.security.KeyStores
+import com.malliina.security.KeyStores.{keyStoreKey, validateKeyStoreIfSpecified}
 import com.malliina.util.Util
 import play.api.Logger
 import play.core.server.{ProdServerStart, RealServerProcess, ReloadableServer}
@@ -18,7 +18,7 @@ import scala.concurrent.Future
   *
   * An alternative to the official ways to start Play, this integrates better with my init scripts.
   */
-trait PlayLifeCycle extends KeyStores {
+abstract class PlayLifeCycle(appName: String, registryPort: Int) {
   protected val (httpPortKey, httpsPortKey, httpAddressKey) =
     ("http.port", "https.port", "http.address")
   protected val defaultHttpPort = 9000
@@ -26,8 +26,6 @@ trait PlayLifeCycle extends KeyStores {
 
   var server: Option[ReloadableServer] = None
   var rmiServer: Option[RmiServer] = None
-
-  def appName: String
 
   def main(args: Array[String]) {
     args.headOption match {
@@ -58,7 +56,7 @@ trait PlayLifeCycle extends KeyStores {
     server = Some(s)
     // Init RMI
     RmiUtil.initSecurityPolicy()
-    rmiServer = Some(new RmiServer() {
+    rmiServer = Some(new RmiServer(registryPort) {
       override def onClosed(): Unit = stop()
     })
   }
