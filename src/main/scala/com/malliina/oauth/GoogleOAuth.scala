@@ -1,13 +1,14 @@
 package com.malliina.oauth
 
 import akka.stream.Materializer
-import com.malliina.oauth.GoogleOAuth._
 import com.malliina.http.FullUrl
+import com.malliina.oauth.GoogleOAuth._
 import com.malliina.play.models.Email
 import org.apache.commons.codec.binary.Base64
 import play.api.Logger
 import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
+import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
 import play.api.libs.ws.JsonBodyReadables.readableAsJson
 import play.api.libs.ws.StandaloneWSClient
 import play.api.libs.ws.ahc.{AhcWSClientConfig, StandaloneAhcWSClient}
@@ -80,5 +81,5 @@ class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer, cli
     Json.parse(claims).as[IdToken].email
   }
 
-  def close() = client.close()
+  def close(): Unit = client.close()
 }
