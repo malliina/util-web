@@ -9,7 +9,7 @@ val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
 
-lazy val utilPlay = PlayProject.library("util-play").settings(SbtUtils.mavenSettings: _*)
+lazy val utilPlay = PlayProject.library("util-play").settings(SbtUtils.mavenSettings: _*).disablePlugins(BintrayPlugin)
 
 scalaVersion := "2.12.4"
 crossScalaVersions := Seq("2.11.11", scalaVersion.value)
@@ -19,6 +19,7 @@ gitUserName := "malliina"
 developerName := "Michael Skogberg"
 organization := "com.malliina"
 
+publishTo := Option(Opts.resolver.sonatypeStaging)
 publishArtifact in Test := true
 
 libraryDependencies ++= Seq(
