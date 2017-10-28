@@ -3,10 +3,9 @@ package com.malliina.play.controllers
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import akka.stream.Materializer
 import com.malliina.http.FullUrl
 import com.malliina.oauth.GoogleOAuth.{Code, State}
-import com.malliina.oauth.{GoogleOAuth, GoogleOAuthCredentials, GoogleOAuthLike, GoogleOAuthReader}
+import com.malliina.oauth._
 import com.malliina.play.controllers.OAuthControl.log
 import com.malliina.play.http.FullUrls
 import com.malliina.play.json.JsonMessages
@@ -15,7 +14,7 @@ import play.api.Logger
 import play.api.mvc.Results.{Redirect, Unauthorized}
 import play.api.mvc._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 /** A template to handle the Google OAuth2 authentication flow.
   *
@@ -25,16 +24,15 @@ import scala.concurrent.{ExecutionContext, Future}
   * 4) redirResponse() extracts email, authenticates
   */
 abstract class OAuthControl(val actions: ActionBuilder[Request, AnyContent],
-                            val oauth: GoogleOAuthLike,
-                            val ec: ExecutionContext)
+                            val oauth: GoogleOAuthLike)
   extends AutoCloseable {
-  def this(actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthCredentials, mat: Materializer) =
-    this(actions, new GoogleOAuth(creds.clientId, creds.clientSecret, mat), mat.executionContext)
-  def this(actions: ActionBuilder[Request, AnyContent], mat: Materializer) =
-    this(actions, GoogleOAuthReader.load, mat)
+  def this(actions: ActionBuilder[Request, AnyContent], creds: GoogleOAuthKey) =
+    this(actions, GoogleOAuth(creds))
+  def this(actions: ActionBuilder[Request, AnyContent]) =
+    this(actions, GoogleOAuthReader.load)
 
+  implicit val ec = oauth.ec
 
-  implicit val exec = ec
   val messageKey = "message"
   val logoutMessage = "You have successfully signed out."
 

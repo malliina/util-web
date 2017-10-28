@@ -1,19 +1,14 @@
 package com.malliina.oauth
 
-import akka.stream.Materializer
-import com.malliina.http.FullUrl
+import com.malliina.concurrent.ExecutionContexts
+import com.malliina.http.{AsyncHttp, FullUrl}
 import com.malliina.oauth.GoogleOAuth._
 import com.malliina.play.models.Email
 import org.apache.commons.codec.binary.Base64
 import play.api.Logger
-import play.api.http.{HeaderNames, MimeTypes}
 import play.api.libs.json._
-import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
-import play.api.libs.ws.JsonBodyReadables.readableAsJson
-import play.api.libs.ws.StandaloneWSClient
-import play.api.libs.ws.ahc.{AhcWSClientConfig, StandaloneAhcWSClient}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object GoogleOAuth {
   private val log = Logger(getClass)
@@ -30,44 +25,43 @@ object GoogleOAuth {
   val Code = "code"
   val State = "state"
   val Scope = "scope"
+
+  def apply(creds: GoogleOAuthKey): GoogleOAuth =
+    new GoogleOAuth(creds)(ExecutionContexts.cached)
 }
 
 /**
   * @see https://developers.google.com/accounts/docs/OAuth2Login
   */
-class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer, clientConf: AhcWSClientConfig = AhcWSClientConfig())
+class GoogleOAuth(creds: GoogleOAuthKey)(implicit val ec: ExecutionContext)
   extends GoogleOAuthLike {
-  def this(creds: GoogleOAuthCredentials, mat: Materializer) = this(creds.clientId, creds.clientSecret, mat)
+  def this(clientId: String, clientSecret: String) =
+    this(GoogleOAuthCreds(clientId, clientSecret))(ExecutionContexts.cached)
 
-  implicit val ec = mat.executionContext
-
-  implicit val client: StandaloneWSClient = StandaloneAhcWSClient(clientConf)(mat)
+  val clientId = creds.clientId
+  val httpClient = new AsyncHttp()
 
   def discover(): Future[GoogleOAuthConf] = jsonRequest[GoogleOAuthConf](GoogleOAuth.DiscoverUri)
 
   def tokenRequest(tokenEndpoint: FullUrl,
                    code: String,
                    redirectUri: FullUrl): Future[TokenResponse] = {
-    def stringify(pairs: (String, String)*) = pairs.map(p => p._1 + "=" + p._2).mkString("&")
-
-    val query = stringify(
+    val params = Map(
       Code -> code,
       ClientId -> clientId,
-      ClientSecret -> clientSecret,
+      ClientSecret -> creds.clientSecret,
       RedirectUri -> redirectUri.url,
       GrantType -> AuthorizationCode
     )
-    client.url(tokenEndpoint.url)
-      .addHttpHeaders(HeaderNames.CONTENT_TYPE -> MimeTypes.FORM)
-      .post(query)
-      .map(response => response.body[JsValue].as[TokenResponse])
+    httpClient.postForm(tokenEndpoint.url, params).map(_.parse[TokenResponse].get)
   }
 
   def resolveEmail(tokenEndpoint: FullUrl, code: String, redirectUri: FullUrl): Future[Email] =
     tokenRequest(tokenEndpoint, code, redirectUri) map email
 
-  private def jsonRequest[T: Reads](url: String) =
-    client.url(url).get().map(response => response.body[JsValue].as[T])
+  private def jsonRequest[T: Reads](url: String): Future[T] = {
+    httpClient.get(url).map(_.parse[T].get)
+  }
 
   def authRequestUri(authEndpoint: FullUrl, redirectUri: FullUrl, state: String): FullUrl =
     authEndpoint.append(s"?$ClientId=$clientId&$ResponseType=$Code&$Scope=openid%20email&$RedirectUri=$redirectUri&$State=$state&$LoginHint=sub")
@@ -81,5 +75,5 @@ class GoogleOAuth(clientId: String, clientSecret: String, mat: Materializer, cli
     Json.parse(claims).as[IdToken].email
   }
 
-  def close(): Unit = client.close()
+  def close(): Unit = httpClient.close()
 }
