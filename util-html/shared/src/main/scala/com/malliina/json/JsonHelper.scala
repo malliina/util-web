@@ -1,4 +1,4 @@
-package com.malliina.play.json
+package com.malliina.json
 
 import play.api.libs.json._
 

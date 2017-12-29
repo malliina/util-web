@@ -1,14 +1,12 @@
-package com.malliina.play.tags
-
-import com.malliina.play.tags.Tags._
-
-import scalatags.Text.all._
-
-object Bootstrap extends Bootstrap
+package com.malliina.html
 
 /** Scalatags for Twitter Bootstrap.
   */
-trait Bootstrap {
+class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output, FragT]) {
+
+  import tags._
+  import tags.impl.all._
+
   val FormSignin = "form-signin"
   val FormSigninHeading = "form-signin-heading"
 

@@ -1,20 +1,11 @@
 package com.malliina.play.controllers
 
+import com.malliina.html.UserFeedback
+import com.malliina.html.UserFeedback.{Feedback, No, Success}
 import play.api.data.Form
 import play.api.mvc.{Flash, RequestHeader}
 
-case class UserFeedback(message: String, isError: Boolean)
-
-object UserFeedback {
-  val Feedback = "feedback"
-  val Success = "success"
-  val Yes = "yes"
-  val No = "no"
-
-  def success(message: String) = UserFeedback(message, isError = false)
-
-  def error(message: String) = UserFeedback(message, isError = true)
-
+object UserFeedbacks {
   def flashed(request: RequestHeader): Option[UserFeedback] =
     flashed(request.flash)
 
@@ -26,5 +17,5 @@ object UserFeedback {
 
   def formed(form: Form[_]): Option[UserFeedback] =
     form.globalError.orElse(form.errors.headOption)
-      .map(formError => error(formError.message))
+      .map(formError => UserFeedback.error(formError.message))
 }

@@ -1,10 +1,13 @@
-package com.malliina.play.tags
+package com.malliina.html
 
-import scalatags.Text.all._
+import scalatags.generic.Bundle
 
-object Tags extends Tags
+object Tags extends Tags(scalatags.Text)
 
-trait Tags {
+class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, FragT]) {
+
+  import impl.all._
+
   val Button = "button"
   val Checkbox = "checkbox"
   val Download = "download"
