@@ -26,8 +26,8 @@ lazy val html = crossProject.in(file("util-html"))
   .jvmSettings(htmlJvmSettings: _*)
   .jsSettings(htmlJsSettings: _*)
 
-lazy val htmlJvm = html.jvm
-lazy val htmlJs = html.js
+lazy val htmlJvm = html.jvm.disablePlugins(BintrayPlugin)
+lazy val htmlJs = html.js.disablePlugins(BintrayPlugin)
 
 def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
   crossScalaVersions := Seq("2.11.11", scalaVersion.value),
