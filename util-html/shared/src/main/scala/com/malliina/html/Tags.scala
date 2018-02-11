@@ -8,10 +8,12 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
 
   import impl.all._
 
+  val Anonymous = "anonymous"
   val Button = "button"
   val Checkbox = "checkbox"
   val Download = "download"
   val En = "en"
+  val False = "false"
   val FormRole = "form"
   val Group = "group"
   val Image = "image"
@@ -25,14 +27,14 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
   val Stylesheet = "stylesheet"
   val Text = "text"
   val Title = "title"
+  val True = "true"
+
+  val crossorigin = attr("crossorigin")
+  val integrity = attr("integrity")
 
   val empty: Modifier = ""
 
   val download = attr(Download).empty
-
-  val ariaExpanded = attr("aria-expanded")
-  val ariaHasPopup = attr("aria-haspopup")
-  val ariaLabel = attr("aria-label")
 
   val section = tag(Section)
   val titleTag = tag(Title)
@@ -51,14 +53,23 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
 
   def liClass(clazz: String) = li(`class` := clazz)
 
-  def liHref[V: AttrValue](url: V, more: Modifier*)(text: Modifier*) = li(aHref(url, more)(text))
+  def liHref[V: AttrValue](url: V, more: Modifier*)(text: Modifier*) =
+    li(a(href := url, more)(text))
 
   // WTF? Removing currying requires an AttrValue - should require Modifier?
-  def aHref[V: AttrValue](url: V, more: Modifier*)(text: Modifier*) = a(href := url, more)(text)
+  def aHref[V: AttrValue](url: V, more: Modifier*) =
+    a(href := url, more)
 
-  def jsScript[V: AttrValue](url: V) = script(src := url)
+  def cssLinkHashed[V: AttrValue](url: V, integrityHash: String, more: Modifier*) =
+    cssLink(url, integrity := integrityHash, crossorigin := Anonymous, more)
 
-  def cssLink[V: AttrValue](url: V) = link(rel := Stylesheet, href := url)
+  def cssLink[V: AttrValue](url: V, more: Modifier*) =
+    link(rel := Stylesheet, href := url, more)
+
+  def jsHashed[V: AttrValue](url: V, integrityHash: String, more: Modifier*) =
+    jsScript(url, integrity := integrityHash, crossorigin := Anonymous, more)
+
+  def jsScript[V: AttrValue](url: V, more: Modifier*) = script(src := url, more)
 
   def submitButton(more: Modifier*) = button(`type` := Submit, more)
 
