@@ -14,7 +14,7 @@ def ivyRepo(name: String, urlString: String) =
   Resolver.url(name, url(urlString))(Resolver.ivyStylePatterns)
 
 Seq(
-  "com.malliina" %% "sbt-utils" % "0.7.1",
+  "com.malliina" %% "sbt-utils" % "0.8.0",
   "com.malliina" %% "sbt-play" % "1.2.2",
   "org.scala-js" % "sbt-scalajs" % "0.6.22"
 ) map addSbtPlugin

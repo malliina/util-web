@@ -19,15 +19,14 @@ lazy val root = project.in(file("."))
 lazy val utilPlay = Project("util-play", file("util-play"))
   .settings(utilPlaySettings: _*)
   .dependsOn(htmlJvm)
-  .disablePlugins(BintrayPlugin)
 
 lazy val html = crossProject.in(file("util-html"))
   .settings(htmlSettings: _*)
   .jvmSettings(htmlJvmSettings: _*)
   .jsSettings(htmlJsSettings: _*)
 
-lazy val htmlJvm = html.jvm.disablePlugins(BintrayPlugin)
-lazy val htmlJs = html.js.disablePlugins(BintrayPlugin)
+lazy val htmlJvm = html.jvm
+lazy val htmlJs = html.js
 
 def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
   crossScalaVersions := Seq("2.11.11", scalaVersion.value),
@@ -38,7 +37,6 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
     playGroup %% "play" % playVersion,
     playGroup %% "play-server" % playVersion,
     malliinaGroup %% "util" % "2.8.2",
-    malliinaGroup %% "util-rmi" % "2.8.2",
     malliinaGroup %% "logback-rx" % "1.2.0",
     httpGroup % "httpclient" % httpVersion,
     httpGroup % "httpcore" % "4.4.8",
