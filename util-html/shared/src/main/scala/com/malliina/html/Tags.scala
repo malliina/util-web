@@ -56,10 +56,6 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
   def liHref[V: AttrValue](url: V, more: Modifier*)(text: Modifier*) =
     li(a(href := url, more)(text))
 
-  // WTF? Removing currying requires an AttrValue - should require Modifier?
-  def aHref[V: AttrValue](url: V, more: Modifier*) =
-    a(href := url, more)
-
   def cssLinkHashed[V: AttrValue](url: V, integrityHash: String, more: Modifier*) =
     cssLink(url, integrity := integrityHash, crossorigin := Anonymous, more)
 
