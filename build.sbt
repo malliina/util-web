@@ -13,7 +13,9 @@ lazy val utilPlayRoot = project.in(file("."))
   .aggregate(utilPlay, htmlJvm, htmlJs)
   .settings(
     publish := {},
-    publishLocal := {}
+    publishLocal := {},
+    publishArtifact := false,
+    publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
   )
 
 lazy val utilPlay = Project("util-play", file("util-play"))
