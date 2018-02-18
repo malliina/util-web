@@ -37,6 +37,7 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
     playGroup %% "play" % playVersion,
     playGroup %% "play-server" % playVersion,
     malliinaGroup %% "util" % "2.8.2",
+    malliinaGroup %% "util-rmi" % "2.8.2",
     malliinaGroup %% "logback-rx" % "1.2.0",
     httpGroup % "httpclient" % httpVersion,
     httpGroup % "httpcore" % "4.4.8",
