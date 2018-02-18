@@ -173,6 +173,7 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
   val nav = tag(Nav)
 
   object navbar {
+    val CollapseWord = "collapse"
     val Navbar = "navbar"
     val ExpandLg = "navbar-expand-lg"
     val Light = "navbar-light"
@@ -192,28 +193,28 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
     val TogglerIcon = "navbar-toggler-icon"
     val DefaultLight = s"$Navbar $ExpandLg $Light $BgLight"
 
+    val defaultNavbarId = "navbarSupportedContent"
+
     def simple[V: AttrValue](home: V,
                             appName: Modifier,
                             navItems: Modifier,
                             navClass: String = DefaultLight,
-                            navBarId: String = "navbarSupportedContent") =
-      basic(home, appName, ulClass(s"$Nav $MrAuto")(navItems), navClass, navBarId)
+                            navBarId: String = defaultNavbarId) =
+      basic(home, appName, ulClass(s"${navbar.Nav} $MrAuto")(navItems), navClass, navBarId)
 
     def basic[V: AttrValue](home: V,
                             appName: Modifier,
                             navContent: Modifier,
                             navClass: String = DefaultLight,
-                            navBarId: String = "navbarSupportedContent") =
+                            navBarId: String = defaultNavbarId) =
       nav(`class` := navClass)(
         divClass(Container)(
-          divClass(Header)(
-            a(`class` := Brand, href := home)(appName),
-            button(`class` := Toggler, dataToggle := Collapse, dataTarget := s".$Collapse",
-              aria.controls := navBarId, aria.expanded := "false", aria.label := "Toggle navigation")(
-              spanClass(TogglerIcon)
-            )
+          a(`class` := navbar.Brand, href := home)(appName),
+          button(`class` := navbar.Toggler, dataToggle := CollapseWord, dataTarget := s"#$navBarId",
+            aria.controls := navBarId, aria.expanded := False, aria.label := "Toggle navigation")(
+            spanClass(navbar.TogglerIcon)
           ),
-          div(`class` := s"$Collapse $Collapse", id := navBarId)(
+          div(`class` := s"$CollapseWord ${navbar.Collapse}", id := navBarId)(
             navContent
           )
         )

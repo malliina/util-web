@@ -9,7 +9,7 @@ val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
 
-lazy val root = project.in(file("."))
+lazy val utilPlayRoot = project.in(file("."))
   .aggregate(utilPlay, htmlJvm, htmlJs)
   .settings(
     publish := {},
