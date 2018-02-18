@@ -12,6 +12,7 @@ val malliinaGroup = "com.malliina"
 lazy val utilPlayRoot = project.in(file("."))
   .aggregate(utilPlay, htmlJvm, htmlJs)
   .settings(
+    organization := malliinaGroup,
     publish := {},
     publishLocal := {},
     publishArtifact := false,
