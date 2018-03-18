@@ -23,7 +23,7 @@ object StaticCodeValidator {
     def facebook(authConf: AuthConf) = StaticConf(
       "public_profile email",
       FullUrl("https", "www.facebook.com", "/v2.12/dialog/oauth"),
-      FullUrl("https", "graph.facebook.com", s"/v2.12/oauth/access_token"),
+      FullUrl("https", "graph.facebook.com", "/v2.12/oauth/access_token"),
       authConf
     )
 
