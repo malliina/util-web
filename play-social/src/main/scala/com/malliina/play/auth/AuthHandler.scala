@@ -10,14 +10,14 @@ import play.api.mvc.{Call, RequestHeader, Result}
 import scala.concurrent.Future
 
 trait AuthHandler {
-  def onSuccess(email: Email, req: RequestHeader): Result
+  def onAuthenticated(email: Email, req: RequestHeader): Result
 
   def onUnauthorized(error: AuthError, req: RequestHeader): Result
 
   def resultFor(outcome: Either[AuthError, Email], req: RequestHeader): Result = {
     outcome.fold(
       err => onUnauthorized(err, req),
-      email => onSuccess(email, req)
+      email => onAuthenticated(email, req)
     )
   }
 
@@ -30,8 +30,8 @@ trait AuthHandler {
   def flatMap(f: Email => Either[AuthError, Email]): AuthHandler = {
     val parent = this
     new AuthHandler {
-      override def onSuccess(email: Email, req: RequestHeader): Result =
-        f(email).fold(e => parent.onUnauthorized(e, req), email => parent.onSuccess(email, req))
+      override def onAuthenticated(email: Email, req: RequestHeader): Result =
+        f(email).fold(e => parent.onUnauthorized(e, req), email => parent.onAuthenticated(email, req))
 
       override def onUnauthorized(error: AuthError, req: RequestHeader): Result =
         parent.onUnauthorized(error, req)
@@ -45,10 +45,14 @@ object BasicAuthHandler {
   def apply(successCall: Call): BasicAuthHandler = new BasicAuthHandler(successCall)
 }
 
-class BasicAuthHandler(successCall: Call, sessionKey: String = "username") extends AuthHandler {
-  override def onSuccess(email: Email, req: RequestHeader): Result = {
-    log.info(s"Logging in '$email' through OAuth code flow.")
-    Redirect(successCall).withSession(sessionKey -> email.email)
+class BasicAuthHandler(val successCall: Call,
+                       authorize: Email => Either[AuthError, Email] = email => Right(email),
+                       val sessionKey: String = "username") extends AuthHandler {
+  override def onAuthenticated(email: Email, req: RequestHeader): Result = {
+    authorize(email).fold(err => onUnauthorized(err, req), email => {
+      log.info(s"Logging in '$email' through OAuth code flow.")
+      Redirect(successCall).withSession(sessionKey -> email.email)
+    })
   }
 
   override def onUnauthorized(error: AuthError, req: RequestHeader): Result = {
