@@ -55,11 +55,11 @@ trait CodeValidator extends AuthValidator {
         validate(Code(code), req).map(outcome => handler.resultFor(outcome, req))
       }.getOrElse {
         log.error(s"Authentication failed, code mismatch. $req")
-        handler.unauthorizedFut(req)
+        handler.onUnauthorizedFut(OAuthError("Code mismatch."), req)
       }
     } else {
       log.error(s"Authentication failed, state mismatch. $req")
-      handler.unauthorizedFut(req)
+      handler.onUnauthorizedFut(OAuthError("State mismatch."), req)
     }
   }
 

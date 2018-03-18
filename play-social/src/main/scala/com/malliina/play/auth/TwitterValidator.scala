@@ -69,7 +69,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
         Redirect(authTokenUrl(tokens.oauthToken).url)
           .withSession(RequestToken.Key -> tokens.oauthToken.token)
       }.getOrElse {
-        handler.unauthorized(req)
+        handler.onUnauthorized(OAuthError("Callback not confirmed."), req)
       }
     }
 
@@ -82,16 +82,16 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
       fetchAccessToken(RequestToken(token), verifier).flatMap { maybeAccess =>
         maybeAccess.map { access =>
           fetchUser(access).mapR { user =>
-            handler.resultFor(user.email.toRight(JsonError("Email missing.")), req)
-          }.onFail { _ =>
-            handler.unauthorized(req)
+            handler.resultFor(user.email.toRight(OAuthError("Email missing.")), req)
+          }.onFail { err =>
+            handler.onUnauthorized(err, req)
           }
         }.getOrElse {
-          handler.unauthorizedFut(req)
+          handler.onUnauthorizedFut(OAuthError("No access token in response."), req)
         }
       }
     }
-    maybe.getOrElse(handler.unauthorizedFut(req))
+    maybe.getOrElse(handler.onUnauthorizedFut(OAuthError("Invalid callback parameters."), req))
   }
 
   private def fetchRequestToken(redirUrl: FullUrl) = {
@@ -127,7 +127,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
     val reqUrl = userInfoUrl.append(s"?$queryString")
 
     val req = new Request.Builder().url(reqUrl.url).addHeader(AUTHORIZATION, authHeaderValue).get.build()
-    http.execute(req).map(_.parse[TwitterUser])
+    http.execute(req).map(_.parse[TwitterUser].left.map(e => JsonError(e)))
   }
 
   private def buildNonce =

@@ -28,6 +28,10 @@ case class OkError(error: ResponseError) extends AuthError("http_error") {
   }
 }
 
+case class PermissionError(message: String) extends AuthError("permission_error")
+
+case class OAuthError(message: String) extends AuthError("oauth_error")
+
 case class JsonError(err: JsError) extends AuthError("json_error") {
   override def message = s"JSON error. $err"
 }

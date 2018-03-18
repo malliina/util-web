@@ -10,11 +10,33 @@ import play.api.mvc.{Call, RequestHeader, Result}
 import scala.concurrent.Future
 
 trait AuthHandler {
-  def resultFor(outcome: Either[AuthError, Email], req: RequestHeader): Result
+  def onSuccess(email: Email, req: RequestHeader): Result
 
-  def unauthorizedFut(req: RequestHeader): Future[Result]
+  def onUnauthorized(error: AuthError, req: RequestHeader): Result
 
-  def unauthorized(req: RequestHeader): Result
+  def resultFor(outcome: Either[AuthError, Email], req: RequestHeader): Result = {
+    outcome.fold(
+      err => onUnauthorized(err, req),
+      email => onSuccess(email, req)
+    )
+  }
+
+  def onUnauthorizedFut(error: AuthError, req: RequestHeader): Future[Result] =
+    Future.successful(onUnauthorized(error, req))
+
+  def filter(p: Email => Boolean): AuthHandler =
+    flatMap(email => if (p(email)) Right(email) else Left(PermissionError(s"Unauthorized: '$email'.")))
+
+  def flatMap(f: Email => Either[AuthError, Email]): AuthHandler = {
+    val parent = this
+    new AuthHandler {
+      override def onSuccess(email: Email, req: RequestHeader): Result =
+        f(email).fold(e => parent.onUnauthorized(e, req), email => parent.onSuccess(email, req))
+
+      override def onUnauthorized(error: AuthError, req: RequestHeader): Result =
+        parent.onUnauthorized(error, req)
+    }
+  }
 }
 
 object BasicAuthHandler {
@@ -24,24 +46,13 @@ object BasicAuthHandler {
 }
 
 class BasicAuthHandler(successCall: Call, sessionKey: String = "username") extends AuthHandler {
-  def resultFor(outcome: Either[AuthError, Email], req: RequestHeader): Result = {
-    outcome.fold(
-      err => {
-        log.error(s"${err.message} for $req")
-        unauthorized(req)
-      },
-      email => {
-        log.info(s"Logging in '$email' through OAuth code flow.")
-        Redirect(successCall).withSession(sessionKey -> email.email)
-      }
-    )
+  override def onSuccess(email: Email, req: RequestHeader): Result = {
+    log.info(s"Logging in '$email' through OAuth code flow.")
+    Redirect(successCall).withSession(sessionKey -> email.email)
   }
 
-  def unauthorizedFut(req: RequestHeader): Future[Result] =
-    fut(unauthorized(req))
-
-  def unauthorized(req: RequestHeader): Result =
+  override def onUnauthorized(error: AuthError, req: RequestHeader): Result = {
+    log.error(s"${error.message} for $req")
     Unauthorized(Json.obj("message" -> "Authentication failed."))
-
-  protected def fut[T](t: T) = Future.successful(t)
+  }
 }
