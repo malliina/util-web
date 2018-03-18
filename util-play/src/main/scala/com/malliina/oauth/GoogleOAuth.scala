@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 object GoogleOAuth {
   private val log = Logger(getClass)
 
-  val DiscoverUri = "https://accounts.google.com/.well-known/openid-configuration"
+  val DiscoverUri = FullUrl.https("accounts.google.com", "/.well-known/openid-configuration")
   val EmailScope = "https://www.googleapis.com/auth/userinfo.email"
   val ClientId = "client_id"
   val ClientSecret = "client_secret"
@@ -53,13 +53,13 @@ class GoogleOAuth(creds: GoogleOAuthKey)(implicit val ec: ExecutionContext)
       RedirectUri -> redirectUri.url,
       GrantType -> AuthorizationCode
     )
-    httpClient.postForm(tokenEndpoint.url, params).map(_.parse[TokenResponse].get)
+    httpClient.postForm(tokenEndpoint, params).map(_.parse[TokenResponse].get)
   }
 
   def resolveEmail(tokenEndpoint: FullUrl, code: String, redirectUri: FullUrl): Future[Email] =
     tokenRequest(tokenEndpoint, code, redirectUri) map email
 
-  private def jsonRequest[T: Reads](url: String): Future[T] = {
+  private def jsonRequest[T: Reads](url: FullUrl): Future[T] = {
     httpClient.get(url).map(_.parse[T].get)
   }
 
