@@ -3,8 +3,6 @@ import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import play.core.PlayVersion
 import play.sbt.PlayImport
 
-val httpGroup = "org.apache.httpcomponents"
-val httpVersion = "4.5.3"
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
@@ -44,9 +42,6 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
     malliinaGroup %% "util" % "2.9.1",
     malliinaGroup %% "util-rmi" % "2.9.1",
     malliinaGroup %% "logback-rx" % "1.2.0",
-    httpGroup % "httpclient" % httpVersion,
-    httpGroup % "httpcore" % "4.4.8",
-    httpGroup % "httpmime" % httpVersion,
     "org.scala-stm" %% "scala-stm" % "0.8"
   )
 )
@@ -69,7 +64,7 @@ def htmlJsSettings = commonSettings ++ Seq(
 )
 
 def commonSettings = SbtUtils.mavenSettings ++ Seq(
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.5",
   organization := "com.malliina",
   gitUserName := "malliina",
   developerName := "Michael Skogberg",
