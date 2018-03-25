@@ -1,4 +1,4 @@
-scalaVersion := "2.12.4"
+scalaVersion := "2.12.5"
 resolvers ++= Seq(
   // temporary hack
   // http://stackoverflow.com/a/42211230

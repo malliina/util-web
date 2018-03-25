@@ -4,7 +4,7 @@ import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.http.FullUrl
-import com.malliina.json.CommonJson.durationFormat
+import com.malliina.json.PrimitiveFormats.durationFormat
 import com.malliina.play.models.Email
 import com.malliina.values.JsonCompanion
 import com.nimbusds.jose.JWSAlgorithm

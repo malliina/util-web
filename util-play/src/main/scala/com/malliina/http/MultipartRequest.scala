@@ -12,7 +12,6 @@ import play.api.http.HeaderNames._
 /** The Play WS API does not afaik support multipart/form-data file uploads, therefore this class provides it using
   * Apache HttpClient.
   */
-
 object MultipartRequest {
   def trustAll(url: FullUrl) = {
     val ssf = SSLUtils.trustAllSslContext().getSocketFactory
@@ -23,7 +22,7 @@ object MultipartRequest {
 }
 
 class MultipartRequest(url: FullUrl, val client: OkClient) extends AutoCloseable {
-  val requestBuilder = new Request.Builder()
+  val requestBuilder = new Request.Builder().url(url.url)
   requestBuilder.addHeader(ACCEPT, JSON)
   val bodyBuilder = new MultipartBody.Builder()
   //  private val reqContent = MultipartEntityBuilder.create().setMode(HttpMultipartMode.BROWSER_COMPATIBLE)

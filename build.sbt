@@ -39,8 +39,8 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
     playGroup %% "play-server" % playVersion,
-    malliinaGroup %% "util" % "2.9.1",
-    malliinaGroup %% "util-rmi" % "2.9.1",
+    malliinaGroup %% "util" % "2.10.0",
+    malliinaGroup %% "util-rmi" % "2.10.0",
     malliinaGroup %% "logback-rx" % "1.2.0",
     "org.scala-stm" %% "scala-stm" % "0.8"
   )
@@ -49,7 +49,7 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
 def playSocialSettings = commonSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
-    malliinaGroup %% "okclient" % "1.4.1",
+    malliinaGroup %% "okclient" % "1.5.0",
     "com.nimbusds" % "nimbus-jose-jwt" % "5.7",
     "org.scalatest" %% "scalatest" % "3.0.5" % Test
   )
@@ -63,7 +63,7 @@ def htmlJsSettings = commonSettings ++ Seq(
 
 )
 
-def commonSettings = SbtUtils.mavenSettings ++ Seq(
+def commonSettings = SbtUtils.mavenSettings ++ commonResolvers ++ Seq(
   scalaVersion := "2.12.5",
   organization := "com.malliina",
   gitUserName := "malliina",
@@ -77,14 +77,17 @@ def htmlSettings = Seq(
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "scalatags" % "0.6.7",
     "com.typesafe.play" %%% "play-json" % "2.6.9",
-    "com.malliina" %%% "primitives" % "1.4.1",
+    "com.malliina" %%% "primitives" % "1.5.0",
     "org.scalatest" %%% "scalatest" % "3.0.5"
   )
 )
 
-def libSettings = Seq(
-  resolvers += "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/",
+def libSettings = commonResolvers ++ Seq(
   libraryDependencies ++= defaultDeps
+)
+
+def commonResolvers = Seq(
+  resolvers += "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/",
 )
 
 def defaultDeps = Seq(
