@@ -37,5 +37,5 @@ class KeyClient(val knownUrl: FullUrl, validator: TokenValidator, val http: OkCl
   def fetchConf() = fetchJson[AuthEndpoints](knownUrl)
 
   def fetchJson[T: Reads](url: FullUrl): Future[Either[AuthError, T]] =
-    http.getJson[T](url).map(_.left.map(e => OkError(e)))
+    http.getAs[T](url).map(_.left.map(e => OkError(e)))
 }

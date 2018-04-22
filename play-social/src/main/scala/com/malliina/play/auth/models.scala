@@ -1,5 +1,6 @@
 package com.malliina.play.auth
 
+import java.nio.file.{Files, Path}
 import java.text.ParseException
 import java.time.Instant
 
@@ -11,15 +12,38 @@ import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
 import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
+import play.api.Configuration
 
 import scala.concurrent.duration.{Duration, DurationLong}
 
 case class AuthConf(clientId: String, clientSecret: String)
 
 object AuthConf {
+  def google = AuthConfReader.env.google
+}
 
-  def read(key: String) = sys.env.get(key).orElse(sys.props.get(key))
-    .toRight(s"Key missing: '$key'. Set it as an environment variable or system property.")
+object AuthConfReader {
+  def env = apply(key => sys.env.get(key).orElse(sys.props.get(key)))
+
+  def conf(c: Configuration) = apply(key => c.getOptional[String](key))
+
+  def file(path: Path) = {
+    import collection.JavaConverters._
+    val asMap = Files.readAllLines(path).asScala.toList
+      .filterNot(line => line.startsWith("#") || line.startsWith("//"))
+      .map(line => line.split("=", 2))
+      .collect { case Array(key, value) => key -> value }
+      .toMap
+    apply(asMap.get)
+  }
+
+  def apply(readKey: String => Option[String]): AuthConfReader =
+    new AuthConfReader(readKey)
+}
+
+class AuthConfReader(readKey: String => Option[String]) {
+  def read(key: String): Either[String, String] =
+    sys.env.get(key).orElse(sys.props.get(key)).toRight(s"Key missing: '$key'.")
 
   def orFail(read: Either[String, AuthConf]) = read.fold(err => throw new Exception(err), identity)
 
