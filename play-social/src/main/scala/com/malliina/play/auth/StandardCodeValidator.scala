@@ -47,8 +47,13 @@ object StandardCodeValidator {
   def apply(conf: CodeValidationConf) = new StandardCodeValidator(conf)
 }
 
+/** A validator where the authorization and token endpoints are obtained through
+  * a discovery endpoint ("knownUrl").
+  *
+  * @param codeConf
+  */
 class StandardCodeValidator(codeConf: CodeValidationConf)
-  extends CodeValidator {
+  extends CodeValidator[Email] {
 
   val handler = codeConf.handler
   val brandName = codeConf.brandName

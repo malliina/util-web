@@ -9,29 +9,35 @@ import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
 
-trait AuthHandler {
-  def onAuthenticated(email: Email, req: RequestHeader): Result
+trait AuthHandler extends AuthHandlerBase[Email]
+
+/**
+  *
+  * @tparam U type of user
+  */
+trait AuthHandlerBase[U] {
+  def onAuthenticated(user: U, req: RequestHeader): Result
 
   def onUnauthorized(error: AuthError, req: RequestHeader): Result
 
-  def resultFor(outcome: Either[AuthError, Email], req: RequestHeader): Result = {
+  def resultFor(outcome: Either[AuthError, U], req: RequestHeader): Result = {
     outcome.fold(
       err => onUnauthorized(err, req),
-      email => onAuthenticated(email, req)
+      user => onAuthenticated(user, req)
     )
   }
 
   def onUnauthorizedFut(error: AuthError, req: RequestHeader): Future[Result] =
     Future.successful(onUnauthorized(error, req))
 
-  def filter(p: Email => Boolean): AuthHandler =
-    flatMap(email => if (p(email)) Right(email) else Left(PermissionError(s"Unauthorized: '$email'.")))
+  def filter(p: U => Boolean): AuthHandlerBase[U] =
+    flatMap(user => if (p(user)) Right(user) else Left(PermissionError(s"Unauthorized: '$user'.")))
 
-  def flatMap(f: Email => Either[AuthError, Email]): AuthHandler = {
+  def flatMap(f: U => Either[AuthError, U]): AuthHandlerBase[U] = {
     val parent = this
-    new AuthHandler {
-      override def onAuthenticated(email: Email, req: RequestHeader): Result =
-        f(email).fold(e => parent.onUnauthorized(e, req), email => parent.onAuthenticated(email, req))
+    new AuthHandlerBase[U] {
+      override def onAuthenticated(user: U, req: RequestHeader): Result =
+        f(user).fold(e => parent.onUnauthorized(e, req), user => parent.onAuthenticated(user, req))
 
       override def onUnauthorized(error: AuthError, req: RequestHeader): Result =
         parent.onUnauthorized(error, req)

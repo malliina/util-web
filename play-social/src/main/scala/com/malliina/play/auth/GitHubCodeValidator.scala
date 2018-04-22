@@ -8,8 +8,11 @@ import play.api.mvc.{Call, RequestHeader}
 
 import scala.concurrent.Future
 
-class GitHubCodeValidator(val redirCall: Call, val handler: AuthHandler, val conf: AuthConf, val http: OkClient)
-  extends StaticCodeValidator("GitHub", StaticConf.github(conf)) {
+class GitHubCodeValidator(val redirCall: Call,
+                          val handler: AuthHandler,
+                          conf: AuthConf,
+                          val http: OkClient)
+  extends StaticCodeValidator[Email]("GitHub", StaticConf.github(conf)) {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)

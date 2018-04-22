@@ -7,8 +7,11 @@ import play.api.mvc.{Call, RequestHeader}
 
 import scala.concurrent.Future
 
-class FacebookCodeValidator(val redirCall: Call, val handler: AuthHandler, val conf: AuthConf, val http: OkClient)
-  extends StaticCodeValidator("Facebook", StaticConf.facebook(conf)) {
+class FacebookCodeValidator(val redirCall: Call,
+                            val handler: AuthHandler,
+                            conf: AuthConf,
+                            val http: OkClient)
+  extends StaticCodeValidator[Email]("Facebook", StaticConf.facebook(conf)) {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val params = validationParams(code, req).mapValues(urlEncode)

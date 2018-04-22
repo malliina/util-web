@@ -6,7 +6,6 @@ import java.security.SecureRandom
 import com.malliina.http.{FullUrl, OkClient}
 import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.http.FullUrls
-import com.malliina.play.models.Email
 import play.api.Logger
 import play.api.libs.json.Reads
 import play.api.mvc.{Call, RequestHeader, Result}
@@ -32,19 +31,25 @@ object CodeValidator {
 
   val scope = "openid email"
 
-  def randomState() = new BigInteger(130, new SecureRandom()).toString(32)
+  private val rng = new SecureRandom()
+
+  def randomState(): String = new BigInteger(130, rng).toString(32)
 }
 
-trait CodeValidator extends AuthValidator {
+/**
+  *
+  * @tparam U type of user object, e.g. Username, Email, AppUser, String
+  */
+trait CodeValidator[U] extends AuthValidator {
   def http: OkClient
 
   def conf: AuthConf
 
   def redirCall: Call
 
-  def handler: AuthHandler
+  def handler: AuthHandlerBase[U]
 
-  def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]]
+  def validate(code: Code, req: RequestHeader): Future[Either[AuthError, U]]
 
   override def validateCallback(req: RequestHeader): Future[Result] = {
     val requestState = req.getQueryString(State)
@@ -54,8 +59,8 @@ trait CodeValidator extends AuthValidator {
       req.getQueryString(CodeKey).map { code =>
         validate(Code(code), req).map(outcome => handler.resultFor(outcome, req))
       }.getOrElse {
-        log.error(s"Authentication failed, code mismatch. $req")
-        handler.onUnauthorizedFut(OAuthError("Code mismatch."), req)
+        log.error(s"Authentication failed, code missing. $req")
+        handler.onUnauthorizedFut(OAuthError("Code missing."), req)
       }
     } else {
       log.error(s"Authentication failed, state mismatch. $req")
@@ -71,7 +76,7 @@ trait CodeValidator extends AuthValidator {
 
   /** Not encoded.
     */
-  protected def validationParams(code: Code, req: RequestHeader) = {
+  protected def validationParams(code: Code, req: RequestHeader): Map[String, String] = {
     Map(
       ClientId -> conf.clientId,
       ClientSecret -> conf.clientSecret,
@@ -88,5 +93,5 @@ trait CodeValidator extends AuthValidator {
                           params: Map[String, String]) =
     http.postFormAs[T](url, params, headers).map(_.left.map(e => OkError(e)))
 
-  def getJson[T: Reads](url: FullUrl) = http.getJson[T](url).map(_.left.map(e => OkError(e)))
+  def getJson[T: Reads](url: FullUrl) = http.getAs[T](url).map(_.left.map(e => OkError(e)))
 }
