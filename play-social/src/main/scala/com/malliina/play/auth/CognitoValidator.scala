@@ -49,7 +49,7 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
     } yield parsed
 }
 
-class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, clientId: String)
+class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientId: String)
   extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
 
   override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {

@@ -35,8 +35,9 @@ class CognitoCodeValidator(identityProvider: String,
                            staticConf: StaticConf,
                            val http: OkClient)
   extends StaticCodeValidator[CognitoUser]("Amazon", staticConf) {
+
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, CognitoUser]] = {
-    val params = tokenParameters(code, FullUrls(redirCall, req)).mapValues(urlEncode)
+    val params = tokenParameters(code, FullUrls(redirCall, req))
     postForm[CognitoTokens](staticConf.tokenEndpoint, params).mapRight { tokens =>
       validator.validate(tokens.idToken)
     }
