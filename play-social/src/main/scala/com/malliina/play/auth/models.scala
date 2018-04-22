@@ -43,7 +43,7 @@ object AuthConfReader {
 
 class AuthConfReader(readKey: String => Option[String]) {
   def read(key: String): Either[String, String] =
-    sys.env.get(key).orElse(sys.props.get(key)).toRight(s"Key missing: '$key'.")
+    readKey(key).toRight(s"Key missing: '$key'.")
 
   def orFail(read: Either[String, AuthConf]) = read.fold(err => throw new Exception(err), identity)
 
@@ -57,7 +57,7 @@ class AuthConfReader(readKey: String => Option[String]) {
 
   def twitter = readConf("twitter_client_id", "twitter_client_secret")
 
-  def readConf(clientIdKey: String, clientSecretKey: String) = {
+  def readConf(clientIdKey: String, clientSecretKey: String): AuthConf = {
     val attempt = for {
       clientId <- read(clientIdKey)
       clientSecret <- read(clientSecretKey)
