@@ -5,7 +5,7 @@ import com.malliina.play.models.Email
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results.{Redirect, Unauthorized}
-import play.api.mvc.{Call, RequestHeader, Result}
+import play.api.mvc.{Call, Cookie, RequestHeader, Result}
 
 import scala.concurrent.Future
 
@@ -48,16 +48,22 @@ trait AuthHandlerBase[U] {
 object BasicAuthHandler {
   private val log = Logger(getClass)
 
-  def apply(successCall: Call): BasicAuthHandler = new BasicAuthHandler(successCall)
+  val LastIdCookie = "last_id"
+
+  def apply(successCall: Call, lastIdKey: String = LastIdCookie): BasicAuthHandler =
+    new BasicAuthHandler(successCall, lastIdKey)
 }
 
 class BasicAuthHandler(val successCall: Call,
+                       lastIdKey: String,
                        authorize: Email => Either[AuthError, Email] = email => Right(email),
                        val sessionKey: String = "username") extends AuthHandler {
   override def onAuthenticated(email: Email, req: RequestHeader): Result = {
     authorize(email).fold(err => onUnauthorized(err, req), email => {
       log.info(s"Logging in '$email' through OAuth code flow.")
-      Redirect(successCall).withSession(sessionKey -> email.email)
+      Redirect(successCall)
+        .withSession(sessionKey -> email.email)
+        .withCookies(Cookie(lastIdKey, email.email))
     })
   }
 
