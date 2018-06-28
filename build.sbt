@@ -2,6 +2,7 @@ import com.malliina.sbtutils.SbtUtils
 import com.malliina.sbtutils.SbtUtils.{developerName, gitUserName}
 import play.core.PlayVersion
 import play.sbt.PlayImport
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, CrossType => PortableType}
 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
@@ -17,6 +18,7 @@ lazy val utilPlayRoot = project.in(file("."))
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
   )
 
+// TODO remove dep on playSocial
 lazy val utilPlay = Project("util-play", file("util-play"))
   .settings(utilPlaySettings: _*)
   .dependsOn(playSocial, htmlJvm)
@@ -24,7 +26,7 @@ lazy val utilPlay = Project("util-play", file("util-play"))
 lazy val playSocial = Project("play-social", file("play-social"))
   .settings(playSocialSettings: _*)
 
-lazy val html = crossProject.in(file("util-html"))
+lazy val html = portableProject.crossType(PortableType.Full).in(file("util-html"))
   .settings(htmlSettings: _*)
   .jvmSettings(htmlJvmSettings: _*)
   .jsSettings(htmlJsSettings: _*)
@@ -50,7 +52,7 @@ def playSocialSettings = commonSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
     malliinaGroup %% "okclient" % "1.5.2",
-    "com.nimbusds" % "nimbus-jose-jwt" % "5.9",
+    "com.nimbusds" % "nimbus-jose-jwt" % "5.12",
     "org.scalatest" %% "scalatest" % "3.0.5" % Test
   )
 )
@@ -64,7 +66,7 @@ def htmlJsSettings = commonSettings ++ Seq(
 )
 
 def commonSettings = SbtUtils.mavenSettings ++ commonResolvers ++ Seq(
-  scalaVersion := "2.12.5",
+  scalaVersion := "2.12.6",
   organization := "com.malliina",
   gitUserName := "malliina",
   developerName := "Michael Skogberg",

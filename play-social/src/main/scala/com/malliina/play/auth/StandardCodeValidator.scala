@@ -3,11 +3,10 @@ package com.malliina.play.auth
 import com.malliina.http.OkClient
 import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.auth.StandardCodeValidator.log
-import com.malliina.play.http.FullUrls
 import com.malliina.play.models.Email
 import play.api.Logger
 import play.api.libs.json.Json
-import play.api.mvc.Results.{BadGateway, Redirect}
+import play.api.mvc.Results.BadGateway
 import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
@@ -21,24 +20,26 @@ case class CodeValidationConf(brandName: String,
                               extraValidateParams: Map[String, String] = Map.empty)
 
 object CodeValidationConf {
-  def google(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient) = CodeValidationConf(
-    "Google",
-    redirCall,
-    handler,
-    conf,
-    KeyClient.google(conf.clientId, http),
-    Map(LoginHint -> "sub")
-  )
+  def google(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient) =
+    CodeValidationConf(
+      "Google",
+      redirCall,
+      handler,
+      conf,
+      KeyClient.google(conf.clientId, http),
+      Map.empty
+    )
 
-  def microsoft(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient) = CodeValidationConf(
-    "Microsoft",
-    redirCall,
-    handler,
-    conf,
-    KeyClient.microsoft(conf.clientId, http),
-    extraStartParams = Map("response_mode" -> "query"),
-    extraValidateParams = Map(Scope -> scope)
-  )
+  def microsoft(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient) =
+    CodeValidationConf(
+      "Microsoft",
+      redirCall,
+      handler,
+      conf,
+      KeyClient.microsoft(conf.clientId, http),
+      extraStartParams = Map("response_mode" -> "query"),
+      extraValidateParams = Map(Scope -> scope)
+    )
 }
 
 object StandardCodeValidator {
@@ -49,8 +50,6 @@ object StandardCodeValidator {
 
 /** A validator where the authorization and token endpoints are obtained through
   * a discovery endpoint ("knownUrl").
-  *
-  * @param codeConf
   */
 class StandardCodeValidator(codeConf: CodeValidationConf)
   extends CodeValidator[Email] {
@@ -64,24 +63,18 @@ class StandardCodeValidator(codeConf: CodeValidationConf)
 
   /** The initial result that initiates sign-in.
     */
-  override def start(req: RequestHeader): Future[Result] = fetchConf().mapR { oauthConf =>
-    val state = randomState()
-    val nonce = randomState()
-    val params = Map(
-      ClientId -> conf.clientId,
-      ResponseType -> CodeKey,
-      RedirectUri -> FullUrls(redirCall, req).url,
-      Scope -> scope,
-      Nonce -> nonce,
-      State -> state
-    ) ++ codeConf.extraStartParams
-    val encodedParams = params.mapValues(urlEncode)
-    val url = oauthConf.authorizationEndpoint.append(s"?${stringify(encodedParams)}")
-    Redirect(url.url).withSession(State -> state, Nonce -> nonce)
-  }.onFail { err =>
-    log.error(s"HTTP error. $err")
-    BadGateway(Json.obj("message" -> "HTTP error."))
-  }
+  override def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] =
+    fetchConf().mapR { oauthConf =>
+      val nonce = randomString()
+      val params = commonAuthParams(scope, req) ++
+        Map(ResponseType -> CodeKey, Nonce -> nonce) ++
+        codeConf.extraStartParams ++
+        extraParams
+      redirResult(oauthConf.authorizationEndpoint, params, Option(nonce))
+    }.onFail { err =>
+      log.error(s"HTTP error. $err")
+      BadGateway(Json.obj("message" -> "HTTP error."))
+    }
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val params = validationParams(code, req) ++

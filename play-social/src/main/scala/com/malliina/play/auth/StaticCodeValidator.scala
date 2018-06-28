@@ -1,10 +1,7 @@
 package com.malliina.play.auth
 
 import com.malliina.http.FullUrl
-import com.malliina.play.auth.CodeValidator.{ClientId, RedirectUri, Scope, State}
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
-import com.malliina.play.http.FullUrls
-import play.api.mvc.Results.Redirect
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.Future
@@ -49,17 +46,9 @@ abstract class StaticCodeValidator[U](val brandName: String, val staticConf: Sta
 
   override def conf = staticConf.authConf
 
-  override def start(req: RequestHeader): Future[Result] = {
-    val state = randomState()
-    val params = Map(
-      ClientId -> conf.clientId,
-      RedirectUri -> FullUrls(redirCall, req).url,
-      State -> state,
-      Scope -> staticConf.scope
-    ) ++ extraRedirParams(req)
-    val encodedParams = params.mapValues(urlEncode)
-    val url = staticConf.authorizationEndpoint.append(s"?${stringify(encodedParams)}")
-    fut(Redirect(url.url).withSession(State -> state))
+  override def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] = {
+    val params = commonAuthParams(staticConf.scope, req) ++ extraRedirParams(req) ++ extraParams
+    fut(redirResult(staticConf.authorizationEndpoint, params))
   }
 
   def extraRedirParams(rh: RequestHeader): Map[String, String] = Map.empty

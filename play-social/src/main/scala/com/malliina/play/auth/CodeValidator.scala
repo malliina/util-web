@@ -8,6 +8,7 @@ import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.http.FullUrls
 import play.api.Logger
 import play.api.libs.json.Reads
+import play.api.mvc.Results.Redirect
 import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
@@ -33,7 +34,7 @@ object CodeValidator {
 
   private val rng = new SecureRandom()
 
-  def randomState(): String = new BigInteger(130, rng).toString(32)
+  def randomString(): String = new BigInteger(130, rng).toString(32)
 }
 
 /**
@@ -68,22 +69,38 @@ trait CodeValidator[U] extends AuthValidator {
     }
   }
 
+  def redirResult(authorizationEndpoint: FullUrl,
+                  authParams: Map[String, String],
+                  nonce: Option[String] = None) = {
+    val state = randomString()
+    val encodedParams = (authParams ++ Map(State -> state)).mapValues(urlEncode)
+    val url = authorizationEndpoint.append(s"?${stringify(encodedParams)}")
+    val sessionParams = Seq(State -> state) ++ nonce.map(n => Seq(Nonce -> n)).getOrElse(Nil)
+    Redirect(url.url).withSession(sessionParams: _*)
+  }
+
   protected def urlEncode(s: String) = AuthValidator.urlEncode(s)
 
-  protected def randomState() = CodeValidator.randomState()
+  protected def randomString() = CodeValidator.randomString()
 
   protected def redirUrl(call: Call, rh: RequestHeader) = urlEncode(FullUrls(call, rh).url)
 
+  protected def commonAuthParams(authScope: String, rh: RequestHeader): Map[String, String] =
+    Map(
+      RedirectUri -> FullUrls(redirCall, rh).url,
+      ClientId -> conf.clientId,
+      Scope -> authScope
+    )
+
   /** Not encoded.
     */
-  protected def validationParams(code: Code, req: RequestHeader): Map[String, String] = {
+  protected def validationParams(code: Code, req: RequestHeader): Map[String, String] =
     Map(
       ClientId -> conf.clientId,
       ClientSecret -> conf.clientSecret,
       RedirectUri -> FullUrls(redirCall, req).url,
       CodeKey -> code.code
     )
-  }
 
   def postForm[T: Reads](url: FullUrl, params: Map[String, String]) =
     http.postFormAs[T](url, params).map(_.left.map(e => OkError(e)))

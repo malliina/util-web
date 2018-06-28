@@ -63,7 +63,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
   def authTokenUrl(token: RequestToken) =
     FullUrl("https", "api.twitter.com", s"/oauth/authenticate?oauth_token=$token")
 
-  def start(req: RequestHeader): Future[Result] =
+  def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] =
     fetchRequestToken(FullUrls(redirCall, req)).map { r =>
       r.filter(_.oauthCallbackConfirmed).map { tokens =>
         Redirect(authTokenUrl(tokens.oauthToken).url)
@@ -131,7 +131,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
   }
 
   private def buildNonce =
-    new String(Base64.getEncoder.encode(CodeValidator.randomState().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8)
+    new String(Base64.getEncoder.encode(CodeValidator.randomString().getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8)
 
   private def paramsStringWith(token: TokenValue, nonce: String, map: Map[String, String] = Map.empty) =
     Encodable(nonce, Map(OauthTokenKey -> token.token) ++ map)

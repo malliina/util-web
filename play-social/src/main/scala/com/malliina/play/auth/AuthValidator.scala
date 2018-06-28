@@ -18,7 +18,7 @@ trait AuthValidator {
 
   /** The initial result that initiates sign-in.
     */
-  def start(req: RequestHeader): Future[Result]
+  def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result]
 
   /** The callback in the auth flow, i.e. the result for redirect URIs.
     */
