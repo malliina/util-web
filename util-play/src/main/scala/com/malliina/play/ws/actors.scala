@@ -1,16 +1,11 @@
 package com.malliina.play.ws
 
-import akka.actor.{Actor, ActorRef, Cancellable, PoisonPill, Props, Terminated}
+import akka.actor.{ActorRef, PoisonPill, Props}
 import com.malliina.collections.BoundedList
-import com.malliina.play.http.Proxies
-import com.malliina.play.json.JsonMessages
-import com.malliina.play.ws.Mediator.{Broadcast, ClientJoined, ClientLeft, ClientMessage}
-import play.api.Logger
+import com.malliina.play.ws.Mediator.Broadcast
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
 import rx.lang.scala.{Observable, Subscription}
-
-import scala.concurrent.duration.DurationInt
 
 case class MediatorClient(ctx: ActorMeta, mediator: ActorRef)
   extends ClientContext {

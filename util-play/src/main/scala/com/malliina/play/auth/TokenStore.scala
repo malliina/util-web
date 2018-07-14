@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.models.Username
+import com.malliina.values.Username
 
 import scala.concurrent.{ExecutionContext, Future}
 

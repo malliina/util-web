@@ -3,7 +3,7 @@ package com.malliina.http
 import java.nio.file.Path
 import java.util.Base64
 
-import com.malliina.play.auth.Execution.cached
+import com.malliina.concurrent.ExecutionContexts.cached
 import com.malliina.security.SSLUtils
 import okhttp3.{MediaType, MultipartBody, Request, RequestBody}
 import play.api.http.ContentTypes._

@@ -5,7 +5,7 @@ import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.auth.CognitoCodeValidator.IdentityProvider
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.play.http.FullUrls
-import play.api.mvc.{Call, RequestHeader}
+import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
 
@@ -35,6 +35,9 @@ class CognitoCodeValidator(identityProvider: String,
                            staticConf: StaticConf,
                            val http: OkClient)
   extends StaticCodeValidator[CognitoUser]("Amazon", staticConf) {
+
+  override def onOutcome(outcome: Either[AuthError, CognitoUser], req: RequestHeader): Result =
+    handler.resultFor(outcome, req)
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, CognitoUser]] = {
     val params = tokenParameters(code, FullUrls(redirCall, req))

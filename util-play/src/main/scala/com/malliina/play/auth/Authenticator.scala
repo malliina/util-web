@@ -2,8 +2,9 @@ package com.malliina.play.auth
 
 import com.malliina.play.auth.Authenticator.Outcome
 import com.malliina.play.concurrent.FutureUtils
-import com.malliina.play.models.{AuthRequest, Username}
-import play.api.mvc.{RequestHeader, Security}
+import com.malliina.play.models.AuthRequest
+import com.malliina.values.Username
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.{ExecutionContext, Future}
 

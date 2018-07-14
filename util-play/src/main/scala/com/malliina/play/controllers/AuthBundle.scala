@@ -1,8 +1,8 @@
 package com.malliina.play.controllers
 
 import com.malliina.play.auth.{AuthFailure, Authenticator, UserAuthenticator}
-import com.malliina.play.http.{AuthedRequest, Proxies}
-import com.malliina.play.models.{AuthInfo, Username}
+import com.malliina.play.http.Proxies
+import com.malliina.values.Username
 import play.api.Logger
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{Call, RequestHeader, Result, Results}

@@ -2,9 +2,9 @@ package com.malliina.play.auth
 
 import com.malliina.http.{FullUrl, OkClient}
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
-import com.malliina.play.models.Email
+import com.malliina.values.Email
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.mvc.{Call, RequestHeader}
+import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
 
@@ -12,7 +12,7 @@ class GitHubCodeValidator(val redirCall: Call,
                           val handler: AuthHandler,
                           conf: AuthConf,
                           val http: OkClient)
-  extends StaticCodeValidator[Email]("GitHub", StaticConf.github(conf)) {
+  extends StaticCodeValidator[Email]("GitHub", StaticConf.github(conf)) with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)
@@ -31,4 +31,13 @@ class GitHubCodeValidator(val redirCall: Call,
       }
     }
   }
+}
+
+trait HandlerLike {
+  self: CodeValidator[Email] =>
+
+  def handler: AuthHandler
+
+  override def onOutcome(outcome: Either[AuthError, Email], req: RequestHeader): Result =
+    handler.resultFor(outcome, req)
 }

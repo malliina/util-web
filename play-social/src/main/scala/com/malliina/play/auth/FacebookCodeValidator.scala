@@ -2,7 +2,7 @@ package com.malliina.play.auth
 
 import com.malliina.http.{FullUrl, OkClient}
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
-import com.malliina.play.models.Email
+import com.malliina.values.Email
 import play.api.mvc.{Call, RequestHeader}
 
 import scala.concurrent.Future
@@ -11,7 +11,7 @@ class FacebookCodeValidator(val redirCall: Call,
                             val handler: AuthHandler,
                             conf: AuthConf,
                             val http: OkClient)
-  extends StaticCodeValidator[Email]("Facebook", StaticConf.facebook(conf)) {
+  extends StaticCodeValidator[Email]("Facebook", StaticConf.facebook(conf)) with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val params = validationParams(code, req).mapValues(urlEncode)

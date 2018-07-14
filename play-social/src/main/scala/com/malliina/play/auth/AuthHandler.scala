@@ -1,7 +1,7 @@
 package com.malliina.play.auth
 
 import com.malliina.play.auth.BasicAuthHandler.log
-import com.malliina.play.models.Email
+import com.malliina.values.Email
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results.{Redirect, Unauthorized}
@@ -55,7 +55,7 @@ object BasicAuthHandler {
 }
 
 class BasicAuthHandler(val successCall: Call,
-                       lastIdKey: String,
+                       val lastIdKey: String,
                        authorize: Email => Either[AuthError, Email] = email => Right(email),
                        val sessionKey: String = "username") extends AuthHandler {
   override def onAuthenticated(email: Email, req: RequestHeader): Result = {

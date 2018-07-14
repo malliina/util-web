@@ -6,8 +6,7 @@ import java.time.Instant
 
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationFormat
-import com.malliina.play.models.Email
-import com.malliina.values.JsonCompanion
+import com.malliina.values.{Email, JsonCompanion}
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
@@ -305,12 +304,21 @@ case class ParsedJWT(jwt: SignedJWT,
   def readStringList(key: String): Either[JWTError, Option[Seq[String]]] =
     read(Option(claims.getStringListClaim(key)).map(_.asScala), key)
 
+  def readBoolean(key: String): Either[JWTError, Boolean] =
+    read(claims.getBooleanClaim(key), key)
+
   def read[T](danger: => T, key: String): Either[JWTError, T] =
     StaticTokenValidator.read(token, danger, s"Claim missing: '$key'.")
 }
 
 case class Verified(parsed: ParsedJWT) {
   def expiresIn: Duration = (parsed.exp.toEpochMilli - Instant.now().toEpochMilli).millis
+
+  def readString(key: String) = parsed.readString(key)
+
+  def readBoolean(key: String) = parsed.readBoolean(key)
+
+  def token = parsed.token
 }
 
 case class KeyConf(n: Base64URL,

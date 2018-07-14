@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.models.Username
+import com.malliina.values.Username
 import play.api.libs.json.Json
 
 case class Token(user: Username, series: Long, token: Long) {

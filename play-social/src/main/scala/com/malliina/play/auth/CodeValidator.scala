@@ -48,9 +48,9 @@ trait CodeValidator[U] extends AuthValidator {
 
   def redirCall: Call
 
-  def handler: AuthHandlerBase[U]
-
   def validate(code: Code, req: RequestHeader): Future[Either[AuthError, U]]
+
+  def onOutcome(outcome: Either[AuthError, U], req: RequestHeader): Result
 
   override def validateCallback(req: RequestHeader): Future[Result] = {
     val requestState = req.getQueryString(State)
@@ -58,20 +58,23 @@ trait CodeValidator[U] extends AuthValidator {
     val isStateOk = requestState.exists(rs => sessionState.contains(rs))
     if (isStateOk) {
       req.getQueryString(CodeKey).map { code =>
-        validate(Code(code), req).map(outcome => handler.resultFor(outcome, req))
+        validate(Code(code), req).map { outcome =>
+          onOutcome(outcome, req)
+        }
       }.getOrElse {
         log.error(s"Authentication failed, code missing. $req")
-        handler.onUnauthorizedFut(OAuthError("Code missing."), req)
+        fut(onOutcome(Left(OAuthError("Code missing.")), req))
       }
     } else {
       log.error(s"Authentication failed, state mismatch. $req")
-      handler.onUnauthorizedFut(OAuthError("State mismatch."), req)
+      fut(onOutcome(Left(OAuthError("State mismatch.")), req))
     }
   }
 
+
   def redirResult(authorizationEndpoint: FullUrl,
                   authParams: Map[String, String],
-                  nonce: Option[String] = None) = {
+                  nonce: Option[String] = None): Result = {
     val state = randomString()
     val encodedParams = (authParams ++ Map(State -> state)).mapValues(urlEncode)
     val url = authorizationEndpoint.append(s"?${stringify(encodedParams)}")
@@ -81,7 +84,7 @@ trait CodeValidator[U] extends AuthValidator {
 
   protected def urlEncode(s: String) = AuthValidator.urlEncode(s)
 
-  protected def randomString() = CodeValidator.randomString()
+  protected def randomString(): String = CodeValidator.randomString()
 
   protected def redirUrl(call: Call, rh: RequestHeader) = urlEncode(FullUrls(call, rh).url)
 

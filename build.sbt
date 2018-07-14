@@ -7,9 +7,10 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
+val primitiveVersion = "1.6.0"
 
 lazy val utilPlayRoot = project.in(file("."))
-  .aggregate(utilPlay, playSocial, htmlJvm, htmlJs)
+  .aggregate(utilPlay, playSocial, htmlJvm, htmlJs, playCommon)
   .settings(
     organization := malliinaGroup,
     publish := {},
@@ -18,15 +19,20 @@ lazy val utilPlayRoot = project.in(file("."))
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
   )
 
-// TODO remove dep on playSocial
 lazy val utilPlay = Project("util-play", file("util-play"))
   .settings(utilPlaySettings: _*)
-  .dependsOn(playSocial, htmlJvm)
+  .dependsOn(htmlJvm, playCommon)
 
 lazy val playSocial = Project("play-social", file("play-social"))
   .settings(playSocialSettings: _*)
+  .dependsOn(playCommon)
 
-lazy val html = portableProject.crossType(PortableType.Full).in(file("util-html"))
+lazy val playCommon = Project("play-common", file("play-common"))
+  .settings(playCommonSettings: _*)
+
+lazy val html = portableProject(JSPlatform, JVMPlatform)
+  .crossType(PortableType.Full)
+  .in(file("util-html"))
   .settings(htmlSettings: _*)
   .jvmSettings(htmlJvmSettings: _*)
   .jsSettings(htmlJsSettings: _*)
@@ -41,8 +47,8 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
     playGroup %% "play-server" % playVersion,
-    malliinaGroup %% "util" % "2.10.2",
-    malliinaGroup %% "util-rmi" % "2.10.2",
+    malliinaGroup %% "okclient" % primitiveVersion,
+    malliinaGroup %% "util" % "2.11.0",
     malliinaGroup %% "logback-rx" % "1.2.0",
     "org.scala-stm" %% "scala-stm" % "0.8"
   )
@@ -51,9 +57,16 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
 def playSocialSettings = commonSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
-    malliinaGroup %% "okclient" % "1.5.2",
+    malliinaGroup %% "okclient" % primitiveVersion,
     "com.nimbusds" % "nimbus-jose-jwt" % "5.12",
     "org.scalatest" %% "scalatest" % "3.0.5" % Test
+  )
+)
+
+def playCommonSettings = commonSettings ++ Seq(
+  libraryDependencies ++= Seq(
+    playGroup %% "play" % playVersion,
+    "com.malliina" %%% "primitives" % primitiveVersion
   )
 )
 
@@ -79,7 +92,7 @@ def htmlSettings = Seq(
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "scalatags" % "0.6.7",
     "com.typesafe.play" %%% "play-json" % "2.6.9",
-    "com.malliina" %%% "primitives" % "1.5.2",
+    "com.malliina" %%% "primitives" % primitiveVersion,
     "org.scalatest" %%% "scalatest" % "3.0.5"
   )
 )

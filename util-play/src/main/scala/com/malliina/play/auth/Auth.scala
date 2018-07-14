@@ -1,9 +1,9 @@
 package com.malliina.play.auth
 
-import com.malliina.play.models.{Password, Username}
+import com.malliina.values.{Password, Username}
 import org.apache.commons.codec.binary.Base64
-import play.api.http.HeaderNames
-import play.api.mvc.{RequestHeader, Security}
+import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.mvc.RequestHeader
 
 object Auth {
   val DefaultSessionKey = "username"
@@ -25,7 +25,7 @@ object Auth {
     * @return
     */
   def authHeaderParser[T](request: RequestHeader)(f: String => Option[T]): Option[T] = {
-    request.headers.get(HeaderNames.AUTHORIZATION) flatMap { authInfo =>
+    request.headers.get(AUTHORIZATION) flatMap { authInfo =>
       authInfo.split(" ") match {
         case Array(_, encodedCredentials) =>
           val decoded = new String(Base64.decodeBase64(encodedCredentials.getBytes))

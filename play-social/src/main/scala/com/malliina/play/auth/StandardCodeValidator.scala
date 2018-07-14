@@ -2,103 +2,84 @@ package com.malliina.play.auth
 
 import com.malliina.http.OkClient
 import com.malliina.play.auth.CodeValidator._
-import com.malliina.play.auth.StandardCodeValidator.log
-import com.malliina.play.models.Email
-import play.api.Logger
-import play.api.libs.json.Json
-import play.api.mvc.Results.BadGateway
+import com.malliina.values.Email
 import play.api.mvc.{Call, RequestHeader, Result}
 
-import scala.concurrent.Future
+case class AuthCodeConf(brandName: String,
+                        redirCall: Call,
+                        conf: AuthConf,
+                        client: KeyClient,
+                        extraStartParams: Map[String, String] = Map.empty,
+                        extraValidateParams: Map[String, String] = Map.empty)
 
-case class CodeValidationConf(brandName: String,
-                              redirCall: Call,
-                              handler: AuthHandler,
-                              conf: AuthConf,
-                              client: KeyClient,
-                              extraStartParams: Map[String, String] = Map.empty,
-                              extraValidateParams: Map[String, String] = Map.empty)
+case class CodeValidationConf(handler: AuthHandler, codeConf: AuthCodeConf) {
+  def brandName = codeConf.brandName
+
+  def conf = codeConf.conf
+
+  def client = codeConf.client
+
+  def redirCall = codeConf.redirCall
+
+  def extraStartParams = codeConf.extraStartParams
+
+  def extraValidateParams = codeConf.extraValidateParams
+}
 
 object CodeValidationConf {
   def google(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient) =
     CodeValidationConf(
-      "Google",
-      redirCall,
       handler,
-      conf,
-      KeyClient.google(conf.clientId, http),
-      Map.empty
+      AuthCodeConf(
+        "Google",
+        redirCall,
+        conf,
+        KeyClient.google(conf.clientId, http),
+        Map.empty
+      )
     )
 
   def microsoft(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient) =
     CodeValidationConf(
-      "Microsoft",
-      redirCall,
       handler,
-      conf,
-      KeyClient.microsoft(conf.clientId, http),
-      extraStartParams = Map("response_mode" -> "query"),
-      extraValidateParams = Map(Scope -> scope)
+      AuthCodeConf(
+        "Microsoft",
+        redirCall,
+        conf,
+        KeyClient.microsoft(conf.clientId, http),
+        extraStartParams = Map("response_mode" -> "query"),
+        extraValidateParams = Map(Scope -> scope)
+      )
     )
 }
 
 object StandardCodeValidator {
-  private val log = Logger(getClass)
-
   def apply(conf: CodeValidationConf) = new StandardCodeValidator(conf)
+
+  def map[T](c: CodeValidationConf)(parse: Verified => Either[AuthError, Email]) =
+    new DiscoveringCodeValidator(c.codeConf) {
+      override def onOutcome(outcome: Either[AuthError, Verified], req: RequestHeader): Result =
+        c.handler.resultFor(outcome.flatMap(parse), req)
+    }
 }
 
-/** A validator where the authorization and token endpoints are obtained through
-  * a discovery endpoint ("knownUrl").
-  */
-class StandardCodeValidator(codeConf: CodeValidationConf)
-  extends CodeValidator[Email] {
-
-  val handler = codeConf.handler
-  val brandName = codeConf.brandName
-  val conf = codeConf.conf
-  val redirCall = codeConf.redirCall
-  val client = codeConf.client
-  val http = client.http
-
-  /** The initial result that initiates sign-in.
-    */
-  override def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] =
-    fetchConf().mapR { oauthConf =>
-      val nonce = randomString()
-      val params = commonAuthParams(scope, req) ++
-        Map(ResponseType -> CodeKey, Nonce -> nonce) ++
-        codeConf.extraStartParams ++
-        extraParams
-      redirResult(oauthConf.authorizationEndpoint, params, Option(nonce))
-    }.onFail { err =>
-      log.error(s"HTTP error. $err")
-      BadGateway(Json.obj("message" -> "HTTP error."))
-    }
-
-  override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
-    val params = validationParams(code, req) ++
-      Map(GrantType -> AuthorizationCode) ++
-      codeConf.extraValidateParams
-    fetchConf().flatMapRight { oauthConf =>
-      postForm[SimpleTokens](oauthConf.tokenEndpoint, params).flatMapRight { tokens =>
-        client.validate(tokens.idToken).map { result =>
-          for {
-            verified <- result
-            _ <- checkNonce(tokens.idToken, verified, req)
-            email <- verified.parsed.readString(EmailKey).map(Email.apply)
-          } yield email
-        }
-      }
-    }
+class StandardCodeValidator(conf: CodeValidationConf) extends DiscoveringCodeValidator(conf.codeConf) {
+  override def onOutcome(outcome: Either[AuthError, Verified], req: RequestHeader): Result = {
+    val emailOutcome = for {
+      validated <- outcome
+      email <- validated.readString(EmailKey).map(Email.apply)
+    } yield email
+    conf.handler.resultFor(emailOutcome, req)
   }
+}
 
-  def checkNonce(idToken: IdToken, verified: Verified, req: RequestHeader) =
-    verified.parsed.readString(Nonce).flatMap { n =>
-      if (req.session.get(Nonce).contains(n)) Right(verified)
-      else Left(InvalidClaims(idToken, "Nonce mismatch."))
-    }
+object GoogleCodeValidator {
+  val EmailVerified = "email_verified"
 
-  def fetchConf(): Future[Either[OkError, AuthEndpoints]] =
-    getJson[AuthEndpoints](client.knownUrl)
+  def apply(code: CodeValidationConf): DiscoveringCodeValidator = StandardCodeValidator.map(code) { validated =>
+    for {
+      _ <- validated.readBoolean(GoogleCodeValidator.EmailVerified).filterOrElse(_ == true, InvalidClaims(validated.token, "Email not verified."))
+      email <- validated.readString(EmailKey).map(Email.apply)
+    } yield email
+  }
 }

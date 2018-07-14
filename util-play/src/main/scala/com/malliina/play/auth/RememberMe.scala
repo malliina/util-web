@@ -2,14 +2,14 @@ package com.malliina.play.auth
 
 import com.malliina.play.auth.RememberMe._
 import com.malliina.play.http.AuthedRequest
-import com.malliina.play.models.Username
+import com.malliina.values.Username
 import play.api.Logger
 import play.api.http.{JWTConfiguration, SecretConfiguration}
 import play.api.libs.crypto.CookieSigner
 import play.api.mvc._
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 /** Adapted from https://github.com/wsargent/play20-rememberme
@@ -76,7 +76,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner, val secretCo
     * @return the authenticated user, along with an optional cookie to include
     */
   def authenticateFromCookie(request: RequestHeader): Future[Option[AuthedRequest]] =
-    authenticateToken(request) map  { maybeToken =>
+    authenticateToken(request) map { maybeToken =>
       maybeToken.map(token => AuthedRequest(token.user, request, Some(cookify(token))))
     }
 

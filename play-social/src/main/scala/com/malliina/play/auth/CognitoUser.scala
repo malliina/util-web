@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.models.{Email, Username}
+import com.malliina.values.{Email, Username}
 
 trait JWTUser {
   def username: Username

@@ -2,7 +2,7 @@ package com.malliina.play.controllers
 
 import com.malliina.play.controllers.Signouts.log
 import com.malliina.play.json.JsonMessages
-import com.malliina.play.models.Email
+import com.malliina.values.Email
 import play.api.Logger
 import play.api.mvc.Results.{Redirect, Unauthorized}
 import play.api.mvc._

@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.models.{Password, Username}
+import com.malliina.values.{Password, Username}
 
 trait BasicCreds {
   def username: Username

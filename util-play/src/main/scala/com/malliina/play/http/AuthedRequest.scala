@@ -1,6 +1,7 @@
 package com.malliina.play.http
 
-import com.malliina.play.models.{AuthRequest, Username}
+import com.malliina.play.models.AuthRequest
+import com.malliina.values.Username
 import play.api.mvc.{AnyContent, Cookie, Request, RequestHeader}
 
 class AuthedRequest(user: Username,
