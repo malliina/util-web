@@ -66,11 +66,16 @@ trait CodeValidator[U] extends AuthValidator {
         fut(onOutcome(Left(OAuthError("Code missing.")), req))
       }
     } else {
-      log.error(s"Authentication failed, state mismatch. $req")
+      val detailed = (requestState, sessionState) match {
+        case (Some(rs), Some(ss)) => s"Got '$rs', expected '$ss'."
+        case (Some(rs), None) => s"Got '$rs', but found nothing to compare to."
+        case (None, Some(ss)) => s"No state in request, expected '$ss'."
+        case _ => "No state in request and nothing to compare to either."
+      }
+      log.error(s"Authentication failed, state mismatch. $detailed $req")
       fut(onOutcome(Left(OAuthError("State mismatch.")), req))
     }
   }
-
 
   def redirResult(authorizationEndpoint: FullUrl,
                   authParams: Map[String, String],
