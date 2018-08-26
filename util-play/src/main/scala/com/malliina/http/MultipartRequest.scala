@@ -3,7 +3,6 @@ package com.malliina.http
 import java.nio.file.Path
 import java.util.Base64
 
-import com.malliina.concurrent.ExecutionContexts.cached
 import com.malliina.security.SSLUtils
 import okhttp3.{MediaType, MultipartBody, Request, RequestBody}
 import play.api.http.ContentTypes._
@@ -22,6 +21,7 @@ object MultipartRequest {
 }
 
 class MultipartRequest(url: FullUrl, val client: OkClient) extends AutoCloseable {
+  implicit val ec = client.exec
   val requestBuilder = new Request.Builder().url(url.url)
   requestBuilder.addHeader(ACCEPT, JSON)
   val bodyBuilder = new MultipartBody.Builder()

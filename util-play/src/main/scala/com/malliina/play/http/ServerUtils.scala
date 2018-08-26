@@ -1,12 +1,13 @@
 package com.malliina.play.http
 
-import com.malliina.util.Utils
 import play.api.mvc.RequestHeader
+
+import scala.util.Try
 
 object ServerUtils {
   def portFromHost(req: RequestHeader): Option[Int] = {
     val maybeSuffix = req.host.dropWhile(_ != ':')
-    if (maybeSuffix.length > 1) Utils.opt[Int, NumberFormatException](maybeSuffix.tail.toInt)
+    if (maybeSuffix.length > 1) Try(maybeSuffix.tail.toInt).toOption
     else None
   }
 }

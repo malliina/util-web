@@ -48,9 +48,7 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
     playGroup %% "play" % playVersion,
     playGroup %% "play-server" % playVersion,
     malliinaGroup %% "okclient" % primitiveVersion,
-    malliinaGroup %% "util" % "2.11.0",
-    malliinaGroup %% "logback-rx" % "1.2.0",
-    "org.scala-stm" %% "scala-stm" % "0.8"
+    malliinaGroup %% "logback-rx" % "1.2.0"
   )
 )
 
@@ -58,7 +56,7 @@ def playSocialSettings = commonSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
     malliinaGroup %% "okclient" % primitiveVersion,
-    "com.nimbusds" % "nimbus-jose-jwt" % "5.12",
+    "com.nimbusds" % "nimbus-jose-jwt" % "6.0.1",
     "org.scalatest" %% "scalatest" % "3.0.5" % Test
   )
 )
@@ -91,7 +89,7 @@ def htmlSettings = Seq(
   name := "util-html",
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "scalatags" % "0.6.7",
-    "com.typesafe.play" %%% "play-json" % "2.6.9",
+    "com.typesafe.play" %%% "play-json" % "2.6.10",
     "com.malliina" %%% "primitives" % primitiveVersion,
     "org.scalatest" %%% "scalatest" % "3.0.5"
   )
