@@ -14,14 +14,7 @@ Useful code for Play Framework. A selection of what is provided:
 
 # play-social
 
-Social login implementations for the following service providers:
-
-- Google
-- Facebook
-- Microsoft
-- Twitter
-- GitHub
-- Amazon
+See [docs](play-social/README.md).
 
 # util-html
 
