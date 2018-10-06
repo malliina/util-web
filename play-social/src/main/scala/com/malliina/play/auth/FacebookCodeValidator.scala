@@ -1,17 +1,25 @@
 package com.malliina.play.auth
 
-import com.malliina.http.{FullUrl, OkClient}
+import com.malliina.http.FullUrl
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.values.Email
-import play.api.mvc.{Call, RequestHeader}
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.Future
 
-class FacebookCodeValidator(val redirCall: Call,
-                            val handler: AuthHandler,
-                            conf: AuthConf,
-                            val http: OkClient)
-  extends StaticCodeValidator[Email]("Facebook", StaticConf.facebook(conf)) with HandlerLike {
+object FacebookCodeValidator {
+  def apply(conf: OAuthConf[Email]) = new FacebookCodeValidator(conf)
+
+  def staticConf(conf: AuthConf) = StaticConf(
+    "public_profile email",
+    FullUrl.https("www.facebook.com", "/v2.12/dialog/oauth"),
+    FullUrl.https("graph.facebook.com", "/v2.12/oauth/access_token"),
+    conf
+  )
+}
+
+class FacebookCodeValidator(val oauth: OAuthConf[Email])
+  extends StaticCodeValidator[Email, Email]("Facebook", StaticConf.facebook(oauth.conf)) with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val params = validationParams(code, req).mapValues(urlEncode)

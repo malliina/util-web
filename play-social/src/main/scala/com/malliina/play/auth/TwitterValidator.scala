@@ -4,15 +4,16 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.Base64
 
-import com.malliina.http.{FullUrl, OkClient}
+import com.malliina.http.FullUrl
 import com.malliina.play.auth.TwitterValidator._
 import com.malliina.play.http.FullUrls
+import com.malliina.values.Email
 import okhttp3.Request
 import org.apache.commons.codec.digest.HmacUtils
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.MimeTypes
 import play.api.mvc.Results.Redirect
-import play.api.mvc.{Call, RequestHeader, Result}
+import play.api.mvc.{RequestHeader, Result}
 
 import scala.collection.SortedMap
 import scala.concurrent.Future
@@ -20,6 +21,8 @@ import scala.concurrent.Future
 object TwitterValidator {
   val OauthTokenKey = "oauth_token"
   val OauthVerifierKey = "oauth_verifier"
+
+  def apply(oauth: OAuthConf[Email]): TwitterValidator = new TwitterValidator(oauth)
 
   def sign(key: String, in: String) =
     new String(Base64.getEncoder.encode(HmacUtils.hmacSha1(key, in)), StandardCharsets.UTF_8)
@@ -52,9 +55,7 @@ object TwitterValidator {
   }
 }
 
-class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, http: OkClient)
-  extends AuthValidator {
-
+class TwitterValidator(val oauth: OAuthConf[Email]) extends AuthValidator with OAuthValidator[Email] {
   val brandName = "Twitter"
   val requestTokenUrl = FullUrl.https("api.twitter.com", "/oauth/request_token")
   val accessTokenUrl = FullUrl.https("api.twitter.com", "/oauth/access_token")
@@ -94,7 +95,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
     maybe.getOrElse(handler.onUnauthorizedFut(OAuthError("Invalid callback parameters."), req))
   }
 
-  private def fetchRequestToken(redirUrl: FullUrl) = {
+  private def fetchRequestToken(redirUrl: FullUrl): Future[Option[TwitterTokens]] = {
     val encodable = Encodable(buildNonce, Map("oauth_callback" -> redirUrl.url))
     val authHeaderValue = encodable.signed("POST", requestTokenUrl, None)
     http.postForm(requestTokenUrl, form = Map.empty, headers = Map(AUTHORIZATION -> authHeaderValue)).map { r =>
@@ -102,7 +103,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
     }
   }
 
-  private def fetchAccessToken(requestToken: RequestToken, verifier: String) = {
+  private def fetchAccessToken(requestToken: RequestToken, verifier: String): Future[Option[TwitterAccess]] = {
     val encodable = paramsStringWith(requestToken, buildNonce)
     val authHeaderValue = encodable.signed("POST", accessTokenUrl, None)
     http.postForm(
@@ -115,7 +116,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
     ).map { res => TwitterAccess.fromString(res.asString) }
   }
 
-  private def fetchUser(access: TwitterAccess) = {
+  private def fetchUser(access: TwitterAccess): Future[Either[JsonError, TwitterUser]] = {
     val queryParams = Map(
       "skip_status" -> "true",
       "include_entities" -> "false",
@@ -138,7 +139,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
 
   case class Encodable(nonce: String, map: Map[String, String]) {
     private val params = map ++ Map(
-      "oauth_consumer_key" -> conf.clientId,
+      "oauth_consumer_key" -> clientConf.clientId,
       "oauth_nonce" -> nonce,
       "oauth_signature_method" -> "HMAC-SHA1",
       "oauth_timestamp" -> s"${Instant.now().getEpochSecond}",
@@ -150,7 +151,7 @@ class TwitterValidator(redirCall: Call, handler: AuthHandler, conf: AuthConf, ht
 
     def signed(method: String, url: FullUrl, oauthTokenSecret: Option[String]): String = {
       val signatureBaseString = s"$method&${percentEncode(url.url)}&$paramsString"
-      val key = signingKey(conf.clientSecret, oauthTokenSecret)
+      val key = signingKey(clientConf.clientSecret, oauthTokenSecret)
       val signature = sign(key, signatureBaseString)
       val headerParams = encodedParams ++ Map("oauth_signature" -> percentEncode(signature))
       val authHeaderValues = headerParams.map { case (k, v) => s"""$k="$v"""" }.mkString(", ")

@@ -3,7 +3,7 @@ package com.malliina.play.auth
 import java.math.BigInteger
 import java.security.SecureRandom
 
-import com.malliina.http.{FullUrl, OkClient}
+import com.malliina.http.FullUrl
 import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.http.FullUrls
 import play.api.Logger
@@ -41,13 +41,7 @@ object CodeValidator {
   *
   * @tparam U type of user object, e.g. Username, Email, AppUser, String
   */
-trait CodeValidator[U] extends AuthValidator {
-  def http: OkClient
-
-  def conf: AuthConf
-
-  def redirCall: Call
-
+trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
   def validate(code: Code, req: RequestHeader): Future[Either[AuthError, U]]
 
   def onOutcome(outcome: Either[AuthError, U], req: RequestHeader): Result
@@ -96,7 +90,7 @@ trait CodeValidator[U] extends AuthValidator {
   protected def commonAuthParams(authScope: String, rh: RequestHeader): Map[String, String] =
     Map(
       RedirectUri -> FullUrls(redirCall, rh).url,
-      ClientId -> conf.clientId,
+      ClientId -> clientConf.clientId,
       Scope -> authScope
     )
 
@@ -104,8 +98,8 @@ trait CodeValidator[U] extends AuthValidator {
     */
   protected def validationParams(code: Code, req: RequestHeader): Map[String, String] =
     Map(
-      ClientId -> conf.clientId,
-      ClientSecret -> conf.clientSecret,
+      ClientId -> clientConf.clientId,
+      ClientSecret -> clientConf.clientSecret,
       RedirectUri -> FullUrls(redirCall, req).url,
       CodeKey -> code.code
     )

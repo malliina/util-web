@@ -13,6 +13,7 @@ case class Code(code: String)
 
 object StaticTokenValidator {
   private val log = Logger(getClass)
+
   def read[T](token: TokenValue, f: => T, onMissing: => String): Either[JWTError, T] =
     try {
       Option(f).toRight(MissingData(token, onMissing))

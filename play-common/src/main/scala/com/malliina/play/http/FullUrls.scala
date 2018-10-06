@@ -13,7 +13,7 @@ object FullUrls {
     FullUrl(url.proto, url.hostAndPort, callUri)
   }
 
-  def apply(call: Call, request: RequestHeader) =
+  def apply(call: Call, request: RequestHeader): FullUrl =
     absolute(hostOnly(request), call)
 
   /** Ignores the uri of `request`.

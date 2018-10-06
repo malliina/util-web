@@ -18,19 +18,11 @@ object StaticCodeValidator {
   }
 
   object StaticConf {
-    def facebook(authConf: AuthConf) = StaticConf(
-      "public_profile email",
-      FullUrl.https("www.facebook.com", "/v2.12/dialog/oauth"),
-      FullUrl.https("graph.facebook.com", "/v2.12/oauth/access_token"),
-      authConf
-    )
+    def facebook(authConf: AuthConf) =
+      FacebookCodeValidator.staticConf(authConf)
 
-    def github(authConf: AuthConf) = StaticConf(
-      "user:email",
-      FullUrl.https("github.com", "/login/oauth/authorize"),
-      FullUrl.https("github.com", "/login/oauth/access_token"),
-      authConf
-    )
+    def github(authConf: AuthConf) =
+      GitHubCodeValidator.staticConf(authConf)
   }
 
 }
@@ -41,10 +33,8 @@ object StaticCodeValidator {
   * @param brandName  provider name
   * @param staticConf conf
   */
-abstract class StaticCodeValidator[U](val brandName: String, val staticConf: StaticConf)
-  extends CodeValidator[U] {
-
-  override def conf = staticConf.authConf
+abstract class StaticCodeValidator[U, V](val brandName: String, val staticConf: StaticConf)
+  extends CodeValidator[U, V] {
 
   override def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] = {
     val params = commonAuthParams(staticConf.scope, req) ++ extraRedirParams(req) ++ extraParams

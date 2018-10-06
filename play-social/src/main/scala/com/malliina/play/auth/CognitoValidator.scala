@@ -38,7 +38,7 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
     for {
       username <- jwt.readString(UserKey).filterOrElse(_.nonEmpty, InvalidClaims(jwt.token, "Username must be non-empty."))
       email <- jwt.readStringOpt(EmailKey)
-      groups <- jwt.readStringListOrEmpty(GroupsKey) // .filterOrElse(_.contains(ExpectedPicsGroup), InvalidClaims(jwt.token, s"User does not belong to group '$PicsGroup'."))
+      groups <- jwt.readStringListOrEmpty(GroupsKey)
     } yield CognitoUser(Username(username), email.map(Email.apply), groups, verified)
   }
 

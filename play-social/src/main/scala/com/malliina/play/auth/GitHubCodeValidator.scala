@@ -1,18 +1,27 @@
 package com.malliina.play.auth
 
-import com.malliina.http.{FullUrl, OkClient}
+import com.malliina.http.FullUrl
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.values.Email
 import play.api.http.{HeaderNames, MimeTypes}
-import play.api.mvc.{Call, RequestHeader, Result}
+import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.Future
 
-class GitHubCodeValidator(val redirCall: Call,
-                          val handler: AuthHandler,
-                          conf: AuthConf,
-                          val http: OkClient)
-  extends StaticCodeValidator[Email]("GitHub", StaticConf.github(conf)) with HandlerLike {
+object GitHubCodeValidator {
+  def apply(conf: OAuthConf[Email]) = new GitHubCodeValidator(conf)
+
+  def staticConf(conf: AuthConf) = StaticConf(
+    "user:email",
+    FullUrl.https("github.com", "/login/oauth/authorize"),
+    FullUrl.https("github.com", "/login/oauth/access_token"),
+    conf
+  )
+}
+
+class GitHubCodeValidator(val oauth: OAuthConf[Email])
+  extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
+    with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)
@@ -34,9 +43,9 @@ class GitHubCodeValidator(val redirCall: Call,
 }
 
 trait HandlerLike {
-  self: CodeValidator[Email] =>
+  self: CodeValidator[Email, Email] =>
 
-  def handler: AuthHandler
+  def handler: AuthResults[Email]
 
   override def onOutcome(outcome: Either[AuthError, Email], req: RequestHeader): Result =
     handler.resultFor(outcome, req)

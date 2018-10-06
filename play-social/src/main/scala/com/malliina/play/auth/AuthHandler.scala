@@ -9,13 +9,13 @@ import play.api.mvc.{Call, Cookie, RequestHeader, Result}
 
 import scala.concurrent.Future
 
-trait AuthHandler extends AuthHandlerBase[Email]
+trait AuthHandler extends AuthResults[Email]
 
 /**
   *
   * @tparam U type of user
   */
-trait AuthHandlerBase[U] {
+trait AuthResults[U] {
   def onAuthenticated(user: U, req: RequestHeader): Result
 
   def onUnauthorized(error: AuthError, req: RequestHeader): Result
@@ -30,12 +30,12 @@ trait AuthHandlerBase[U] {
   def onUnauthorizedFut(error: AuthError, req: RequestHeader): Future[Result] =
     Future.successful(onUnauthorized(error, req))
 
-  def filter(p: U => Boolean): AuthHandlerBase[U] =
+  def filter(p: U => Boolean): AuthResults[U] =
     flatMap(user => if (p(user)) Right(user) else Left(PermissionError(s"Unauthorized: '$user'.")))
 
-  def flatMap(f: U => Either[AuthError, U]): AuthHandlerBase[U] = {
+  def flatMap(f: U => Either[AuthError, U]): AuthResults[U] = {
     val parent = this
-    new AuthHandlerBase[U] {
+    new AuthResults[U] {
       override def onAuthenticated(user: U, req: RequestHeader): Result =
         f(user).fold(e => parent.onUnauthorized(e, req), user => parent.onAuthenticated(user, req))
 

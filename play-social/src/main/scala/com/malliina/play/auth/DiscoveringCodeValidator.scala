@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.auth.CodeValidator.{GrantType, Nonce, ResponseType, scope, _}
+import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.auth.DiscoveringCodeValidator.log
 import play.api.Logger
 import play.api.libs.json.Json
@@ -15,15 +15,20 @@ object DiscoveringCodeValidator {
 
 /** A validator where the authorization and token endpoints are obtained through
   * a discovery endpoint ("knownUrl").
+  *
+  * @param codeConf conf
+  * @tparam V type of authenticated user
   */
-abstract class DiscoveringCodeValidator(codeConf: AuthCodeConf)
-  extends CodeValidator[Verified] {
+abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
+  extends CodeValidator[Verified, V] {
 
   val brandName = codeConf.brandName
-  val conf = codeConf.conf
-  val redirCall = codeConf.redirCall
   val client = codeConf.client
-  val http = client.http
+
+  def parse(v: Verified): Either[AuthError, V]
+
+  override def onOutcome(outcome: Either[AuthError, Verified], req: RequestHeader): Result =
+    handler.resultFor(outcome.flatMap(parse), req)
 
   /** The initial result that initiates sign-in.
     */
@@ -56,7 +61,7 @@ abstract class DiscoveringCodeValidator(codeConf: AuthCodeConf)
     }
   }
 
-  def checkNonce(idToken: IdToken, verified: Verified, req: RequestHeader) =
+  def checkNonce(idToken: IdToken, verified: Verified, req: RequestHeader): Either[JWTError, Verified] =
     verified.parsed.readString(Nonce).flatMap { n =>
       if (req.session.get(Nonce).contains(n)) Right(verified)
       else Left(InvalidClaims(idToken, "Nonce mismatch."))

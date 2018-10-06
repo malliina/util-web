@@ -9,18 +9,11 @@ import play.api.libs.json.Reads
 import scala.concurrent.Future
 
 object KeyClient {
-  // https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-tokens
-  val knownUrlMicrosoft =
-    FullUrl("https", "login.microsoftonline.com", "/common/v2.0/.well-known/openid-configuration")
-
-  val knownUrlGoogle =
-    FullUrl("https", "accounts.google.com", "/.well-known/openid-configuration")
-
   def microsoft(clientId: String, http: OkClient): KeyClient =
-    new KeyClient(knownUrlMicrosoft, MicrosoftValidator(clientId), http)
+    MicrosoftCodeValidator.keyClient(clientId, http)
 
   def google(clientId: String, http: OkClient): KeyClient =
-    new KeyClient(knownUrlGoogle, GoogleValidator(clientId), http)
+    GoogleCodeValidator.keyClient(clientId, http)
 }
 
 class KeyClient(val knownUrl: FullUrl, validator: TokenValidator, val http: OkClient) {

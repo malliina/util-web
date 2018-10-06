@@ -1,4 +1,4 @@
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 resolvers ++= Seq(
   // temporary hack
   // http://stackoverflow.com/a/42211230
@@ -22,7 +22,7 @@ def ivyRepo(name: String, urlString: String) =
 
 Seq(
   "com.malliina" %% "sbt-utils" % "0.9.0",
-  "com.malliina" %% "sbt-play" % "1.3.1",
+  "com.malliina" %% "sbt-play" % "1.4.0",
   "org.portable-scala" % "sbt-scalajs-crossproject" % "0.5.0",
-  "org.scala-js" % "sbt-scalajs" % "0.6.24"
+  "org.scala-js" % "sbt-scalajs" % "0.6.25"
 ) map addSbtPlugin
