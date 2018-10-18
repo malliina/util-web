@@ -10,19 +10,12 @@ object GoogleCodeValidator {
 
   val EmailVerified = "email_verified"
 
-  def apply(oauth: OAuthConf[Email]): EmailValidator =
-    EmailValidator(google(oauth))
+  def apply(oauth: OAuthConf[Email]): GoogleCodeValidator = apply(google(oauth))
 
-  def apply(code: CodeValidationConf[Email]): DiscoveringCodeValidator[Email] =
-    EmailValidator.map(code) { validated =>
-      val emailVerified = validated.readBoolean(GoogleCodeValidator.EmailVerified)
-      for {
-        _ <- emailVerified.filterOrElse(_ == true, InvalidClaims(validated.token, "Email not verified."))
-        email <- validated.readString(EmailKey).map(Email.apply)
-      } yield email
-    }
+  def apply(conf: CodeValidationConf[Email]): GoogleCodeValidator =
+    new GoogleCodeValidator(conf)
 
-  def google(oauth: OAuthConf[Email]) = CodeValidationConf(
+  def google(oauth: OAuthConf[Email]): CodeValidationConf[Email] = CodeValidationConf(
     oauth,
     AuthCodeConf(
       "Google",
@@ -35,4 +28,16 @@ object GoogleCodeValidator {
 
   def keyClient(clientId: String, http: OkClient): KeyClient =
     new KeyClient(knownUrlGoogle, GoogleValidator(clientId), http)
+}
+
+class GoogleCodeValidator(conf: CodeValidationConf[Email])
+  extends StandardOAuth[Email](conf) {
+
+  override def parse(validated: Verified): Either[AuthError, Email] = {
+    val emailVerified = validated.readBoolean(GoogleCodeValidator.EmailVerified)
+    for {
+      _ <- emailVerified.filterOrElse(_ == true, InvalidClaims(validated.token, "Email not verified."))
+      email <- validated.readString(EmailKey).map(Email.apply)
+    } yield email
+  }
 }

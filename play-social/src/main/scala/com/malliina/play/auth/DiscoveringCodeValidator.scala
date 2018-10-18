@@ -70,3 +70,9 @@ abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
   def fetchConf(): Future[Either[OkError, AuthEndpoints]] =
     getJson[AuthEndpoints](client.knownUrl)
 }
+
+abstract class StandardOAuth[V](conf: CodeValidationConf[V])
+  extends DiscoveringCodeValidator[V](conf.codeConf)
+    with LoginHintSupport {
+  override val oauth: OAuthConf[V] = conf.oauth
+}

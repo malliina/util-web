@@ -87,22 +87,20 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
 
   protected def redirUrl(call: Call, rh: RequestHeader) = urlEncode(FullUrls(call, rh).url)
 
-  protected def commonAuthParams(authScope: String, rh: RequestHeader): Map[String, String] =
-    Map(
-      RedirectUri -> FullUrls(redirCall, rh).url,
-      ClientId -> clientConf.clientId,
-      Scope -> authScope
-    )
+  protected def commonAuthParams(authScope: String, rh: RequestHeader): Map[String, String] = Map(
+    RedirectUri -> FullUrls(redirCall, rh).url,
+    ClientId -> clientConf.clientId,
+    Scope -> authScope
+  )
 
   /** Not encoded.
     */
-  protected def validationParams(code: Code, req: RequestHeader): Map[String, String] =
-    Map(
-      ClientId -> clientConf.clientId,
-      ClientSecret -> clientConf.clientSecret,
-      RedirectUri -> FullUrls(redirCall, req).url,
-      CodeKey -> code.code
-    )
+  protected def validationParams(code: Code, req: RequestHeader): Map[String, String] = Map(
+    ClientId -> clientConf.clientId,
+    ClientSecret -> clientConf.clientSecret,
+    RedirectUri -> FullUrls(redirCall, req).url,
+    CodeKey -> code.code
+  )
 
   def postForm[T: Reads](url: FullUrl, params: Map[String, String]) =
     http.postFormAs[T](url, params).map(_.left.map(e => OkError(e)))
