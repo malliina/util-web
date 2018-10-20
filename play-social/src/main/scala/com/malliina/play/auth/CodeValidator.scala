@@ -6,6 +6,7 @@ import java.security.SecureRandom
 import com.malliina.http.FullUrl
 import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.http.FullUrls
+import com.malliina.play.http.HttpConstants.NoCacheRevalidate
 import play.api.Logger
 import play.api.http.HeaderNames.CACHE_CONTROL
 import play.api.libs.json.Reads
@@ -81,7 +82,7 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
     val sessionParams = Seq(State -> state) ++ nonce.map(n => Seq(Nonce -> n)).getOrElse(Nil)
     Redirect(url.url)
       .withSession(sessionParams: _*)
-      .withHeaders(CACHE_CONTROL -> "no-cache, no-store, must-revalidate")
+      .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
   }
 
   protected def urlEncode(s: String) = AuthValidator.urlEncode(s)
