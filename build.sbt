@@ -7,7 +7,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.6.0"
+val primitiveVersion = "1.6.1"
 
 lazy val utilPlayRoot = project.in(file("."))
   .aggregate(utilPlay, playSocial, htmlJvm, htmlJs, playCommon)
