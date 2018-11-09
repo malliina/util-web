@@ -1,8 +1,10 @@
 package com.malliina.play.auth
 
 import com.malliina.play.auth.BasicAuthHandler.log
+import com.malliina.play.http.HttpConstants.NoCacheRevalidate
 import com.malliina.values.Email
 import play.api.Logger
+import play.api.http.HeaderNames.CACHE_CONTROL
 import play.api.libs.json.Json
 import play.api.mvc.Results.{Redirect, Unauthorized}
 import play.api.mvc.{Call, Cookie, RequestHeader, Result}
@@ -73,10 +75,12 @@ class BasicAuthHandler(val successCall: Call,
         Redirect(successCall)
           .withSession(sessionKey -> email.email)
           .withCookies(Cookie(lastIdKey, email.email, lastIdMaxAge.map(_.toSeconds.toInt)))
+          .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
       })
 
   override def onUnauthorized(error: AuthError, req: RequestHeader): Result = {
     log.error(s"${error.message} for $req")
     Unauthorized(Json.obj("message" -> "Authentication failed."))
+      .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
   }
 }
