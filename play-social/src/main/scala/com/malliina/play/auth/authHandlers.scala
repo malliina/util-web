@@ -79,8 +79,9 @@ class BasicAuthHandler(val successCall: Call,
       })
 
   override def onUnauthorized(error: AuthError, req: RequestHeader): Result = {
-    log.error(s"${error.message} for $req")
+    log.error(s"${error.message} $req")
     Unauthorized(Json.obj("message" -> "Authentication failed."))
+      .withNewSession
       .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
   }
 }

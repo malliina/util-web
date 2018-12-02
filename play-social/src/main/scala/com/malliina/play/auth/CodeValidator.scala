@@ -80,6 +80,7 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
     val encodedParams = (authParams ++ Map(State -> state)).mapValues(urlEncode)
     val url = authorizationEndpoint.append(s"?${stringify(encodedParams)}")
     val sessionParams = Seq(State -> state) ++ nonce.map(n => Seq(Nonce -> n)).getOrElse(Nil)
+    log.info(s"Redirecting with state '$state'...")
     Redirect(url.url)
       .withSession(sessionParams: _*)
       .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)

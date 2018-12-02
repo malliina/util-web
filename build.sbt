@@ -7,7 +7,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.6.1"
+val primitiveVersion = "1.7.1"
 
 lazy val utilPlayRoot = project.in(file("."))
   .aggregate(utilPlay, playSocial, htmlJvm, htmlJs, playCommon)
@@ -48,7 +48,7 @@ def utilPlaySettings = commonSettings ++ libSettings ++ Seq(
     playGroup %% "play" % playVersion,
     playGroup %% "play-server" % playVersion,
     malliinaGroup %% "okclient" % primitiveVersion,
-    malliinaGroup %% "logback-rx" % "1.3.0"
+    malliinaGroup %% "logback-rx" % "1.4.0"
   )
 )
 
@@ -89,7 +89,7 @@ def htmlSettings = Seq(
   name := "util-html",
   libraryDependencies ++= Seq(
     "com.lihaoyi" %%% "scalatags" % "0.6.7",
-    "com.typesafe.play" %%% "play-json" % "2.6.10",
+    "com.typesafe.play" %%% "play-json" % "2.6.11",
     "com.malliina" %%% "primitives" % primitiveVersion,
     "org.scalatest" %%% "scalatest" % "3.0.5"
   )
