@@ -2,30 +2,24 @@ package com.malliina.play.auth
 
 import java.time.Instant
 
+import com.malliina.play.auth.CognitoValidator._
 import com.malliina.values.{Email, Username}
 import play.api.Logger
 
-object CognitoValidator {
+object CognitoValidator extends OAuthKeys {
   private val log = Logger(getClass)
 
   val Access = "access"
-  val Aud = "aud"
   val Id = "id"
-  val ClientId = "client_id"
   val TokenUse = "token_use"
   val UserKey = "username"
-  val EmailKey = "email"
   val GroupsKey = "cognito:groups"
-
-  val ExpectedPicsGroup = "pics-group"
 }
 
 case class CognitoValidation(issuer: String,
                              tokenUse: String,
                              clientIdKey: String,
                              clientId: String)
-
-import com.malliina.play.auth.CognitoValidator._
 
 abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: String)
   extends StaticTokenValidator[T, U](keys, issuer)
@@ -49,8 +43,10 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
     } yield parsed
 }
 
-class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientId: String)
+class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientIds: Seq[String])
   extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
+  def this(keys: Seq[KeyConf], issuer: String, clientId: String) =
+    this(keys, issuer, Seq(clientId))
 
   override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
     val jwt = verified.parsed
@@ -63,6 +59,6 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientId: Strin
   override protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT] =
     for {
       _ <- checkClaim(TokenUse, Id, parsed)
-      _ <- checkContains(Aud, clientId, parsed)
+      _ <- checkContains(Aud, clientIds, parsed)
     } yield parsed
 }

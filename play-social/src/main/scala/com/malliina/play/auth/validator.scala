@@ -42,39 +42,39 @@ abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issu
 object GoogleValidator {
   val issuers = Seq("https://accounts.google.com", "accounts.google.com")
 
-  def apply(clientId: String) = new GoogleValidator(clientId, issuers)
+  def apply(clientId: String): GoogleValidator = apply(Seq(clientId))
+
+  def apply(clientIds: Seq[String]): GoogleValidator = new GoogleValidator(clientIds, issuers)
 }
 
-class GoogleValidator(clientId: String, issuers: Seq[String]) extends TokenValidator(issuers) {
-  override protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT] = {
-    for {
-      _ <- checkContains(CognitoValidator.Aud, clientId, parsed)
-    } yield parsed
-  }
+class GoogleValidator(clientIds: Seq[String], issuers: Seq[String]) extends TokenValidator(issuers) {
+  override protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT] =
+    checkContains(Aud, clientIds, parsed).map { _ => parsed }
 }
 
 object MicrosoftValidator {
   val issuerMicrosoftConsumer = "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
 
-  def apply(clientId: String) = new MicrosoftValidator(clientId, issuerMicrosoftConsumer)
+  def apply(clientId: String): MicrosoftValidator =
+    new MicrosoftValidator(Seq(clientId), issuerMicrosoftConsumer)
 }
 
-class MicrosoftValidator(clientId: String, issuer: String) extends TokenValidator(issuer) {
+class MicrosoftValidator(clientIds: Seq[String], issuer: String) extends TokenValidator(issuer) {
   override protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT] =
     for {
-      _ <- checkContains(CognitoValidator.Aud, clientId, parsed)
+      _ <- checkContains(Aud, clientIds, parsed)
       _ <- checkNbf(parsed, now)
     } yield parsed
 
   def checkNbf(parsed: ParsedJWT, now: Instant): Either[JWTError, Instant] =
-    read(parsed.token, parsed.claims.getNotBeforeTime, "nbf").flatMap { nbf =>
+    read(parsed.token, parsed.claims.getNotBeforeTime, NotBefore).flatMap { nbf =>
       val nbfInstant = nbf.toInstant
       if (now.isBefore(nbfInstant)) Left(NotYetValid(parsed.token, nbfInstant, now))
       else Right(nbfInstant)
     }
 }
 
-abstract class TokenValidator(issuers: Seq[String]) {
+abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
   def this(issuer: String) = this(Seq(issuer))
 
   protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT]
@@ -88,9 +88,9 @@ abstract class TokenValidator(issuers: Seq[String]) {
   protected def parse(token: TokenValue): Either[JWTError, ParsedJWT] = for {
     jwt <- read(token, SignedJWT.parse(token.token), "token")
     claims <- read(token, jwt.getJWTClaimsSet, "claims")
-    kid <- read(token, jwt.getHeader.getKeyID, "kid")
-    iss <- read(token, claims.getIssuer, "iss")
-    exp <- read(token, claims.getExpirationTime, "exp")
+    kid <- read(token, jwt.getHeader.getKeyID, Kid)
+    iss <- read(token, claims.getIssuer, IssuerKey)
+    exp <- read(token, claims.getExpirationTime, Exp)
   } yield ParsedJWT(jwt, claims, kid, iss, exp.toInstant, token)
 
   protected def verify(parsed: ParsedJWT, keys: Seq[KeyConf], now: Instant): Either[JWTError, Verified] = {
@@ -120,10 +120,10 @@ abstract class TokenValidator(issuers: Seq[String]) {
     }
   }
 
-  def checkContains(key: String, expected: String, parsed: ParsedJWT): Either[JWTError, Seq[String]] = {
+  def checkContains(key: String, expecteds: Seq[String], parsed: ParsedJWT): Either[JWTError, Seq[String]] = {
     parsed.readStringListOrEmpty(key).flatMap { arr =>
-      if (arr.contains(expected)) Right(arr)
-      else Left(InvalidClaims(parsed.token, s"Claim '$key' does not contain '$expected', was '${arr.mkString(", ")}'."))
+      if (expecteds.exists(e => arr.contains(e))) Right(arr)
+      else Left(InvalidClaims(parsed.token, s"Claim '$key' does not contain any of '${expecteds.mkString(", ")}', was '${arr.mkString(", ")}'."))
     }
   }
 

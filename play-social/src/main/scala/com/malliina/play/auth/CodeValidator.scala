@@ -15,32 +15,14 @@ import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
 
-object CodeValidator {
+object CodeValidator extends OAuthKeys {
   private val log = Logger(getClass)
-
-  val AuthorizationCode = "authorization_code"
-  val ClientId = "client_id"
-  val ClientSecret = "client_secret"
-  val CodeKey = "code"
-  val EmailKey = "email"
-  val GrantType = "grant_type"
-  val IdTokenKey = "id_token"
-  val LoginHint = "login_hint"
-  val Nonce = "nonce"
-  val RedirectUri = "redirect_uri"
-  val ResponseType = "response_type"
-  val Scope = "scope"
-  val State = "state"
-
-  val scope = "openid email"
-
   private val rng = new SecureRandom()
 
   def randomString(): String = new BigInteger(130, rng).toString(32)
 }
 
 /**
-  *
   * @tparam U type of user object, e.g. Username, Email, AppUser, String
   */
 trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {

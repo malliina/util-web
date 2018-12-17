@@ -56,7 +56,7 @@ def playSocialSettings = commonSettings ++ Seq(
   libraryDependencies ++= Seq(
     playGroup %% "play" % playVersion,
     malliinaGroup %% "okclient" % primitiveVersion,
-    "com.nimbusds" % "nimbus-jose-jwt" % "6.0.2",
+    "com.nimbusds" % "nimbus-jose-jwt" % "6.4.2",
     "org.scalatest" %% "scalatest" % "3.0.5" % Test
   )
 )
@@ -77,7 +77,7 @@ def htmlJsSettings = commonSettings ++ Seq(
 )
 
 def commonSettings = SbtUtils.mavenSettings ++ commonResolvers ++ Seq(
-  scalaVersion := "2.12.7",
+  scalaVersion := "2.12.8",
   organization := "com.malliina",
   gitUserName := "malliina",
   developerName := "Michael Skogberg",
@@ -91,7 +91,7 @@ def htmlSettings = Seq(
     "com.lihaoyi" %%% "scalatags" % "0.6.7",
     "com.typesafe.play" %%% "play-json" % "2.6.11",
     "com.malliina" %%% "primitives" % primitiveVersion,
-    "org.scalatest" %%% "scalatest" % "3.0.5"
+    "org.scalatest" %%% "scalatest" % "3.0.5" % Test
   )
 )
 
