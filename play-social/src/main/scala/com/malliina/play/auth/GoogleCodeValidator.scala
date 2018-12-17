@@ -21,13 +21,13 @@ object GoogleCodeValidator {
       "Google",
       oauth.redirCall,
       oauth.conf,
-      keyClient(oauth.conf.clientId, oauth.http),
+      keyClient(Seq(oauth.conf.clientId), oauth.http),
       Map.empty
     )
   )
 
-  def keyClient(clientId: String, http: OkClient): KeyClient =
-    new KeyClient(knownUrlGoogle, GoogleValidator(clientId), http)
+  def keyClient(clientIds: Seq[String], http: OkClient): KeyClient =
+    new KeyClient(knownUrlGoogle, GoogleValidator(clientIds), http)
 }
 
 class GoogleCodeValidator(conf: CodeValidationConf[Email])

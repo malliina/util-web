@@ -42,8 +42,6 @@ abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issu
 object GoogleValidator {
   val issuers = Seq("https://accounts.google.com", "accounts.google.com")
 
-  def apply(clientId: String): GoogleValidator = apply(Seq(clientId))
-
   def apply(clientIds: Seq[String]): GoogleValidator = new GoogleValidator(clientIds, issuers)
 }
 
@@ -55,8 +53,8 @@ class GoogleValidator(clientIds: Seq[String], issuers: Seq[String]) extends Toke
 object MicrosoftValidator {
   val issuerMicrosoftConsumer = "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
 
-  def apply(clientId: String): MicrosoftValidator =
-    new MicrosoftValidator(Seq(clientId), issuerMicrosoftConsumer)
+  def apply(clientIds: Seq[String]): MicrosoftValidator =
+    new MicrosoftValidator(clientIds, issuerMicrosoftConsumer)
 }
 
 class MicrosoftValidator(clientIds: Seq[String], issuer: String) extends TokenValidator(issuer) {

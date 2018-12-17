@@ -6,6 +6,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.mvc.RequestHeader
 
 object Auth {
+  val DefaultScheme = "Bearer"
   val DefaultSessionKey = "username"
 
   def basicCredentials(request: RequestHeader): Option[BasicCredentials] = {
@@ -16,6 +17,16 @@ object Auth {
       }
     }
   }
+
+  def readAuthToken(rh: RequestHeader, scheme: String = DefaultScheme): Option[String] =
+    rh.headers.get(AUTHORIZATION).flatMap { authInfo =>
+      authInfo.split(" ") match {
+        case Array(name, value) if name.toLowerCase == scheme.toLowerCase =>
+          Option(value)
+        case _ =>
+          None
+      }
+    }
 
   /**
     *

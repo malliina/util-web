@@ -9,11 +9,11 @@ import play.api.libs.json.Reads
 import scala.concurrent.Future
 
 object KeyClient {
-  def microsoft(clientId: String, http: OkClient): KeyClient =
-    MicrosoftCodeValidator.keyClient(clientId, http)
+  def microsoft(clientIds: Seq[String], http: OkClient): KeyClient =
+    MicrosoftCodeValidator.keyClient(clientIds, http)
 
-  def google(clientId: String, http: OkClient): KeyClient =
-    GoogleCodeValidator.keyClient(clientId, http)
+  def google(clientIds: Seq[String], http: OkClient): KeyClient =
+    GoogleCodeValidator.keyClient(clientIds, http)
 }
 
 class KeyClient(val knownUrl: FullUrl, validator: TokenValidator, val http: OkClient) {
