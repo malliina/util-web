@@ -1,12 +1,6 @@
 package com.malliina.html
 
-/** Scalatags for Twitter Bootstrap.
-  */
-class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output, FragT]) {
-
-  import tags._
-  import tags.impl.all._
-
+trait BootstrapStrings {
   val FormSignin = "form-signin"
   val FormSigninHeading = "form-signin-heading"
   val NoGutters = "no-gutters"
@@ -14,9 +8,6 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
   val Container = "container"
   val ContainerFluid = "container-fluid"
   val ControlLabel = "control-label"
-  val dataParent = data("parent")
-  val dataTarget = data("target")
-  val dataToggle = data("toggle")
   val Dropdown = "dropdown"
   val DropdownMenu = "dropdown-menu"
   val DropdownToggle = "dropdown-toggle"
@@ -48,6 +39,39 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
 
   val Caret = "caret"
   val Collapse = "collapse"
+
+  object navbars {
+    val CollapseWord = "collapse"
+    val Navbar = "navbar"
+    val ExpandLg = "navbar-expand-lg"
+    val Light = "navbar-light"
+    val BgLight = "bg-light"
+
+    val Brand = "navbar-brand"
+    val Collapse = "navbar-collapse"
+    val Form = "navbar-form"
+    val Header = "navbar-header"
+    val Default = "navbar-default"
+    val Nav = "navbar-nav"
+    val Right = "navbar-right"
+    val StaticTop = "navbar-static-top"
+    val Text = "navbar-text"
+    val Toggle = "navbar-toggle"
+    val Toggler = "navbar-toggler"
+    val TogglerIcon = "navbar-toggler-icon"
+    val DefaultLight = s"$Navbar $ExpandLg $Light $BgLight"
+
+    val defaultNavbarId = "navbarSupportedContent"
+
+    val UneditableInput = "uneditable-input"
+    val VisibleLg = "visible-lg"
+    val VisibleMd = "visible-md"
+    val VisibleSm = "visible-sm"
+  }
+
+}
+
+trait BootstrapParts {
 
   trait Component extends MiniComponent {
     lazy val default = named("default")
@@ -170,57 +194,6 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
     def named(name: String): String
   }
 
-  val nav = tag(Nav)
-
-  object navbar {
-    val CollapseWord = "collapse"
-    val Navbar = "navbar"
-    val ExpandLg = "navbar-expand-lg"
-    val Light = "navbar-light"
-    val BgLight = "bg-light"
-
-    val Brand = "navbar-brand"
-    val Collapse = "navbar-collapse"
-    val Form = "navbar-form"
-    val Header = "navbar-header"
-    val Default = "navbar-default"
-    val Nav = "navbar-nav"
-    val Right = "navbar-right"
-    val StaticTop = "navbar-static-top"
-    val Text = "navbar-text"
-    val Toggle = "navbar-toggle"
-    val Toggler = "navbar-toggler"
-    val TogglerIcon = "navbar-toggler-icon"
-    val DefaultLight = s"$Navbar $ExpandLg $Light $BgLight"
-
-    val defaultNavbarId = "navbarSupportedContent"
-
-    def simple[V: AttrValue](home: V,
-                            appName: Modifier,
-                            navItems: Modifier,
-                            navClass: String = DefaultLight,
-                            navBarId: String = defaultNavbarId) =
-      basic(home, appName, ulClass(s"${navbar.Nav} $MrAuto")(navItems), navClass, navBarId)
-
-    def basic[V: AttrValue](home: V,
-                            appName: Modifier,
-                            navContent: Modifier,
-                            navClass: String = DefaultLight,
-                            navBarId: String = defaultNavbarId) =
-      nav(`class` := navClass)(
-        divClass(Container)(
-          a(`class` := navbar.Brand, href := home)(appName),
-          button(`class` := navbar.Toggler, dataToggle := CollapseWord, dataTarget := s"#$navBarId",
-            aria.controls := navBarId, aria.expanded := False, aria.label := "Toggle navigation")(
-            spanClass(navbar.TogglerIcon)
-          ),
-          div(`class` := s"$CollapseWord ${navbar.Collapse}", id := navBarId)(
-            navContent
-          )
-        )
-      )
-  }
-
   object tables {
     lazy val Table = "table"
     lazy val responsive = named("responsive")
@@ -235,10 +208,58 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
     def named(name: String) = s"$Table-$name"
   }
 
-  val UneditableInput = "uneditable-input"
-  val VisibleLg = "visible-lg"
-  val VisibleMd = "visible-md"
-  val VisibleSm = "visible-sm"
+}
+
+/** Scalatags for Twitter Bootstrap.
+  */
+class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output, FragT])
+    extends BootstrapStrings
+    with BootstrapParts {
+
+  import tags._
+  import tags.impl.all._
+
+  val dataParent = data("parent")
+  val dataTarget = data("target")
+  val dataToggle = data("toggle")
+
+  val nav = tag(Nav)
+
+  object navbar {
+
+    import navbars._
+
+    def simple[V: AttrValue](home: V,
+                             appName: Modifier,
+                             navItems: Modifier,
+                             navClass: String = DefaultLight,
+                             navBarId: String = defaultNavbarId) =
+      basic(home, appName, ulClass(s"${navbars.Nav} $MrAuto")(navItems), navClass, navBarId)
+
+    def basic[V: AttrValue](home: V,
+                            appName: Modifier,
+                            navContent: Modifier,
+                            navClass: String = DefaultLight,
+                            navBarId: String = defaultNavbarId) =
+      nav(`class` := navClass)(
+        divClass(Container)(
+          a(`class` := Brand, href := home)(appName),
+          button(
+            `class` := Toggler,
+            dataToggle := CollapseWord,
+            dataTarget := s"#$navBarId",
+            aria.controls := navBarId,
+            aria.expanded := False,
+            aria.label := "Toggle navigation"
+          )(
+            spanClass(TogglerIcon)
+          ),
+          div(`class` := s"$CollapseWord ${navbars.Collapse}", id := navBarId)(
+            navContent
+          )
+        )
+      )
+  }
 
   def alertDanger(message: String) = alertDiv(alert.danger, message)
 

@@ -11,7 +11,7 @@ class Uploads(uploadDir: Path) {
     request.body.files.map { file =>
       val dest = uploadDir resolve file.filename
       if (!Files.exists(dest))
-        file.ref.moveTo(dest.toFile, replace = true)
+        file.ref.moveFileTo(dest.toFile, replace = true)
       dest
     }
 }

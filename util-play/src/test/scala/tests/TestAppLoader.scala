@@ -11,7 +11,8 @@ class TestAppLoader(loader: ApplicationLoader) extends WithApplicationLoader(loa
 
 object TestAppLoader {
   def createTestAppContext: Context = {
-    val env = new Environment(new java.io.File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
-    ApplicationLoader.createContext(env)
+    val env =
+      new Environment(new java.io.File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
+    Context.create(env)
   }
 }

@@ -57,10 +57,10 @@ trait StreamParsers {
     * @return
     */
   protected def byteArrayPartHandler[T](sink: Sink[ByteString, Future[T]])(implicit ec: ExecutionContext): Multipart.FilePartHandler[T] =
-    handleFilePart(fi => Accumulator(sink))
+    handleFilePart(_ => Accumulator(sink))
 
   protected def byteArrayPartHandler2[T](acc: Accumulator[ByteString, FilePart[T]]): Multipart.FilePartHandler[T] = {
-    case FileInfo(partName, filename, contentType) =>
+    case FileInfo(_, _, _, _) =>
       acc
   }
 

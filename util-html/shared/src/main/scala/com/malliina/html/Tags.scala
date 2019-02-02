@@ -1,36 +1,18 @@
 package com.malliina.html
 
+import com.malliina.values.Wrapped
 import scalatags.generic.Bundle
 
-object Tags extends Tags(scalatags.Text)
+import scala.language.implicitConversions
 
-class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, FragT]) {
+class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, FragT])
+  extends HtmlWords {
 
   import impl.all._
 
-  val Anonymous = "anonymous"
-  val Button = "button"
-  val Checkbox = "checkbox"
-  val Download = "download"
-  val En = "en"
-  val False = "false"
-  val FormRole = "form"
-  val Group = "group"
-  val Image = "image"
-  val Number = "number"
-  val Password = "password"
-  val Post = "POST"
-  val Search = "search"
-  val Section = "section"
-  val Separator = "separator"
-  val Submit = "submit"
-  val Stylesheet = "stylesheet"
-  val Text = "text"
-  val Title = "title"
-  val True = "true"
-
   val crossorigin = attr("crossorigin")
   val integrity = attr("integrity")
+  val defer = attr("defer").empty
 
   val empty: Modifier = ""
 
@@ -38,6 +20,8 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
 
   val section = tag(Section)
   val titleTag = tag(Title)
+
+  implicit def wrappedFrag[T <: Wrapped](t: T): Frag = stringFrag(t.value)
 
   def labelFor(forTarget: String, more: Modifier*) = label(`for` := forTarget, more)
 
