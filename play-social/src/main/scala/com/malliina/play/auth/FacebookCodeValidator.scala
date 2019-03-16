@@ -19,16 +19,19 @@ object FacebookCodeValidator {
 }
 
 class FacebookCodeValidator(val oauth: OAuthConf[Email])
-  extends StaticCodeValidator[Email, Email]("Facebook", StaticConf.facebook(oauth.conf)) with HandlerLike {
+    extends StaticCodeValidator[Email, Email]("Facebook", StaticConf.facebook(oauth.conf))
+    with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val params = validationParams(code, req).mapValues(urlEncode)
     val url = staticConf.tokenEndpoint.append(s"?${stringify(params)}")
 
-    getJson[FacebookTokens](url).flatMapRight { tokens =>
-      // https://developers.facebook.com/docs/php/howto/example_retrieve_user_profile
-      val emailUrl = FullUrl.https("graph.facebook.com", s"/v2.12/me?fields=email&access_token=${tokens.accessToken}")
-      getJson[EmailResponse](emailUrl).mapR(_.email)
-    }
+    // https://developers.facebook.com/docs/php/howto/example_retrieve_user_profile
+    for {
+      tokens <- getJson[FacebookTokens](url)
+      emailUrl = FullUrl.https("graph.facebook.com",
+                               s"/v2.12/me?fields=email&access_token=${tokens.accessToken}")
+      emailResponse <- getJson[EmailResponse](emailUrl)
+    } yield Right(emailResponse.email)
   }
 }

@@ -2,7 +2,11 @@ package com.malliina.play.auth
 
 import com.malliina.http.FullUrl
 import com.malliina.play.auth.CodeValidator._
-import com.malliina.play.auth.CognitoCodeValidator.{IdentityProvider, IdentityProviderKey, staticConf}
+import com.malliina.play.auth.CognitoCodeValidator.{
+  IdentityProvider,
+  IdentityProviderKey,
+  staticConf
+}
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.play.http.FullUrls
 import play.api.mvc.{RequestHeader, Result}
@@ -49,16 +53,16 @@ class CognitoCodeValidator(host: String,
                            identityProvider: IdentityProvider,
                            validator: CognitoIdValidator,
                            val oauth: OAuthConf[CognitoUser])
-  extends StaticCodeValidator[CognitoUser, CognitoUser]("Amazon", staticConf(host, oauth.conf)) {
+    extends StaticCodeValidator[CognitoUser, CognitoUser]("Amazon", staticConf(host, oauth.conf)) {
 
   override def onOutcome(outcome: Either[AuthError, CognitoUser], req: RequestHeader): Result =
     handler.resultFor(outcome, req)
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, CognitoUser]] = {
     val params = tokenParameters(code, FullUrls(redirCall, req))
-    postForm[CognitoTokens](staticConf.tokenEndpoint, params).mapRight { tokens =>
-      validator.validate(tokens.idToken)
-    }
+    for {
+      tokens <- postForm[CognitoTokens](staticConf.tokenEndpoint, params)
+    } yield validator.validate(tokens.idToken)
   }
 
   def tokenParameters(code: Code, redirUrl: FullUrl): Map[String, String] = Map(

@@ -3,7 +3,7 @@ package com.malliina.play.auth
 import java.text.ParseException
 import java.time.Instant
 
-import com.malliina.http.{ResponseError, StatusError}
+import com.malliina.http.{ResponseError, ResponseException, StatusError}
 import play.api.libs.json.{JsError, JsPath, JsonValidationError}
 
 import scala.concurrent.duration.{Duration, DurationLong}
@@ -26,6 +26,10 @@ case class OkError(error: ResponseError) extends AuthError("http_error") {
     case com.malliina.http.JsonError(_, _, _) => "JSON error."
     case _ => "Unknown error"
   }
+}
+
+object OkError {
+  def apply(e: ResponseException): OkError = apply(e.error)
 }
 
 case class PermissionError(message: String) extends AuthError("permission_error")

@@ -15,7 +15,6 @@ import scala.concurrent.duration.{Duration, DurationInt}
 trait AuthHandler extends AuthResults[Email]
 
 /**
-  *
   * @tparam U type of user
   */
 trait AuthResults[U] {

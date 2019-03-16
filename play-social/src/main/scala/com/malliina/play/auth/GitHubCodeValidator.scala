@@ -20,25 +20,22 @@ object GitHubCodeValidator {
 }
 
 class GitHubCodeValidator(val oauth: OAuthConf[Email])
-  extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
+    extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
     with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)
     val params = validationParams(code, req)
 
-    def tokenUrl(token: AccessToken) =
-      FullUrl.https("api.github.com", s"/user/emails?access_token=$token")
-
-    postEmpty[GitHubTokens](staticConf.tokenEndpoint, headers, params).flatMapRight { tokens =>
-      getJson[Seq[GitHubEmail]](tokenUrl(tokens.accessToken)).mapRight { emails =>
-        emails.find(email => email.primary && email.verified).map { primaryEmail =>
-          Right(primaryEmail.email)
-        }.getOrElse {
-          Left(JsonError("No primary and verified email found."))
-        }
-      }
-    }
+    for {
+      tokens <- postEmpty[GitHubTokens](staticConf.tokenEndpoint, headers, params)
+      tokenUrl = FullUrl.https("api.github.com", s"/user/emails?access_token=${tokens.accessToken}")
+      emails <- getJson[Seq[GitHubEmail]](tokenUrl)
+    } yield
+      emails
+        .find(email => email.primary && email.verified)
+        .map(_.email)
+        .toRight(JsonError("No primary and verified email found."))
   }
 }
 

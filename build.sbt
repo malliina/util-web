@@ -5,7 +5,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.8.1"
+val primitiveVersion = "1.9.0"
 
 val baseSettings = Seq(
   scalaVersion := "2.12.8",
@@ -23,7 +23,7 @@ val commonSettings = baseSettings ++ commonResolvers ++ Seq(
   publishArtifact in Test := true
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % "1.11"
+val commonsCodec = "commons-codec" % "commons-codec" % "1.12"
 
 val playCommon = Project("play-common", file("play-common"))
   .enablePlugins(MavenCentralPlugin)
@@ -42,9 +42,9 @@ val playSocial = Project("play-social", file("play-social"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "6.8",
+      "com.nimbusds" % "nimbus-jose-jwt" % "7.0.1",
       commonsCodec,
-      "org.scalatest" %% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %% "scalatest" % "3.0.6" % Test
     )
   )
   .dependsOn(playCommon)
@@ -60,7 +60,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
       "com.lihaoyi" %%% "scalatags" % "0.6.7",
       "com.typesafe.play" %%% "play-json" % "2.7.1",
       "com.malliina" %%% "primitives" % primitiveVersion,
-      "org.scalatest" %%% "scalatest" % "3.0.5" % Test
+      "org.scalatest" %%% "scalatest" % "3.0.6" % Test
     )
   )
 
