@@ -1,6 +1,6 @@
 import play.core.PlayVersion
 import play.sbt.PlayImport
-import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, CrossType => PortableType}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
@@ -8,27 +8,22 @@ val malliinaGroup = "com.malliina"
 val primitiveVersion = "1.11.0"
 val scalaTestVersion = "3.0.8"
 
-pgpPassphrase in ThisBuild := sys.env.get("PGP_PASSPHRASE").orElse {
-  val file = Path.userHome / ".sbt" / ".pgp"
-  if (file.exists()) Option(IO.read(file)) else None
-}.map(_.toCharArray)
-
 val baseSettings = Seq(
   scalaVersion := "2.13.0",
   crossScalaVersions := scalaVersion.value :: "2.12.8" :: Nil,
-  organization := "com.malliina"
+  organization := "com.malliina",
+  releaseProcess := tagReleaseProcess.value
 )
 
 val commonSettings = baseSettings ++ Seq(
   gitUserName := "malliina",
   developerName := "Michael Skogberg",
-  publishTo := Option(Opts.resolver.sonatypeStaging),
   publishArtifact in Test := true
 )
 
 val commonsCodec = "commons-codec" % "commons-codec" % "1.12"
 
-val playCommon = Project("play-common", file("play-common"))
+val playCommon = project.in(file("play-common"))
   .enablePlugins(MavenCentralPlugin)
   .settings(commonSettings)
   .settings(
@@ -38,7 +33,7 @@ val playCommon = Project("play-common", file("play-common"))
     )
   )
 
-val playSocial = Project("play-social", file("play-social"))
+val playSocial = project.in(file("play-social"))
   .enablePlugins(MavenCentralPlugin)
   .settings(commonSettings)
   .settings(
@@ -70,7 +65,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
 val htmlJvm = html.jvm
 val htmlJs = html.js
 
-val utilPlay = Project("util-play", file("util-play"))
+val utilPlay = project.in(file("util-play"))
   .enablePlugins(MavenCentralPlugin)
   .settings(commonSettings)
   .settings(

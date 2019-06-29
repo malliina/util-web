@@ -15,7 +15,7 @@ def ivyRepo(name: String, urlString: String) =
   Resolver.url(name, url(urlString))(Resolver.ivyStylePatterns)
 
 Seq(
-  "com.malliina" %% "sbt-utils-maven" % "0.12.1",
+  "com.malliina" %% "sbt-utils-maven" % "0.12.11",
   "com.typesafe.play" % "sbt-plugin" % "2.7.3",
   "org.portable-scala" % "sbt-scalajs-crossproject" % "0.6.0",
   "org.scala-js" % "sbt-scalajs" % "0.6.28"
