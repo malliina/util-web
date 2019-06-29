@@ -23,7 +23,7 @@ val commonSettings = baseSettings ++ Seq(
 
 val commonsCodec = "commons-codec" % "commons-codec" % "1.12"
 
-val playCommon = project.in(file("play-common"))
+val playCommon = Project("play-common", file("play-common"))
   .enablePlugins(MavenCentralPlugin)
   .settings(commonSettings)
   .settings(
@@ -34,7 +34,7 @@ val playCommon = project.in(file("play-common"))
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
-val playSocial = project.in(file("play-social"))
+val playSocial = Project("play-social", file("play-social"))
   .enablePlugins(MavenCentralPlugin)
   .settings(commonSettings)
   .settings(
@@ -68,7 +68,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
 val htmlJvm = html.jvm
 val htmlJs = html.js
 
-val utilPlay = project.in(file("util-play"))
+val utilPlay = Project("util-play", file("util-play"))
   .enablePlugins(MavenCentralPlugin)
   .settings(commonSettings)
   .settings(
