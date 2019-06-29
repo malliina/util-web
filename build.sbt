@@ -8,17 +8,18 @@ val malliinaGroup = "com.malliina"
 val primitiveVersion = "1.11.0"
 val scalaTestVersion = "3.0.8"
 
+pgpPassphrase in ThisBuild := sys.env.get("PGP_PASSPHRASE").orElse {
+  val file = Path.userHome / ".sbt" / ".pgp"
+  if (file.exists()) Option(IO.read(file)) else None
+}.map(_.toCharArray)
+
 val baseSettings = Seq(
   scalaVersion := "2.13.0",
   crossScalaVersions := scalaVersion.value :: "2.12.8" :: Nil,
   organization := "com.malliina"
 )
 
-val commonResolvers = Seq(
-  resolvers += "Sonatype releases" at "https://oss.sonatype.org/content/repositories/releases/",
-)
-
-val commonSettings = baseSettings ++ commonResolvers ++ Seq(
+val commonSettings = baseSettings ++ Seq(
   gitUserName := "malliina",
   developerName := "Michael Skogberg",
   publishTo := Option(Opts.resolver.sonatypeStaging),
