@@ -5,10 +5,12 @@ import sbtcrossproject.CrossPlugin.autoImport.{crossProject => portableProject, 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.9.0"
+val primitiveVersion = "1.11.0"
+val scalaTestVersion = "3.0.8"
 
 val baseSettings = Seq(
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.13.0",
+  crossScalaVersions := scalaVersion.value :: "2.12.8" :: Nil,
   organization := "com.malliina"
 )
 
@@ -42,9 +44,9 @@ val playSocial = Project("play-social", file("play-social"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "7.0.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % "7.3",
       commonsCodec,
-      "org.scalatest" %% "scalatest" % "3.0.6" % Test
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     )
   )
   .dependsOn(playCommon)
@@ -57,10 +59,10 @@ val html = portableProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.6.7",
-      "com.typesafe.play" %%% "play-json" % "2.7.1",
+      "com.lihaoyi" %%% "scalatags" % "0.7.0",
+      "com.typesafe.play" %%% "play-json" % "2.7.4",
       "com.malliina" %%% "primitives" % primitiveVersion,
-      "org.scalatest" %%% "scalatest" % "3.0.6" % Test
+      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
     )
   )
 
@@ -77,9 +79,9 @@ val utilPlay = Project("util-play", file("util-play"))
       playGroup %% "play" % playVersion,
       playGroup %% "play-server" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      malliinaGroup %% "logback-streams" % "1.5.0",
+      malliinaGroup %% "logback-streams" % "1.6.0",
       commonsCodec,
-      "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.1" % Test,
+      "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3" % Test,
       PlayImport.specs2 % Test
     )
   )

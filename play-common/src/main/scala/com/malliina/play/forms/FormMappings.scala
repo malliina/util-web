@@ -17,8 +17,8 @@ trait FormMappings {
 
   val c: Constraint[String] = Constraint[String]((s: String) => Email.build(s).fold(err => Invalid(err.message), _ => Valid))
 
-  def stringMapping[T <: Wrapped](build: String => Either[ErrorMessage, T]): Mapping[T] =
+  def stringMapping[T <: WrappedString](build: String => Either[ErrorMessage, T]): Mapping[T] =
     Forms.of[String]
       .verifying(Constraint[String]((s: String) => build(s).fold(err => Invalid(err.message), _ => Valid)))
-      .transform(s => build(s).right.get, t => t.value)
+      .transform(s => build(s).getOrElse(throw new NoSuchElementException(s"Invalid input: '$s")), t => t.value)
 }

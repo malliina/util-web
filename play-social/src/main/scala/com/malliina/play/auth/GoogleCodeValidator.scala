@@ -1,7 +1,7 @@
 package com.malliina.play.auth
 
 import com.malliina.http.{FullUrl, OkClient}
-import com.malliina.play.auth.CodeValidator.EmailKey
+import com.malliina.play.auth.OAuthKeys.EmailKey
 import com.malliina.values.Email
 
 object GoogleCodeValidator {
@@ -30,13 +30,13 @@ object GoogleCodeValidator {
     new KeyClient(knownUrlGoogle, GoogleValidator(clientIds), http)
 }
 
-class GoogleCodeValidator(conf: CodeValidationConf[Email])
-  extends StandardOAuth[Email](conf) {
+class GoogleCodeValidator(conf: CodeValidationConf[Email]) extends StandardOAuth[Email](conf) {
 
   override def parse(validated: Verified): Either[JWTError, Email] = {
     val emailVerified = validated.readBoolean(GoogleCodeValidator.EmailVerified)
     for {
-      _ <- emailVerified.filterOrElse(_ == true, InvalidClaims(validated.token, "Email not verified."))
+      _ <- emailVerified.filterOrElse(_ == true,
+                                      InvalidClaims(validated.token, "Email not verified."))
       email <- validated.readString(EmailKey).map(Email.apply)
     } yield email
   }

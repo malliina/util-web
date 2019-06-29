@@ -36,7 +36,9 @@ trait LoginHintSupport {
   def startHinted(req: RequestHeader,
                   loginHint: Option[String],
                   extraParams: Map[String, String] = Map.empty): Future[Result] =
-    self.start(req, extraParams ++ loginHint.map(lh => Map(CodeValidator.LoginHint -> lh)).getOrElse(Map.empty))
+    self.start(
+      req,
+      extraParams ++ loginHint.map(lh => Map(OAuthKeys.LoginHint -> lh)).getOrElse(Map.empty))
 }
 
 trait OAuthValidator[U] {

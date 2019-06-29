@@ -13,6 +13,6 @@ trait Bindables {
   implicit val idToken: PathBindable[IdToken] = bindable[IdToken](IdToken.apply)
   implicit val userId: PathBindable[UserId] = PathBindable.bindableLong.transform(l => UserId(l), u => u.id)
 
-  def bindable[T <: Wrapped](build: String => T): PathBindable[T] =
+  def bindable[T <: WrappedString](build: String => T): PathBindable[T] =
     PathBindable.bindableString.transform[T](s => build(s), u => u.value)
 }

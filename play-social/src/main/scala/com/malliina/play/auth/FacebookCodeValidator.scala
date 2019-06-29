@@ -23,7 +23,7 @@ class FacebookCodeValidator(val oauth: OAuthConf[Email])
     with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
-    val params = validationParams(code, req).mapValues(urlEncode)
+    val params = validationParams(code, req).map { case (k, v) => k -> urlEncode(v) }
     val url = staticConf.tokenEndpoint.append(s"?${stringify(params)}")
 
     // https://developers.facebook.com/docs/php/howto/example_retrieve_user_profile

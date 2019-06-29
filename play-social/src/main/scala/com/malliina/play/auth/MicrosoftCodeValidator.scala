@@ -1,7 +1,7 @@
 package com.malliina.play.auth
 
 import com.malliina.http.{FullUrl, OkClient}
-import com.malliina.play.auth.CodeValidator.Scope
+import com.malliina.play.auth.OAuthKeys.{Scope, scope}
 import com.malliina.values.Email
 
 object MicrosoftCodeValidator {
@@ -19,7 +19,7 @@ object MicrosoftCodeValidator {
       oauth.conf,
       keyClient(Seq(oauth.conf.clientId), oauth.http),
       extraStartParams = Map("response_mode" -> "query"),
-      extraValidateParams = Map(Scope -> CodeValidator.scope)
+      extraValidateParams = Map(Scope -> scope)
     )
   )
 

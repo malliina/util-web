@@ -27,7 +27,7 @@ class MultipartRequest(url: FullUrl, val client: OkClient) extends AutoCloseable
   val bodyBuilder = new MultipartBody.Builder()
   //  private val reqContent = MultipartEntityBuilder.create().setMode(HttpMultipartMode.BROWSER_COMPATIBLE)
 
-  def setAuth(username: String, password: String) {
+  def setAuth(username: String, password: String): Unit = {
     def authorizationValue(username: String, password: String) =
       s"Basic " + Base64.getEncoder.encodeToString((username + ":" + password).getBytes("UTF-8"))
 
@@ -38,7 +38,7 @@ class MultipartRequest(url: FullUrl, val client: OkClient) extends AutoCloseable
     bodyBuilder.addFormDataPart(
       "file",
       file.getFileName.toString,
-      RequestBody.create(mediaType, file.toFile)
+      RequestBody.create(file.toFile, mediaType)
     )
 
   def addKeyValues(kvs: (String, String)*): Unit =
@@ -62,7 +62,7 @@ class MultipartRequest(url: FullUrl, val client: OkClient) extends AutoCloseable
     */
   def executeToString() = execute().map(_.asString)
 
-  override def close() {
+  override def close(): Unit = {
     client.close()
   }
 }

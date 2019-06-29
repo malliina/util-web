@@ -2,7 +2,15 @@ package com.malliina.play.auth
 
 import java.time.Instant
 
-import com.malliina.play.auth.CognitoValidator._
+import com.malliina.play.auth.CognitoValidator.{
+  Access,
+  ClientId,
+  EmailKey,
+  GroupsKey,
+  Id,
+  TokenUse,
+  UserKey
+}
 import com.malliina.values.{Email, Username}
 import play.api.Logger
 

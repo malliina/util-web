@@ -4,7 +4,8 @@ import java.math.BigInteger
 import java.security.SecureRandom
 
 import com.malliina.http.FullUrl
-import com.malliina.play.auth.CodeValidator._
+import com.malliina.play.auth.CodeValidator.log
+import com.malliina.play.auth.OAuthKeys._
 import com.malliina.play.http.FullUrls
 import com.malliina.play.http.HttpConstants.NoCacheRevalidate
 import play.api.Logger
@@ -15,7 +16,7 @@ import play.api.mvc.{Call, RequestHeader, Result}
 
 import scala.concurrent.Future
 
-object CodeValidator extends OAuthKeys {
+object CodeValidator {
   private val log = Logger(getClass)
   private val rng = new SecureRandom()
 
@@ -71,7 +72,7 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
                   authParams: Map[String, String],
                   nonce: Option[String] = None): Result = {
     val state = randomString()
-    val encodedParams = (authParams ++ Map(State -> state)).mapValues(urlEncode)
+    val encodedParams = (authParams ++ Map(State -> state)).map { case (k, v) => k -> urlEncode(v) }
     val url = authorizationEndpoint.append(s"?${stringify(encodedParams)}")
     val sessionParams = Seq(State -> state) ++ nonce.map(n => Seq(Nonce -> n)).getOrElse(Nil)
     log.info(s"Redirecting with state '$state'...")

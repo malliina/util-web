@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.play.auth.CodeValidator._
+import com.malliina.play.auth.OAuthKeys.EmailKey
 import com.malliina.values.Email
 
 object EmailValidator {

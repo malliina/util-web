@@ -135,11 +135,8 @@ trait BootstrapParts {
     def width(num: String) = s"$Col-$num"
 
     object sm extends Prefixed("sm")
-
     object md extends Prefixed("md")
-
     object lg extends Prefixed("lg")
-
     object xl extends Prefixed("xl")
 
     abstract class Prefixed(prefix: String) extends ColPrefixed {
@@ -304,6 +301,4 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
     headeredTable(tables.stripedHoverResponsive, headers.map(stringFrag))(
       tbody(entries.map(entry => tr(cells(entry))))
     )
-
-  def iconic(iconicName: String) = spanClass(s"oi oi-$iconicName", title := iconicName, aria.hidden := True)
 }

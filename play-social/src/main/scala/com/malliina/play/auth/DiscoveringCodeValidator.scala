@@ -1,7 +1,7 @@
 package com.malliina.play.auth
 
-import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.auth.DiscoveringCodeValidator.log
+import com.malliina.play.auth.OAuthKeys._
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results.BadGateway
@@ -73,7 +73,7 @@ abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
       else Left(InvalidClaims(idToken, "Nonce mismatch."))
     }
 
-  def fetchConf() = getJson[AuthEndpoints](client.knownUrl)
+  def fetchConf(): Future[AuthEndpoints] = getJson[AuthEndpoints](client.knownUrl)
 }
 
 abstract class StandardOAuth[V](conf: CodeValidationConf[V])

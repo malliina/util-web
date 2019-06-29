@@ -1,11 +1,10 @@
 package com.malliina.play.ws
 
-import akka.actor.{ActorRef, PoisonPill, Props}
+import akka.actor.{ActorRef, Props}
 import com.malliina.collections.BoundedList
 import com.malliina.play.ws.Mediator.Broadcast
 import play.api.libs.json._
 import play.api.mvc.RequestHeader
-import rx.lang.scala.{Observable, Subscription}
 
 case class MediatorClient(ctx: ActorMeta, mediator: ActorRef)
   extends ClientContext {
@@ -32,27 +31,6 @@ case class DefaultActorConfig[U](out: ActorRef, rh: RequestHeader, user: U)
 
 trait ActorConfig[U] extends ActorMeta {
   def user: U
-}
-
-class ObserverActor(events: Observable[JsValue], ctx: ActorMeta)
-  extends JsonActor(ctx) {
-  var subscription: Option[Subscription] = None
-
-  override def preStart() = {
-    super.preStart()
-    val sub = events.subscribe(
-      json => ctx.out ! json,
-      _ => self ! PoisonPill,
-      () => self ! PoisonPill
-    )
-    subscription = Option(sub)
-  }
-
-  override def postStop() = {
-    super.postStop()
-    subscription foreach { sub => sub.unsubscribe() }
-    subscription = None
-  }
 }
 
 class ReplayMediator(bufferSize: Int) extends Mediator {

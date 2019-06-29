@@ -26,7 +26,7 @@ object AuthConfReader {
 
   def conf(c: Configuration) = apply(key => c.getOptional[String](key))
 
-  def file(path: Path) = {
+  def file(path: Path): AuthConfReader = {
     import collection.JavaConverters._
     val asMap = Files.readAllLines(path).asScala.toList
       .filterNot(line => line.startsWith("#") || line.startsWith("//"))
@@ -302,7 +302,7 @@ case class ParsedJWT(jwt: SignedJWT,
     readStringList(key).map(_.getOrElse(Nil))
 
   def readStringList(key: String): Either[JWTError, Option[Seq[String]]] =
-    read(Option(claims.getStringListClaim(key)).map(_.asScala), key)
+    read(Option(claims.getStringListClaim(key)).map(_.asScala.toList), key)
 
   def readBoolean(key: String): Either[JWTError, Boolean] =
     read(claims.getBooleanClaim(key), key)

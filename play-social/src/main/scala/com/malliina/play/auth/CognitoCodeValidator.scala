@@ -1,12 +1,12 @@
 package com.malliina.play.auth
 
 import com.malliina.http.FullUrl
-import com.malliina.play.auth.CodeValidator._
 import com.malliina.play.auth.CognitoCodeValidator.{
   IdentityProvider,
   IdentityProviderKey,
   staticConf
 }
+import com.malliina.play.auth.OAuthKeys._
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.play.http.FullUrls
 import play.api.mvc.{RequestHeader, Result}
