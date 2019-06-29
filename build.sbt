@@ -1,3 +1,4 @@
+import com.malliina.sbtutils.MavenCentralKeys
 import play.core.PlayVersion
 import play.sbt.PlayImport
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
@@ -11,8 +12,7 @@ val scalaTestVersion = "3.0.8"
 val baseSettings = Seq(
   scalaVersion := "2.13.0",
   crossScalaVersions := scalaVersion.value :: "2.12.8" :: Nil,
-  organization := "com.malliina",
-  releaseProcess := tagReleaseProcess.value
+  organization := "com.malliina"
 )
 
 val commonSettings = baseSettings ++ Seq(
@@ -30,7 +30,8 @@ val playCommon = project.in(file("play-common"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       "com.malliina" %%% "primitives" % primitiveVersion
-    )
+    ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
 val playSocial = project.in(file("play-social"))
@@ -43,7 +44,8 @@ val playSocial = project.in(file("play-social"))
       "com.nimbusds" % "nimbus-jose-jwt" % "7.3",
       commonsCodec,
       "org.scalatest" %% "scalatest" % scalaTestVersion % Test
-    )
+    ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
   .dependsOn(playCommon)
 
@@ -59,7 +61,8 @@ val html = portableProject(JSPlatform, JVMPlatform)
       "com.typesafe.play" %%% "play-json" % "2.7.4",
       "com.malliina" %%% "primitives" % primitiveVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
-    )
+    ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
 val htmlJvm = html.jvm
@@ -79,7 +82,8 @@ val utilPlay = project.in(file("util-play"))
       commonsCodec,
       "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3" % Test,
       PlayImport.specs2 % Test
-    )
+    ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
   .dependsOn(htmlJvm, playCommon)
 
@@ -87,6 +91,7 @@ val utilPlayRoot = project.in(file("."))
   .aggregate(utilPlay, playSocial, htmlJvm, htmlJs, playCommon)
   .settings(baseSettings)
   .settings(
+    releaseProcess := (releaseProcess in utilPlay).value,
     organization := malliinaGroup,
     publish := {},
     publishLocal := {},
