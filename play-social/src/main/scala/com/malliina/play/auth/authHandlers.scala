@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.http.HeaderNames.CACHE_CONTROL
 import play.api.libs.json.Json
 import play.api.mvc.Results.{Redirect, Unauthorized}
-import play.api.mvc.{Call, Cookie, RequestHeader, Result}
+import play.api.mvc.{Call, Cookie, DiscardingCookie, RequestHeader, Result}
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -50,6 +50,7 @@ object BasicAuthHandler {
   private val log = Logger(getClass)
 
   val DefaultMaxAge: Duration = 3650.days
+  val DefaultReturnUriKey = "returnUri"
   val DefaultSessionKey = "username"
   val LastIdCookie = "lastId"
 
@@ -57,22 +58,26 @@ object BasicAuthHandler {
             lastIdKey: String = LastIdCookie,
             authorize: Email => Either[AuthError, Email] = email => Right(email),
             sessionKey: String = DefaultSessionKey,
-            lastIdMaxAge: Option[Duration] = Option(DefaultMaxAge)): BasicAuthHandler =
-    new BasicAuthHandler(successCall, lastIdKey, authorize, sessionKey, lastIdMaxAge)
+            lastIdMaxAge: Option[Duration] = Option(DefaultMaxAge),
+            returnUriKey: String = DefaultReturnUriKey): BasicAuthHandler =
+    new BasicAuthHandler(successCall, lastIdKey, authorize, sessionKey, lastIdMaxAge, returnUriKey)
 }
 
 class BasicAuthHandler(val successCall: Call,
                        val lastIdKey: String,
                        authorize: Email => Either[AuthError, Email],
                        val sessionKey: String,
-                       val lastIdMaxAge: Option[Duration]) extends AuthHandler {
+                       val lastIdMaxAge: Option[Duration],
+                       val returnUriKey: String) extends AuthHandler {
   override def onAuthenticated(email: Email, req: RequestHeader): Result =
     authorize(email).fold(
       err => onUnauthorized(err, req),
       email => {
-        log.info(s"Logging in '$email' through OAuth code flow.")
-        Redirect(successCall)
-          .withSession(sessionKey -> email.email)
+        val returnUri = req.cookies.get(returnUriKey).map(_.value).getOrElse(successCall.path())
+        log.info(s"Logging in '$email' through OAuth code flow, returning to '$returnUri'...")
+        Redirect(returnUri)
+          .addingToSession(sessionKey -> email.email)(req)
+          .discardingCookies(DiscardingCookie(returnUriKey))
           .withCookies(Cookie(lastIdKey, email.email, lastIdMaxAge.map(_.toSeconds.toInt)))
           .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
       })

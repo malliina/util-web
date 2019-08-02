@@ -75,7 +75,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
       r.filter(_.oauthCallbackConfirmed)
         .map { tokens =>
           Redirect(authTokenUrl(tokens.oauthToken).url)
-            .withSession(RequestToken.Key -> tokens.oauthToken.token)
+            .addingToSession(RequestToken.Key -> tokens.oauthToken.token)(req)
         }
         .getOrElse {
           handler.onUnauthorized(OAuthError("Callback not confirmed."), req)

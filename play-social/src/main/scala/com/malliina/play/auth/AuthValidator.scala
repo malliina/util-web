@@ -30,9 +30,7 @@ trait AuthValidator {
   protected def fut[T](t: T): Future[T] = Future.successful(t)
 }
 
-trait LoginHintSupport {
-  self: AuthValidator =>
-
+trait LoginHintSupport { self: AuthValidator =>
   def startHinted(req: RequestHeader,
                   loginHint: Option[String],
                   extraParams: Map[String, String] = Map.empty): Future[Result] =
@@ -43,12 +41,8 @@ trait LoginHintSupport {
 
 trait OAuthValidator[U] {
   def oauth: OAuthConf[U]
-
   def handler = oauth.handler
-
   def redirCall = oauth.redirCall
-
   def http = oauth.http
-
   def clientConf = oauth.conf
 }
