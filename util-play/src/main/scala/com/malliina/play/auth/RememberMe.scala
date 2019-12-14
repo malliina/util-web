@@ -24,9 +24,13 @@ object RememberMe {
   val discardingCookie = DiscardingCookie(CookieName)
 }
 
-class RememberMe(store: TokenStore, val cookieSigner: CookieSigner, val secretConfiguration: SecretConfiguration)(implicit ec: ExecutionContext)
+class RememberMe(
+  store: TokenStore,
+  val cookieSigner: CookieSigner,
+  val secretConfiguration: SecretConfiguration
+)(implicit ec: ExecutionContext)
   extends CookieBaker[UnAuthToken]
-    with JWTCookieDataCodec {
+  with JWTCookieDataCodec {
   override val jwtConfiguration = JWTConfiguration()
   override val path: String = "/"
   override val COOKIE_NAME: String = CookieName
@@ -71,7 +75,6 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner, val secretCo
     Option(maybeEmptyToken).filterNot(_.isEmpty)
   }
 
-
   /**
     * @return the authenticated user, along with an optional cookie to include
     */
@@ -84,7 +87,7 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner, val secretCo
     * @return an authenticated token
     */
   def authenticateToken(req: RequestHeader): Future[Option[Token]] =
-    authenticate(req).map(_.right.toOption)
+    authenticate(req).map(_.toOption)
 
   def authenticate(req: RequestHeader): Future[Either[AuthFailure, Token]] =
     readToken(req).map(t => cookieAuth(t, req)) getOrElse {
@@ -94,41 +97,48 @@ class RememberMe(store: TokenStore, val cookieSigner: CookieSigner, val secretCo
 
   def cookify(token: Token) = encodeAsCookie(token.asUnAuth)
 
-  def persistNewCookie(loggedInUser: Username): Future[Cookie] = createToken(loggedInUser).map(cookify)
+  def persistNewCookie(loggedInUser: Username): Future[Cookie] =
+    createToken(loggedInUser).map(cookify)
 
   private def createToken(loggedInUser: Username): Future[Token] = {
     val token = Token(loggedInUser, Random.nextLong(), Random.nextLong())
     (store persist token).map(_ => token)
   }
 
-  private def cookieAuth(attempt: UnAuthToken, rh: RequestHeader): Future[Either[AuthFailure, Token]] = {
+  private def cookieAuth(
+    attempt: UnAuthToken,
+    rh: RequestHeader
+  ): Future[Either[AuthFailure, Token]] = {
     log debug s"Authenticating: $attempt"
     val user = attempt.user
     store.findToken(user, attempt.series).flatMap { maybeToken =>
-      maybeToken.map { savedToken =>
-        if (savedToken.token == attempt.token) {
-          /**
-            * I believe the intention is to ensure that a browser cannot reuse another browser's token.
-            *
-            * The token is replaced with a new one at each successful token authentication, while the series remains the
-            * same; this updated cookie is then sent to the browser. The series acts as a browser identifier. So, if
-            * there's a token mismatch, it suggests some other actor has authenticated using this browser's token, which is
-            * suspect.
-            */
-          log info s"Cookie authentication succeeded. Updating token."
-          for {
-            _ <- store remove savedToken
-            newToken = Token(user, attempt.series, Random.nextLong())
-            _ <- store persist newToken
-          } yield Right(newToken)
-        } else {
-          log warn s"The saved token did not match the one from the request. Refusing access."
-          (store removeAll user).map(_ => Left(InvalidCookie(rh)))
+      maybeToken
+        .map { savedToken =>
+          if (savedToken.token == attempt.token) {
+
+            /**
+              * I believe the intention is to ensure that a browser cannot reuse another browser's token.
+              *
+              * The token is replaced with a new one at each successful token authentication, while the series remains the
+              * same; this updated cookie is then sent to the browser. The series acts as a browser identifier. So, if
+              * there's a token mismatch, it suggests some other actor has authenticated using this browser's token, which is
+              * suspect.
+              */
+            log info s"Cookie authentication succeeded. Updating token."
+            for {
+              _ <- store remove savedToken
+              newToken = Token(user, attempt.series, Random.nextLong())
+              _ <- store persist newToken
+            } yield Right(newToken)
+          } else {
+            log warn s"The saved token did not match the one from the request. Refusing access."
+            (store removeAll user).map(_ => Left(InvalidCookie(rh)))
+          }
         }
-      }.getOrElse {
-        log debug s"Unable to authenticate token: $attempt"
-        Future.successful(Left(InvalidCredentials(rh)))
-      }
+        .getOrElse {
+          log debug s"Unable to authenticate token: $attempt"
+          Future.successful(Left(InvalidCredentials(rh)))
+        }
     }
   }
 }

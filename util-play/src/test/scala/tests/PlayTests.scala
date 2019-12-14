@@ -15,7 +15,6 @@ class PlayTests extends FunSuite {
 
   test("stream") {
     implicit val system = ActorSystem("QuickStart")
-    implicit val materializer = ActorMaterializer()
 
     val expected = 42
     val completion = Promise[Int]()

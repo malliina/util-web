@@ -21,9 +21,9 @@ class JsonActor(ctx: ActorMeta) extends Actor {
   }
 
   def scheduleHealthCheck(): Unit = {
-    val healthCheck = context.system.scheduler.schedule(
+    val healthCheck = context.system.scheduler.scheduleWithFixedDelay(
       initialDelay = 10.seconds,
-      interval = 30.seconds,
+      delay = 30.seconds,
       receiver = out,
       message = JsonMessages.ping
     )
@@ -43,7 +43,9 @@ class JsonActor(ctx: ActorMeta) extends Actor {
 
   override def postStop() = {
     super.postStop()
-    pinger foreach { p => p.cancel() }
+    pinger foreach { p =>
+      p.cancel()
+    }
   }
 }
 

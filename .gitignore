@@ -6,3 +6,4 @@ target/
 .idea_modules/
 .hydra
 .bloop
+hydra.sbt
