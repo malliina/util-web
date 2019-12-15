@@ -10,9 +10,8 @@ trait GoogleOAuthKey {
   def clientSecret: String
 }
 
-case class GoogleOAuthCredentials(clientId: String,
-                                  clientSecret: String,
-                                  scope: String) extends GoogleOAuthKey
+case class GoogleOAuthCredentials(clientId: String, clientSecret: String, scope: String)
+  extends GoogleOAuthKey
 
 object GoogleOAuthCredentials {
   def apply(conf: Configuration): Either[ErrorMessage, GoogleOAuthCredentials] =

@@ -24,16 +24,18 @@ object CognitoValidator extends OAuthKeys {
   val GroupsKey = "cognito:groups"
 }
 
-case class CognitoValidation(issuer: String,
-                             tokenUse: String,
-                             clientIdKey: String,
-                             clientId: String)
+case class CognitoValidation(
+  issuer: String,
+  tokenUse: String,
+  clientIdKey: String,
+  clientId: String
+)
 
 abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: String)
-    extends StaticTokenValidator[T, U](keys, issuer)
+  extends StaticTokenValidator[T, U](keys, issuer)
 
 class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: String)
-    extends CognitoValidator[AccessToken, CognitoUser](keys, issuer) {
+  extends CognitoValidator[AccessToken, CognitoUser](keys, issuer) {
 
   protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
     val jwt = verified.parsed
@@ -46,8 +48,10 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
     } yield CognitoUser(Username(username), email.map(Email.apply), groups, verified)
   }
 
-  override protected def validateClaims(parsed: ParsedJWT,
-                                        now: Instant): Either[JWTError, ParsedJWT] =
+  override protected def validateClaims(
+    parsed: ParsedJWT,
+    now: Instant
+  ): Either[JWTError, ParsedJWT] =
     for {
       _ <- checkClaim(TokenUse, Access, parsed)
       _ <- checkClaim(ClientId, clientId, parsed)
@@ -55,7 +59,7 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
 }
 
 class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientIds: Seq[String])
-    extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
+  extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
   def this(keys: Seq[KeyConf], issuer: String, clientId: String) =
     this(keys, issuer, Seq(clientId))
 
@@ -67,8 +71,10 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientIds: Seq[
     } yield CognitoUser(Username(email.email), Option(email), groups, verified)
   }
 
-  override protected def validateClaims(parsed: ParsedJWT,
-                                        now: Instant): Either[JWTError, ParsedJWT] =
+  override protected def validateClaims(
+    parsed: ParsedJWT,
+    now: Instant
+  ): Either[JWTError, ParsedJWT] =
     for {
       _ <- checkClaim(TokenUse, Id, parsed)
       _ <- checkContains(Aud, clientIds, parsed)

@@ -210,8 +210,8 @@ trait BootstrapParts {
 /** Scalatags for Twitter Bootstrap.
   */
 class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output, FragT])
-    extends BootstrapStrings
-    with BootstrapParts {
+  extends BootstrapStrings
+  with BootstrapParts {
 
   import tags._
   import tags.impl.all._
@@ -226,18 +226,22 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
 
     import navbars._
 
-    def simple[V: AttrValue](home: V,
-                             appName: Modifier,
-                             navItems: Modifier,
-                             navClass: String = DefaultLight,
-                             navBarId: String = defaultNavbarId) =
+    def simple[V: AttrValue](
+      home: V,
+      appName: Modifier,
+      navItems: Modifier,
+      navClass: String = DefaultLight,
+      navBarId: String = defaultNavbarId
+    ) =
       basic(home, appName, ulClass(s"${navbars.Nav} $MrAuto")(navItems), navClass, navBarId)
 
-    def basic[V: AttrValue](home: V,
-                            appName: Modifier,
-                            navContent: Modifier,
-                            navClass: String = DefaultLight,
-                            navBarId: String = defaultNavbarId) =
+    def basic[V: AttrValue](
+      home: V,
+      appName: Modifier,
+      navContent: Modifier,
+      navClass: String = DefaultLight,
+      navBarId: String = defaultNavbarId
+    ) =
       nav(`class` := navClass)(
         divClass(Container)(
           a(`class` := Brand, href := home)(appName),

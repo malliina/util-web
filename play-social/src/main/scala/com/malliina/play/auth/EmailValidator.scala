@@ -7,8 +7,9 @@ object EmailValidator {
   def apply(conf: CodeValidationConf[Email]): EmailValidator =
     new EmailValidator(conf)
 
-  def map[T](c: CodeValidationConf[Email])(
-      parseUser: Verified => Either[JWTError, Email]): EmailValidator =
+  def map[T](
+    c: CodeValidationConf[Email]
+  )(parseUser: Verified => Either[JWTError, Email]): EmailValidator =
     new EmailValidator(c) {
       override def parse(v: Verified): Either[JWTError, Email] = parseUser(v)
     }

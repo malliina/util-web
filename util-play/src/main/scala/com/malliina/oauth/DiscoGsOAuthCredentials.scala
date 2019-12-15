@@ -4,10 +4,12 @@ import com.malliina.play.util.ConfOps
 import com.malliina.values.ErrorMessage
 import play.api.Configuration
 
-case class DiscoGsOAuthCredentials(consumerKey: String,
-                                   consumerSecret: String,
-                                   accessToken: String,
-                                   accessTokenSecret: String)
+case class DiscoGsOAuthCredentials(
+  consumerKey: String,
+  consumerSecret: String,
+  accessToken: String,
+  accessTokenSecret: String
+)
 
 object DiscoGsOAuthCredentials {
   def apply(conf: Configuration): Either[ErrorMessage, DiscoGsOAuthCredentials] =

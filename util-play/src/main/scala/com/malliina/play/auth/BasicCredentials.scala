@@ -8,9 +8,7 @@ trait BasicCreds {
   def password: Password
 }
 
-case class BasicCredentials(username: Username,
-                            password: Password) extends BasicCreds
+case class BasicCredentials(username: Username, password: Password) extends BasicCreds
 
-case class RememberMeCredentials(username: Username,
-                                 password: Password,
-                                 rememberMe: Boolean) extends BasicCreds
+case class RememberMeCredentials(username: Username, password: Password, rememberMe: Boolean)
+  extends BasicCreds

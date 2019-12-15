@@ -20,8 +20,8 @@ object GitHubCodeValidator {
 }
 
 class GitHubCodeValidator(val oauth: OAuthConf[Email])
-    extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
-    with HandlerLike {
+  extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
+  with HandlerLike {
 
   override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
     val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)
@@ -31,11 +31,10 @@ class GitHubCodeValidator(val oauth: OAuthConf[Email])
       tokens <- postEmpty[GitHubTokens](staticConf.tokenEndpoint, headers, params)
       tokenUrl = FullUrl.https("api.github.com", s"/user/emails?access_token=${tokens.accessToken}")
       emails <- getJson[Seq[GitHubEmail]](tokenUrl)
-    } yield
-      emails
-        .find(email => email.primary && email.verified)
-        .map(_.email)
-        .toRight(JsonError("No primary and verified email found."))
+    } yield emails
+      .find(email => email.primary && email.verified)
+      .map(_.email)
+      .toRight(JsonError("No primary and verified email found."))
   }
 }
 

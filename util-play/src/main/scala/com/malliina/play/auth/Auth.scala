@@ -13,7 +13,7 @@ object Auth {
     authHeaderParser(request) { decoded =>
       decoded.split(":", 2) match {
         case Array(user, pass) => Some(BasicCredentials(Username(user), Password(pass)))
-        case _ => None
+        case _                 => None
       }
     }
   }
@@ -47,17 +47,21 @@ object Auth {
     }
   }
 
-  def credentialsFromQuery(request: RequestHeader, userKey: String = "u", passKey: String = "p"): Option[BasicCredentials] = {
+  def credentialsFromQuery(
+    request: RequestHeader,
+    userKey: String = "u",
+    passKey: String = "p"
+  ): Option[BasicCredentials] = {
     val qString = request.queryString
-    for (
-      u <- qString get userKey;
-      p <- qString get passKey;
-      user <- u.headOption;
-      pass <- p.headOption
-    ) yield BasicCredentials(Username(user), Password(pass))
+    for (u <- qString get userKey;
+         p <- qString get passKey;
+         user <- u.headOption;
+         pass <- p.headOption) yield BasicCredentials(Username(user), Password(pass))
   }
 
-  def authenticateFromSession(rh: RequestHeader,
-                              sessionKey: String = DefaultSessionKey): Option[Username] =
+  def authenticateFromSession(
+    rh: RequestHeader,
+    sessionKey: String = DefaultSessionKey
+  ): Option[Username] =
     rh.session.get(sessionKey).map(Username.apply)
 }

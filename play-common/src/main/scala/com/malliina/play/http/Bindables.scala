@@ -11,7 +11,8 @@ trait Bindables {
   implicit val email: PathBindable[Email] = bindable[Email](Email.apply)
   implicit val accessToken: PathBindable[AccessToken] = bindable[AccessToken](AccessToken.apply)
   implicit val idToken: PathBindable[IdToken] = bindable[IdToken](IdToken.apply)
-  implicit val userId: PathBindable[UserId] = PathBindable.bindableLong.transform(l => UserId(l), u => u.id)
+  implicit val userId: PathBindable[UserId] =
+    PathBindable.bindableLong.transform(l => UserId(l), u => u.id)
 
   def bindable[T <: WrappedString](build: String => T): PathBindable[T] =
     PathBindable.bindableString.transform[T](s => build(s), u => u.value)

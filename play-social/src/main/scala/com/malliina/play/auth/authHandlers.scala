@@ -54,21 +54,25 @@ object BasicAuthHandler {
   val DefaultSessionKey = "username"
   val LastIdCookie = "lastId"
 
-  def apply(successCall: Call,
-            lastIdKey: String = LastIdCookie,
-            authorize: Email => Either[AuthError, Email] = email => Right(email),
-            sessionKey: String = DefaultSessionKey,
-            lastIdMaxAge: Option[Duration] = Option(DefaultMaxAge),
-            returnUriKey: String = DefaultReturnUriKey): BasicAuthHandler =
+  def apply(
+    successCall: Call,
+    lastIdKey: String = LastIdCookie,
+    authorize: Email => Either[AuthError, Email] = email => Right(email),
+    sessionKey: String = DefaultSessionKey,
+    lastIdMaxAge: Option[Duration] = Option(DefaultMaxAge),
+    returnUriKey: String = DefaultReturnUriKey
+  ): BasicAuthHandler =
     new BasicAuthHandler(successCall, lastIdKey, authorize, sessionKey, lastIdMaxAge, returnUriKey)
 }
 
-class BasicAuthHandler(val successCall: Call,
-                       val lastIdKey: String,
-                       authorize: Email => Either[AuthError, Email],
-                       val sessionKey: String,
-                       val lastIdMaxAge: Option[Duration],
-                       val returnUriKey: String) extends AuthHandler {
+class BasicAuthHandler(
+  val successCall: Call,
+  val lastIdKey: String,
+  authorize: Email => Either[AuthError, Email],
+  val sessionKey: String,
+  val lastIdMaxAge: Option[Duration],
+  val returnUriKey: String
+) extends AuthHandler {
   override def onAuthenticated(email: Email, req: RequestHeader): Result =
     authorize(email).fold(
       err => onUnauthorized(err, req),
@@ -80,12 +84,12 @@ class BasicAuthHandler(val successCall: Call,
           .discardingCookies(DiscardingCookie(returnUriKey))
           .withCookies(Cookie(lastIdKey, email.email, lastIdMaxAge.map(_.toSeconds.toInt)))
           .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
-      })
+      }
+    )
 
   override def onUnauthorized(error: AuthError, req: RequestHeader): Result = {
     log.error(s"${error.message} $req")
-    Unauthorized(Json.obj("message" -> "Authentication failed."))
-      .withNewSession
+    Unauthorized(Json.obj("message" -> "Authentication failed.")).withNewSession
       .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
   }
 }

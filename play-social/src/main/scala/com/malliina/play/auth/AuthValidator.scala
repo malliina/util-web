@@ -31,12 +31,15 @@ trait AuthValidator {
 }
 
 trait LoginHintSupport { self: AuthValidator =>
-  def startHinted(req: RequestHeader,
-                  loginHint: Option[String],
-                  extraParams: Map[String, String] = Map.empty): Future[Result] =
+  def startHinted(
+    req: RequestHeader,
+    loginHint: Option[String],
+    extraParams: Map[String, String] = Map.empty
+  ): Future[Result] =
     self.start(
       req,
-      extraParams ++ loginHint.map(lh => Map(OAuthKeys.LoginHint -> lh)).getOrElse(Map.empty))
+      extraParams ++ loginHint.map(lh => Map(OAuthKeys.LoginHint -> lh)).getOrElse(Map.empty)
+    )
 }
 
 trait OAuthValidator[U] {

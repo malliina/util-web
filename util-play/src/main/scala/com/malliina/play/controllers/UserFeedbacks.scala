@@ -16,6 +16,7 @@ object UserFeedbacks {
     } yield UserFeedback(message, isError)
 
   def formed(form: Form[_]): Option[UserFeedback] =
-    form.globalError.orElse(form.errors.headOption)
+    form.globalError
+      .orElse(form.errors.headOption)
       .map(formError => UserFeedback.error(formError.message))
 }

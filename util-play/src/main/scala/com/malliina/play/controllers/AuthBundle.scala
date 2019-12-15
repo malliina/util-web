@@ -31,14 +31,17 @@ object AuthBundle {
       }
     }
 
-  def oauthUser(initiateFlow: Call, sessionKey: String)(implicit ec: ExecutionContext): AuthBundle[Username] =
+  def oauthUser(initiateFlow: Call, sessionKey: String)(
+    implicit ec: ExecutionContext
+  ): AuthBundle[Username] =
     oauth[Username]((_, u) => u, initiateFlow, sessionKey)
 
-  def oauth[T](map: (RequestHeader, Username) => T,
-               initiateFlow: Call,
-               sessionKey: String)(implicit ec: ExecutionContext): AuthBundle[T] =
+  def oauth[T](map: (RequestHeader, Username) => T, initiateFlow: Call, sessionKey: String)(
+    implicit ec: ExecutionContext
+  ): AuthBundle[T] =
     new AuthBundle[T] {
-      override val authenticator: Authenticator[T] = UserAuthenticator.session(sessionKey)
+      override val authenticator: Authenticator[T] = UserAuthenticator
+        .session(sessionKey)
         .transform((r, u) => Right(map(r, u)))
 
       override def onUnauthorized(failure: AuthFailure) =

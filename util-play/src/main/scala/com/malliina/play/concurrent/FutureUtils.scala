@@ -3,6 +3,7 @@ package com.malliina.play.concurrent
 import scala.concurrent.{ExecutionContext, Future}
 
 object FutureUtils {
+
   /** Sequentially evaluates `f` on elements in `ts` until `p` evaluates to true.
     *
     * If `p` does not evaluate to true to any element in `ts`, the result of `f`
@@ -11,7 +12,9 @@ object FutureUtils {
     *
     * @return the first result that satisfies `p`, or the last result if there's no match
     */
-  def first[T, R](ts: List[T])(f: T => Future[R])(p: R => Boolean)(implicit ec: ExecutionContext): Future[R] =
+  def first[T, R](
+    ts: List[T]
+  )(f: T => Future[R])(p: R => Boolean)(implicit ec: ExecutionContext): Future[R] =
     ts match {
       case Nil =>
         Future.failed(new NoSuchElementException)

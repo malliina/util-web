@@ -22,9 +22,9 @@ object JsonError {
 
 case class OkError(error: ResponseError) extends AuthError("http_error") {
   override def message: String = error match {
-    case StatusError(r, _) => s"Status code ${r.code}."
+    case StatusError(r, _)                    => s"Status code ${r.code}."
     case com.malliina.http.JsonError(_, _, _) => "JSON error."
-    case _ => "Unknown error"
+    case _                                    => "Unknown error"
   }
 }
 
@@ -57,7 +57,8 @@ case class NotYetValid(token: TokenValue, nbf: Instant, now: Instant)
   extends JWTError("not_yet_valid") {
   def validIn = (nbf.toEpochMilli - now.toEpochMilli).millis
 
-  override def message = s"Token not yet valid. Valid in $validIn. Valid from $nbf, checked at $now."
+  override def message =
+    s"Token not yet valid. Valid in $validIn. Valid from $nbf, checked at $now."
 }
 
 case class IssuerMismatch(token: TokenValue, actual: String, allowed: Seq[String])
@@ -65,8 +66,7 @@ case class IssuerMismatch(token: TokenValue, actual: String, allowed: Seq[String
   def message = s"Issuer mismatch. Got '$actual', but expected one of '${allowed.mkString(", ")}'."
 }
 
-case class InvalidSignature(token: TokenValue)
-  extends JWTError("invalid_signature") {
+case class InvalidSignature(token: TokenValue) extends JWTError("invalid_signature") {
   override def message = "Invalid JWT signature."
 }
 
@@ -75,13 +75,10 @@ case class InvalidKeyId(token: TokenValue, kid: String, expected: Seq[String])
   def message = s"Invalid key ID. Expected one of '${expected.mkString(", ")}', but got '$kid'."
 }
 
-case class InvalidClaims(token: TokenValue, message: String)
-  extends JWTError("invalid_claims")
+case class InvalidClaims(token: TokenValue, message: String) extends JWTError("invalid_claims")
 
-case class ParseError(token: TokenValue, e: ParseException)
-  extends JWTError("parse_error") {
+case class ParseError(token: TokenValue, e: ParseException) extends JWTError("parse_error") {
   override def message = "Parse error"
 }
 
-case class MissingData(token: TokenValue, message: String)
-  extends JWTError("missing_data")
+case class MissingData(token: TokenValue, message: String) extends JWTError("missing_data")

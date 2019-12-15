@@ -16,10 +16,12 @@ import scala.concurrent.Future
 object CognitoCodeValidator {
   val IdentityProviderKey = "identity_provider"
 
-  def apply(host: String,
-            identityProvider: IdentityProvider,
-            validator: CognitoIdValidator,
-            oauth: OAuthConf[CognitoUser]) =
+  def apply(
+    host: String,
+    identityProvider: IdentityProvider,
+    validator: CognitoIdValidator,
+    oauth: OAuthConf[CognitoUser]
+  ) =
     new CognitoCodeValidator(host, identityProvider, validator, oauth)
 
   /**
@@ -49,11 +51,12 @@ object CognitoCodeValidator {
 
 }
 
-class CognitoCodeValidator(host: String,
-                           identityProvider: IdentityProvider,
-                           validator: CognitoIdValidator,
-                           val oauth: OAuthConf[CognitoUser])
-    extends StaticCodeValidator[CognitoUser, CognitoUser]("Amazon", staticConf(host, oauth.conf)) {
+class CognitoCodeValidator(
+  host: String,
+  identityProvider: IdentityProvider,
+  validator: CognitoIdValidator,
+  val oauth: OAuthConf[CognitoUser]
+) extends StaticCodeValidator[CognitoUser, CognitoUser]("Amazon", staticConf(host, oauth.conf)) {
 
   override def onOutcome(outcome: Either[AuthError, CognitoUser], req: RequestHeader): Result =
     handler.resultFor(outcome, req)

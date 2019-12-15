@@ -18,10 +18,12 @@ object Sockets {
   val DefaultOverflowStrategy = OverflowStrategy.fail
 }
 
-abstract class Sockets[User](auth: Authenticator[User],
-                             ctx: ActorExecution,
-                             actorBufferSize: Int = DefaultActorBufferSize,
-                             overflowStrategy: OverflowStrategy = DefaultOverflowStrategy) {
+abstract class Sockets[User](
+  auth: Authenticator[User],
+  ctx: ActorExecution,
+  actorBufferSize: Int = DefaultActorBufferSize,
+  overflowStrategy: OverflowStrategy = DefaultOverflowStrategy
+) {
   implicit val actorSystem = ctx.actorSystem
   implicit val mat = ctx.materializer
   implicit val ec = ctx.executionContext
@@ -48,5 +50,9 @@ abstract class Sockets[User](auth: Authenticator[User],
   }
 
   def actorFlow(user: User, rh: RequestHeader): Flow[JsValue, JsValue, _] =
-    ActorFlow.actorRef[JsValue, JsValue](out => props(DefaultActorConfig(out, rh, user)), actorBufferSize, overflowStrategy)
+    ActorFlow.actorRef[JsValue, JsValue](
+      out => props(DefaultActorConfig(out, rh, user)),
+      actorBufferSize,
+      overflowStrategy
+    )
 }

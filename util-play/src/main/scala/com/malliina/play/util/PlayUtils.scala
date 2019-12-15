@@ -6,9 +6,11 @@ import play.api.mvc.RequestHeader
 
 trait PlayUtils {
   def formatHeaders(req: RequestHeader) =
-    req.headers.toMap.map {
-      case (key, values) => s"$key : ${values.mkString(",")}"
-    }.mkString("\n", "\n", "")
+    req.headers.toMap
+      .map {
+        case (key, values) => s"$key : ${values.mkString(",")}"
+      }
+      .mkString("\n", "\n", "")
 
   def logHeaders(req: RequestHeader) = log info formatHeaders(req)
 }

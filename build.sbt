@@ -9,8 +9,9 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.12.3"
-val scalaTestVersion = "3.1.0"
+val primitiveVersion = "1.13.0"
+// scalatestplus 5.0.0 depends on 3.0.8
+val scalaTestVersion = "3.0.8"
 
 val baseSettings = Seq(
   scalaVersion := "2.13.1",

@@ -21,7 +21,9 @@ object UserAuthenticator {
         auth(rh)
     }
 
-  def default(isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext): Authenticator[Username] =
+  def default(
+    isValid: BasicCredentials => Future[Option[Username]]
+  )(implicit ec: ExecutionContext): Authenticator[Username] =
     Authenticator.anyOne(session(), header(isValid), query(isValid))
 
   def session(key: String = Auth.DefaultSessionKey): UserAuthenticator =
@@ -49,20 +51,26 @@ object UserAuthenticator {
   def query(isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext) =
     basic(rh => Auth.credentialsFromQuery(rh), isValid)
 
-  def basic(read: RequestHeader => Option[BasicCredentials],
-            isValid: BasicCredentials => Future[Option[Username]])(implicit ec: ExecutionContext): UserAuthenticator =
+  def basic(
+    read: RequestHeader => Option[BasicCredentials],
+    isValid: BasicCredentials => Future[Option[Username]]
+  )(implicit ec: ExecutionContext): UserAuthenticator =
     UserAuthenticator { rh =>
-      read(rh).map { creds =>
-        isValid(creds).map { maybeUser =>
-          maybeUser.map { user =>
-            Right(user)
-          }.getOrElse {
-            Left(InvalidCredentials(rh))
+      read(rh)
+        .map { creds =>
+          isValid(creds).map { maybeUser =>
+            maybeUser
+              .map { user =>
+                Right(user)
+              }
+              .getOrElse {
+                Left(InvalidCredentials(rh))
+              }
           }
         }
-      }.getOrElse {
-        Future.successful(Left(MissingCredentials(rh)))
-      }
+        .getOrElse {
+          Future.successful(Left(MissingCredentials(rh)))
+        }
     }
 
   def readCreds(rh: RequestHeader): Option[BasicCredentials] =
@@ -81,7 +89,9 @@ trait Authenticator[+T] {
   def mapAuth[U](f: (RequestHeader, T) => U)(implicit ec: ExecutionContext) =
     transform((req, t) => Right(f(req, t)))
 
-  def transform[U](f: (RequestHeader, T) => Outcome[U])(implicit ec: ExecutionContext): Authenticator[U] =
+  def transform[U](
+    f: (RequestHeader, T) => Outcome[U]
+  )(implicit ec: ExecutionContext): Authenticator[U] =
     Authenticator[U] { rh =>
       authenticate(rh).map { outcome =>
         outcome.fold(

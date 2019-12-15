@@ -15,7 +15,9 @@ class Mediator extends Actor {
 
   override def receive: Receive = {
     case Broadcast(message) =>
-      clients foreach { out => out ! message }
+      clients foreach { out =>
+        out ! message
+      }
       onBroadcast(message)
     case ClientMessage(message, rh) =>
       onClientMessage(message, rh)

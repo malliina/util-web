@@ -60,8 +60,8 @@ object TwitterValidator {
 }
 
 class TwitterValidator(val oauth: OAuthConf[Email])
-    extends AuthValidator
-    with OAuthValidator[Email] {
+  extends AuthValidator
+  with OAuthValidator[Email] {
   val brandName = "Twitter"
   val requestTokenUrl = FullUrl.https("api.twitter.com", "/oauth/request_token")
   val accessTokenUrl = FullUrl.https("api.twitter.com", "/oauth/access_token")
@@ -118,8 +118,10 @@ class TwitterValidator(val oauth: OAuthConf[Email])
       }
   }
 
-  private def fetchAccessToken(requestToken: RequestToken,
-                               verifier: String): Future[Option[TwitterAccess]] = {
+  private def fetchAccessToken(
+    requestToken: RequestToken,
+    verifier: String
+  ): Future[Option[TwitterAccess]] = {
     val encodable = paramsStringWith(requestToken, buildNonce)
     val authHeaderValue = encodable.signed("POST", accessTokenUrl, None)
     http
@@ -152,19 +154,24 @@ class TwitterValidator(val oauth: OAuthConf[Email])
     http.execute(req).flatMap { res =>
       res
         .parse[TwitterUser]
-        .fold(err => Future.failed(com.malliina.http.JsonError(err, res, reqUrl).toException),
-              user => Future.successful(user))
+        .fold(
+          err => Future.failed(com.malliina.http.JsonError(err, res, reqUrl).toException),
+          user => Future.successful(user)
+        )
     }
   }
 
   private def buildNonce =
     new String(
       Base64.getEncoder.encode(CodeValidator.randomString().getBytes(StandardCharsets.UTF_8)),
-      StandardCharsets.UTF_8)
+      StandardCharsets.UTF_8
+    )
 
-  private def paramsStringWith(token: TokenValue,
-                               nonce: String,
-                               map: Map[String, String] = Map.empty) =
+  private def paramsStringWith(
+    token: TokenValue,
+    nonce: String,
+    map: Map[String, String] = Map.empty
+  ) =
     Encodable(nonce, Map(OauthTokenKey -> token.token) ++ map)
 
   case class Encodable(nonce: String, map: Map[String, String]) {

@@ -20,7 +20,7 @@ object DiscoveringCodeValidator {
   * @tparam V type of authenticated user
   */
 abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
-    extends CodeValidator[Verified, V] {
+  extends CodeValidator[Verified, V] {
 
   val brandName = codeConf.brandName
   val client = codeConf.client
@@ -32,8 +32,10 @@ abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
 
   /** The initial result that initiates sign-in.
     */
-  override def start(req: RequestHeader,
-                     extraParams: Map[String, String] = Map.empty): Future[Result] =
+  override def start(
+    req: RequestHeader,
+    extraParams: Map[String, String] = Map.empty
+  ): Future[Result] =
     fetchConf()
       .map { oauthConf =>
         val nonce = randomString()
@@ -65,9 +67,11 @@ abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
     }
   }
 
-  def checkNonce(idToken: IdToken,
-                 verified: Verified,
-                 req: RequestHeader): Either[JWTError, Verified] =
+  def checkNonce(
+    idToken: IdToken,
+    verified: Verified,
+    req: RequestHeader
+  ): Either[JWTError, Verified] =
     verified.parsed.readString(Nonce).flatMap { n =>
       if (req.session.get(Nonce).contains(n)) Right(verified)
       else Left(InvalidClaims(idToken, "Nonce mismatch."))
@@ -77,7 +81,7 @@ abstract class DiscoveringCodeValidator[V](codeConf: AuthCodeConf)
 }
 
 abstract class StandardOAuth[V](conf: CodeValidationConf[V])
-    extends DiscoveringCodeValidator[V](conf.codeConf)
-    with LoginHintSupport {
+  extends DiscoveringCodeValidator[V](conf.codeConf)
+  with LoginHintSupport {
   override val oauth: OAuthConf[V] = conf.oauth
 }

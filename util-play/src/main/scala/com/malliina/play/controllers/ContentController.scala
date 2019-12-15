@@ -20,7 +20,9 @@ trait ContentController extends Caching {
     *
     * Otherwise you might send JSON to a browser that also accepts HTML.
     */
-  private def respondIgnoreQueryParam(request: RequestHeader)(html: => Result, json: => Result): Result = {
+  private def respondIgnoreQueryParam(
+    request: RequestHeader
+  )(html: => Result, json: => Result): Result = {
     if (request accepts HTML) html
     else if (request accepts JSON) json
     else NotAcceptable

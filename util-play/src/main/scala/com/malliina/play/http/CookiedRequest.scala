@@ -9,6 +9,6 @@ import play.api.mvc.{Cookie, Request, RequestHeader}
   */
 class CookiedRequest[A, U](user: U, request: Request[A], val cookie: Option[Cookie] = None)
   extends AuthenticatedRequest[A, U](user, request)
-    with BaseAuthRequest[U] {
+  with BaseAuthRequest[U] {
   override def rh: RequestHeader = request
 }

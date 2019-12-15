@@ -8,10 +8,12 @@ import scala.concurrent.Future
 
 object StaticCodeValidator {
 
-  case class StaticConf(scope: String,
-                        authorizationEndpoint: FullUrl,
-                        tokenEndpoint: FullUrl,
-                        authConf: AuthConf) {
+  case class StaticConf(
+    scope: String,
+    authorizationEndpoint: FullUrl,
+    tokenEndpoint: FullUrl,
+    authConf: AuthConf
+  ) {
     def clientId = authConf.clientId
 
     def clientSecret = authConf.clientSecret
@@ -36,7 +38,10 @@ object StaticCodeValidator {
 abstract class StaticCodeValidator[U, V](val brandName: String, val staticConf: StaticConf)
   extends CodeValidator[U, V] {
 
-  override def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] = {
+  override def start(
+    req: RequestHeader,
+    extraParams: Map[String, String] = Map.empty
+  ): Future[Result] = {
     val params = commonAuthParams(staticConf.scope, req) ++ extraRedirParams(req) ++ extraParams
     fut(redirResult(staticConf.authorizationEndpoint, params))
   }

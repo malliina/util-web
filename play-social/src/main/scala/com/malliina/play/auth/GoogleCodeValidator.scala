@@ -35,8 +35,10 @@ class GoogleCodeValidator(conf: CodeValidationConf[Email]) extends StandardOAuth
   override def parse(validated: Verified): Either[JWTError, Email] = {
     val emailVerified = validated.readBoolean(GoogleCodeValidator.EmailVerified)
     for {
-      _ <- emailVerified.filterOrElse(_ == true,
-                                      InvalidClaims(validated.token, "Email not verified."))
+      _ <- emailVerified.filterOrElse(
+        _ == true,
+        InvalidClaims(validated.token, "Email not verified.")
+      )
       email <- validated.readString(EmailKey).map(Email.apply)
     } yield email
   }

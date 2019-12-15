@@ -28,7 +28,10 @@ object AuthConfReader {
 
   def file(path: Path): AuthConfReader = {
     import collection.JavaConverters._
-    val asMap = Files.readAllLines(path).asScala.toList
+    val asMap = Files
+      .readAllLines(path)
+      .asScala
+      .toList
       .filterNot(line => line.startsWith("#") || line.startsWith("//"))
       .map(line => line.split("=", 2))
       .collect { case Array(key, value) => key -> value }
@@ -103,7 +106,7 @@ object CognitoTokens {
     (JsPath \ "access_token").format[AccessToken] and
       (JsPath \ "id_token").format[IdToken] and
       (JsPath \ "refresh_token").format[RefreshToken]
-    ) (CognitoTokens.apply, unlift(CognitoTokens.unapply))
+  )(CognitoTokens.apply, unlift(CognitoTokens.unapply))
 }
 
 case class GitHubTokens(accessToken: AccessToken, tokenType: String)
@@ -112,10 +115,15 @@ object GitHubTokens {
   implicit val json: Format[GitHubTokens] = (
     (JsPath \ "access_token").format[AccessToken] and
       (JsPath \ "token_type").formatWithDefault[String]("dummy")
-    ) (GitHubTokens.apply, unlift(GitHubTokens.unapply))
+  )(GitHubTokens.apply, unlift(GitHubTokens.unapply))
 }
 
-case class GitHubEmail(email: Email, primary: Boolean, verified: Boolean, visibility: Option[String])
+case class GitHubEmail(
+  email: Email,
+  primary: Boolean,
+  verified: Boolean,
+  visibility: Option[String]
+)
 
 object GitHubEmail {
   implicit val json = Json.format[GitHubEmail]
@@ -133,25 +141,26 @@ object SimpleOpenIdConf {
   }
 }
 
-case class AuthEndpoints(authorizationEndpoint: FullUrl,
-                         tokenEndpoint: FullUrl,
-                         jwksUri: FullUrl) extends OpenIdConf
+case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl)
+  extends OpenIdConf
 
 object AuthEndpoints {
   implicit val reader: Reads[AuthEndpoints] = (
     (JsPath \ "authorization_endpoint").read[FullUrl] and
       (JsPath \ "token_endpoint").read[FullUrl] and
       (JsPath \ "jwks_uri").read[FullUrl]
-    ) (AuthEndpoints.apply _)
+  )(AuthEndpoints.apply _)
 }
 
-case class MicrosoftOAuthConf(authorizationEndpoint: FullUrl,
-                              tokenEndpoint: FullUrl,
-                              jwksUri: FullUrl,
-                              endSessionEndpoint: FullUrl,
-                              scopesSupported: Seq[String],
-                              issuer: String,
-                              claimsSupported: Seq[String]) extends OpenIdConf
+case class MicrosoftOAuthConf(
+  authorizationEndpoint: FullUrl,
+  tokenEndpoint: FullUrl,
+  jwksUri: FullUrl,
+  endSessionEndpoint: FullUrl,
+  scopesSupported: Seq[String],
+  issuer: String,
+  claimsSupported: Seq[String]
+) extends OpenIdConf
 
 object MicrosoftOAuthConf {
   implicit val reader: Reads[MicrosoftOAuthConf] = (
@@ -162,7 +171,7 @@ object MicrosoftOAuthConf {
       (JsPath \ "scopes_supported").read[Seq[String]] and
       (JsPath \ "issuer").read[String] and
       (JsPath \ "claims_supported").read[Seq[String]]
-    ) (MicrosoftOAuthConf.apply _)
+  )(MicrosoftOAuthConf.apply _)
 }
 
 trait TokenSet {
@@ -184,12 +193,14 @@ object SimpleTokens {
   * @param tokenType    Bearer
   * @param expiresIn    seconds
   */
-case class MicrosoftTokens(idToken: IdToken,
-                           accessToken: Option[AccessToken],
-                           refreshToken: Option[RefreshToken],
-                           tokenType: Option[String],
-                           expiresIn: Option[Duration],
-                           scope: Option[String]) extends TokenSet
+case class MicrosoftTokens(
+  idToken: IdToken,
+  accessToken: Option[AccessToken],
+  refreshToken: Option[RefreshToken],
+  tokenType: Option[String],
+  expiresIn: Option[Duration],
+  scope: Option[String]
+) extends TokenSet
 
 object MicrosoftTokens {
   implicit val json: Format[MicrosoftTokens] = (
@@ -199,13 +210,15 @@ object MicrosoftTokens {
       (JsPath \ "token_type").formatNullable[String] and
       (JsPath \ "expires_in").formatNullable[Duration] and
       (JsPath \ "scope").formatNullable[String]
-    ) (MicrosoftTokens.apply, unlift(MicrosoftTokens.unapply))
+  )(MicrosoftTokens.apply, unlift(MicrosoftTokens.unapply))
 }
 
-case class GoogleTokens(idToken: IdToken,
-                        accessToken: AccessToken,
-                        expiresIn: Duration,
-                        tokenType: String) extends TokenSet
+case class GoogleTokens(
+  idToken: IdToken,
+  accessToken: AccessToken,
+  expiresIn: Duration,
+  tokenType: String
+) extends TokenSet
 
 object GoogleTokens {
   implicit val json: Format[GoogleTokens] = (
@@ -213,7 +226,7 @@ object GoogleTokens {
       (JsPath \ "access_token").format[AccessToken] and
       (JsPath \ "expires_in").format[Duration] and
       (JsPath \ "token_type").format[String]
-    ) (GoogleTokens.apply, unlift(GoogleTokens.unapply))
+  )(GoogleTokens.apply, unlift(GoogleTokens.unapply))
 }
 
 case class FacebookTokens(accessToken: AccessToken, tokenType: String, expiresIn: Duration)
@@ -223,22 +236,30 @@ object FacebookTokens {
     (JsPath \ "access_token").format[AccessToken] and
       (JsPath \ "token_type").format[String] and
       (JsPath \ "expires_in").format[Duration]
-    ) (FacebookTokens.apply, unlift(FacebookTokens.unapply))
+  )(FacebookTokens.apply, unlift(FacebookTokens.unapply))
 }
 
-case class TwitterTokens(oauthToken: RequestToken, oauthTokenSecret: String, oauthCallbackConfirmed: Boolean)
+case class TwitterTokens(
+  oauthToken: RequestToken,
+  oauthTokenSecret: String,
+  oauthCallbackConfirmed: Boolean
+)
 
 object TwitterTokens {
   def fromString(in: String) = {
-    val map = in.split("&").toList.flatMap { kv =>
-      val parts = kv.split("=")
-      if (parts.length == 2) {
-        val Array(k, v) = parts
-        Option(k -> v)
-      } else {
-        None
+    val map = in
+      .split("&")
+      .toList
+      .flatMap { kv =>
+        val parts = kv.split("=")
+        if (parts.length == 2) {
+          val Array(k, v) = parts
+          Option(k -> v)
+        } else {
+          None
+        }
       }
-    }.toMap
+      .toMap
     for {
       ot <- map.get("oauth_token").map(RequestToken.apply)
       ots <- map.get("oauth_token_secret")
@@ -251,15 +272,19 @@ case class TwitterAccess(oauthToken: AccessToken, oauthTokenSecret: String)
 
 object TwitterAccess {
   def fromString(in: String) = {
-    val map = in.split("&").toList.flatMap { kv =>
-      val parts = kv.split("=")
-      if (parts.length == 2) {
-        val Array(k, v) = parts
-        Option(k -> v)
-      } else {
-        None
+    val map = in
+      .split("&")
+      .toList
+      .flatMap { kv =>
+        val parts = kv.split("=")
+        if (parts.length == 2) {
+          val Array(k, v) = parts
+          Option(k -> v)
+        } else {
+          None
+        }
       }
-    }.toMap
+      .toMap
     for {
       ot <- map.get("oauth_token").map(AccessToken.apply)
       ots <- map.get("oauth_token_secret")
@@ -275,7 +300,7 @@ object TwitterUser {
       (JsPath \ "name").format[String] and
       (JsPath \ "screen_name").format[String] and
       (JsPath \ "email").formatNullable[Email]
-    ) (TwitterUser.apply, unlift(TwitterUser.unapply))
+  )(TwitterUser.apply, unlift(TwitterUser.unapply))
 }
 
 case class EmailResponse(email: Email)
@@ -284,12 +309,14 @@ object EmailResponse {
   implicit val json = Json.format[EmailResponse]
 }
 
-case class ParsedJWT(jwt: SignedJWT,
-                     claims: JWTClaimsSet,
-                     kid: String,
-                     iss: String,
-                     exp: Instant,
-                     token: TokenValue) {
+case class ParsedJWT(
+  jwt: SignedJWT,
+  claims: JWTClaimsSet,
+  kid: String,
+  iss: String,
+  exp: Instant,
+  token: TokenValue
+) {
 
   import scala.collection.JavaConverters.asScalaBufferConverter
 
@@ -321,12 +348,14 @@ case class Verified(parsed: ParsedJWT) {
   def token = parsed.token
 }
 
-case class KeyConf(n: Base64URL,
-                   kid: String,
-                   use: KeyUse,
-                   e: Base64URL,
-                   alg: JWSAlgorithm,
-                   kty: String)
+case class KeyConf(
+  n: Base64URL,
+  kid: String,
+  use: KeyUse,
+  e: Base64URL,
+  alg: JWSAlgorithm,
+  kty: String
+)
 
 object KeyConf {
   implicit val reader = Reads[KeyConf] { json =>

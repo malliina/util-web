@@ -2,9 +2,7 @@ package com.malliina.play.auth
 
 import com.malliina.http.FullUrl
 
-case class CognitoIdentityConf(clientId: String,
-                               domain: FullUrl,
-                               scope: String) {
+case class CognitoIdentityConf(clientId: String, domain: FullUrl, scope: String) {
   def authUrlGoogle(state: String, redirUrl: FullUrl) = authUrl("Google", state, redirUrl)
 
   def authUrlFacebook(state: String, redirUrl: FullUrl) = authUrl("Facebook", state, redirUrl)

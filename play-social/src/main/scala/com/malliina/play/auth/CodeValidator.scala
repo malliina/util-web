@@ -68,9 +68,11 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
     }
   }
 
-  def redirResult(authorizationEndpoint: FullUrl,
-                  authParams: Map[String, String],
-                  nonce: Option[String] = None): Result = {
+  def redirResult(
+    authorizationEndpoint: FullUrl,
+    authParams: Map[String, String],
+    nonce: Option[String] = None
+  ): Result = {
     val state = randomString()
     val encodedParams = (authParams ++ Map(State -> state)).map { case (k, v) => k -> urlEncode(v) }
     val url = authorizationEndpoint.append(s"?${stringify(encodedParams)}")
@@ -105,9 +107,11 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
   def postForm[T: Reads](url: FullUrl, params: Map[String, String]): Future[T] =
     http.postFormAs[T](url, params)
 
-  def postEmpty[T: Reads](url: FullUrl,
-                          headers: Map[String, String],
-                          params: Map[String, String]): Future[T] =
+  def postEmpty[T: Reads](
+    url: FullUrl,
+    headers: Map[String, String],
+    params: Map[String, String]
+  ): Future[T] =
     http.postFormAs[T](url, params, headers)
 
   def getJson[T: Reads](url: FullUrl): Future[T] = http.getAs[T](url)

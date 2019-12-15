@@ -19,21 +19,27 @@ class AccountForms {
   val newPassKey = "newPassword"
   val newPassAgainKey = "newPasswordAgain"
 
-  val loginForm = Form[BasicCredentials](mapping(
-    userFormKey -> username,
-    passFormKey -> password
-  )(BasicCredentials.apply)(BasicCredentials.unapply))
+  val loginForm = Form[BasicCredentials](
+    mapping(
+      userFormKey -> username,
+      passFormKey -> password
+    )(BasicCredentials.apply)(BasicCredentials.unapply)
+  )
 
-  val rememberMeLoginForm = Form(mapping(
-    userFormKey -> username,
-    passFormKey -> password,
-    rememberMeKey -> boolean // the checkbox HTML element must have the property 'value="true"'
-  )(RememberMeCredentials.apply)(RememberMeCredentials.unapply))
+  val rememberMeLoginForm = Form(
+    mapping(
+      userFormKey -> username,
+      passFormKey -> password,
+      rememberMeKey -> boolean // the checkbox HTML element must have the property 'value="true"'
+    )(RememberMeCredentials.apply)(RememberMeCredentials.unapply)
+  )
 
-  val changePasswordForm = Form(mapping(
-    oldPassKey -> password,
-    newPassKey -> password,
-    newPassAgainKey -> password
-  )(PasswordChange.apply)(PasswordChange.unapply)
-    .verifying("The new password was incorrectly repeated.", pc => pc.newPass == pc.newPassAgain))
+  val changePasswordForm = Form(
+    mapping(
+      oldPassKey -> password,
+      newPassKey -> password,
+      newPassAgainKey -> password
+    )(PasswordChange.apply)(PasswordChange.unapply)
+      .verifying("The new password was incorrectly repeated.", pc => pc.newPass == pc.newPassAgain)
+  )
 }

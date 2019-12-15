@@ -12,9 +12,7 @@ import com.malliina.play.auth.Authenticator
   * The actor created from `mediatorProps` will receive any
   * messages sent from connected websockets.
   */
-class MediatorSockets[User](mediatorProps: Props,
-                            auth: Authenticator[User],
-                            ctx: ActorExecution)
+class MediatorSockets[User](mediatorProps: Props, auth: Authenticator[User], ctx: ActorExecution)
   extends Sockets[User](auth, ctx) {
   val mediator = actorSystem.actorOf(mediatorProps)
 

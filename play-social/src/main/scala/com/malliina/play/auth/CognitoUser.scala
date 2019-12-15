@@ -6,7 +6,9 @@ trait JWTUser {
   def username: Username
 }
 
-case class CognitoUser(username: Username,
-                       email: Option[Email],
-                       groups: Seq[String],
-                       verified: Verified) extends JWTUser
+case class CognitoUser(
+  username: Username,
+  email: Option[Email],
+  groups: Seq[String],
+  verified: Verified
+) extends JWTUser

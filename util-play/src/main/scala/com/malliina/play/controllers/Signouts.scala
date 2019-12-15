@@ -18,7 +18,8 @@ trait Signouts {
 
   def eject: Result = ejectWith(logoutMessage)
 
-  def ejectWith(message: String) = Redirect(ejectCall).flashing(messageKey -> message).withNewSession
+  def ejectWith(message: String) =
+    Redirect(ejectCall).flashing(messageKey -> message).withNewSession
 
   def unauthorizedMessage(email: Email) = s"Hi $email, you're not authorized."
 
