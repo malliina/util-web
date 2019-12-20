@@ -11,7 +11,7 @@ import com.malliina.play.auth.CognitoValidator.{
   TokenUse,
   UserKey
 }
-import com.malliina.values.{Email, Username}
+import com.malliina.values.{Email, ErrorMessage, Username}
 import play.api.Logger
 
 object CognitoValidator extends OAuthKeys {
@@ -42,7 +42,10 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
     for {
       username <- jwt
         .readString(UserKey)
-        .filterOrElse(_.nonEmpty, InvalidClaims(jwt.token, "Username must be non-empty."))
+        .filterOrElse(
+          _.nonEmpty,
+          InvalidClaims(jwt.token, ErrorMessage("Username must be non-empty."))
+        )
       email <- jwt.readStringOpt(EmailKey)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
     } yield CognitoUser(Username(username), email.map(Email.apply), groups, verified)

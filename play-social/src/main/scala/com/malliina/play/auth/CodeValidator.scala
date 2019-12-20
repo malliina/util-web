@@ -8,6 +8,7 @@ import com.malliina.play.auth.CodeValidator.log
 import com.malliina.play.auth.OAuthKeys._
 import com.malliina.play.http.FullUrls
 import com.malliina.play.http.HttpConstants.NoCacheRevalidate
+import com.malliina.values.ErrorMessage
 import play.api.Logger
 import play.api.http.HeaderNames.CACHE_CONTROL
 import play.api.libs.json.Reads
@@ -54,7 +55,7 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
         }
         .getOrElse {
           log.error(s"Authentication failed, code missing. $req")
-          fut(onOutcome(Left(OAuthError("Code missing.")), req))
+          fut(onOutcome(Left(OAuthError(ErrorMessage("Code missing."))), req))
         }
     } else {
       val detailed = (requestState, sessionState) match {
@@ -64,10 +65,18 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
         case _                    => "No state in request and nothing to compare to either."
       }
       log.error(s"Authentication failed, state mismatch. $detailed $req")
-      fut(onOutcome(Left(OAuthError("State mismatch.")), req))
+      fut(onOutcome(Left(OAuthError(ErrorMessage("State mismatch."))), req))
     }
   }
 
+  /** Adds a random state parameter and an optional nonce and returns a redirect to the authorization URL with all
+    * parameters set.
+    *
+    * @param authorizationEndpoint authorizaton URL
+    * @param authParams parameters, unencoded
+    * @param nonce optional nonce
+    * @return a redirect
+    */
   def redirResult(
     authorizationEndpoint: FullUrl,
     authParams: Map[String, String],
@@ -83,11 +92,9 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
       .withHeaders(CACHE_CONTROL -> NoCacheRevalidate)
   }
 
-  protected def urlEncode(s: String) = AuthValidator.urlEncode(s)
-
+  protected def urlEncode(s: String): String = AuthValidator.urlEncode(s)
   protected def randomString(): String = CodeValidator.randomString()
-
-  protected def redirUrl(call: Call, rh: RequestHeader) = urlEncode(FullUrls(call, rh).url)
+  protected def redirUrl(call: Call, rh: RequestHeader): String = urlEncode(FullUrls(call, rh).url)
 
   protected def commonAuthParams(authScope: String, rh: RequestHeader): Map[String, String] = Map(
     RedirectUri -> FullUrls(redirCall, rh).url,

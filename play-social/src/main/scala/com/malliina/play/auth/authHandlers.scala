@@ -2,7 +2,7 @@ package com.malliina.play.auth
 
 import com.malliina.play.auth.BasicAuthHandler.log
 import com.malliina.play.http.HttpConstants.NoCacheRevalidate
-import com.malliina.values.Email
+import com.malliina.values.{Email, ErrorMessage}
 import play.api.Logger
 import play.api.http.HeaderNames.CACHE_CONTROL
 import play.api.libs.json.Json
@@ -32,7 +32,9 @@ trait AuthResults[U] {
     Future.successful(onUnauthorized(error, req))
 
   def filter(p: U => Boolean): AuthResults[U] =
-    flatMap(user => if (p(user)) Right(user) else Left(PermissionError(s"Unauthorized: '$user'.")))
+    flatMap(user =>
+      if (p(user)) Right(user) else Left(PermissionError(ErrorMessage(s"Unauthorized: '$user'.")))
+    )
 
   def flatMap(f: U => Either[AuthError, U]): AuthResults[U] = {
     val parent = this

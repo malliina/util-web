@@ -1,8 +1,27 @@
 package com.malliina.play.auth
 
+import java.time.Instant
+
 import com.malliina.http.{FullUrl, OkClient}
 import com.malliina.play.auth.OAuthKeys.EmailKey
-import com.malliina.values.Email
+import com.malliina.values.{Email, ErrorMessage}
+
+object GoogleValidator {
+  val issuers = Seq("https://accounts.google.com", "accounts.google.com")
+
+  def apply(clientIds: Seq[String]): GoogleValidator = new GoogleValidator(clientIds, issuers)
+}
+
+class GoogleValidator(clientIds: Seq[String], issuers: Seq[String])
+  extends TokenValidator(issuers) {
+  override protected def validateClaims(
+    parsed: ParsedJWT,
+    now: Instant
+  ): Either[JWTError, ParsedJWT] =
+    checkContains(Aud, clientIds, parsed).map { _ =>
+      parsed
+    }
+}
 
 object GoogleCodeValidator {
   val knownUrlGoogle =
@@ -37,7 +56,7 @@ class GoogleCodeValidator(conf: CodeValidationConf[Email]) extends StandardOAuth
     for {
       _ <- emailVerified.filterOrElse(
         _ == true,
-        InvalidClaims(validated.token, "Email not verified.")
+        InvalidClaims(validated.token, ErrorMessage("Email not verified."))
       )
       email <- validated.readString(EmailKey).map(Email.apply)
     } yield email

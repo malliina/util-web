@@ -4,17 +4,16 @@ import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.play.auth.StaticTokenValidator.read
+import com.malliina.values.ErrorMessage
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.SignedJWT
 import play.api.Logger
 
-case class Code(code: String)
-
 object StaticTokenValidator {
   private val log = Logger(getClass)
 
-  def read[T](token: TokenValue, f: => T, onMissing: => String): Either[JWTError, T] =
+  def read[T](token: TokenValue, f: => T, onMissing: => ErrorMessage): Either[JWTError, T] =
     try {
       Option(f).toRight(MissingData(token, onMissing))
     } catch {
@@ -39,49 +38,6 @@ abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issu
   protected def toUser(v: Verified): Either[JWTError, U]
 }
 
-object GoogleValidator {
-  val issuers = Seq("https://accounts.google.com", "accounts.google.com")
-
-  def apply(clientIds: Seq[String]): GoogleValidator = new GoogleValidator(clientIds, issuers)
-}
-
-class GoogleValidator(clientIds: Seq[String], issuers: Seq[String])
-  extends TokenValidator(issuers) {
-  override protected def validateClaims(
-    parsed: ParsedJWT,
-    now: Instant
-  ): Either[JWTError, ParsedJWT] =
-    checkContains(Aud, clientIds, parsed).map { _ =>
-      parsed
-    }
-}
-
-object MicrosoftValidator {
-  val issuerMicrosoftConsumer =
-    "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
-
-  def apply(clientIds: Seq[String]): MicrosoftValidator =
-    new MicrosoftValidator(clientIds, issuerMicrosoftConsumer)
-}
-
-class MicrosoftValidator(clientIds: Seq[String], issuer: String) extends TokenValidator(issuer) {
-  override protected def validateClaims(
-    parsed: ParsedJWT,
-    now: Instant
-  ): Either[JWTError, ParsedJWT] =
-    for {
-      _ <- checkContains(Aud, clientIds, parsed)
-      _ <- checkNbf(parsed, now)
-    } yield parsed
-
-  def checkNbf(parsed: ParsedJWT, now: Instant): Either[JWTError, Instant] =
-    read(parsed.token, parsed.claims.getNotBeforeTime, NotBefore).flatMap { nbf =>
-      val nbfInstant = nbf.toInstant
-      if (now.isBefore(nbfInstant)) Left(NotYetValid(parsed.token, nbfInstant, now))
-      else Right(nbfInstant)
-    }
-}
-
 abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
   def this(issuer: String) = this(Seq(issuer))
 
@@ -94,11 +50,11 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
     } yield verified
 
   protected def parse(token: TokenValue): Either[JWTError, ParsedJWT] = for {
-    jwt <- read(token, SignedJWT.parse(token.token), "token")
-    claims <- read(token, jwt.getJWTClaimsSet, "claims")
-    kid <- read(token, jwt.getHeader.getKeyID, Kid)
-    iss <- read(token, claims.getIssuer, IssuerKey)
-    exp <- read(token, claims.getExpirationTime, Exp)
+    jwt <- read(token, SignedJWT.parse(token.token), ErrorMessage("token"))
+    claims <- read(token, jwt.getJWTClaimsSet, ErrorMessage("claims"))
+    kid <- read(token, jwt.getHeader.getKeyID, ErrorMessage(Kid))
+    iss <- read(token, claims.getIssuer, ErrorMessage(IssuerKey))
+    exp <- read(token, claims.getExpirationTime, ErrorMessage(Exp))
   } yield ParsedJWT(jwt, claims, kid, iss, exp.toInstant, token)
 
   protected def verify(
@@ -131,7 +87,13 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
   def checkClaim(key: String, expected: String, parsed: ParsedJWT): Either[JWTError, ParsedJWT] = {
     parsed.readString(key).flatMap { actual =>
       if (actual == expected) Right(parsed)
-      else Left(InvalidClaims(parsed.token, s"Claim '$key' must equal '$expected', was '$actual'."))
+      else
+        Left(
+          InvalidClaims(
+            parsed.token,
+            ErrorMessage(s"Claim '$key' must equal '$expected', was '$actual'.")
+          )
+        )
     }
   }
 
@@ -146,7 +108,9 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
         Left(
           InvalidClaims(
             parsed.token,
-            s"Claim '$key' does not contain any of '${expecteds.mkString(", ")}', was '${arr.mkString(", ")}'."
+            ErrorMessage(
+              s"Claim '$key' does not contain any of '${expecteds.mkString(", ")}', was '${arr.mkString(", ")}'."
+            )
           )
         )
     }
@@ -161,6 +125,7 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
   }
 }
 
+/** Accepts any claims, provides user as-is. */
 class LiberalValidator(conf: KeyConf, issuer: String)
   extends StaticTokenValidator[AccessToken, Verified](Seq(conf), issuer) {
   override protected def validateClaims(

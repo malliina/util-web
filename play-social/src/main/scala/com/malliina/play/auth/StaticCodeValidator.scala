@@ -29,8 +29,7 @@ object StaticCodeValidator {
 
 }
 
-/** A validator where the authorization and token endpoints are static,
-  * that is, no discovery endpoint is used.
+/** A validator where the authorization and token endpoints are static, that is, no discovery endpoint is used.
   *
   * @param brandName  provider name
   * @param staticConf conf

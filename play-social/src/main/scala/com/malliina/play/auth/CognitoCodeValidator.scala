@@ -38,15 +38,10 @@ object CognitoCodeValidator {
   sealed abstract class IdentityProvider(val name: String)
 
   object IdentityProvider {
-
     case object LoginWithAmazon extends IdentityProvider("LoginWithAmazon")
-
     case object IdentityFacebook extends IdentityProvider("Facebook")
-
     case object IdentityGoogle extends IdentityProvider("Google")
-
     case class IdentityOther(n: String) extends IdentityProvider(n)
-
   }
 
 }

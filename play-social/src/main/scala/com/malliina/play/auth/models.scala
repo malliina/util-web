@@ -6,7 +6,14 @@ import java.time.Instant
 
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationFormat
-import com.malliina.values.{Email, JsonCompanion}
+import com.malliina.values.{
+  Email,
+  ErrorMessage,
+  JsonCompanion,
+  StringCompanion,
+  Username,
+  WrappedString
+}
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
@@ -14,6 +21,20 @@ import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
 import play.api.Configuration
 
 import scala.concurrent.duration.{Duration, DurationLong}
+
+case class ClientId(value: String) extends WrappedString
+object ClientId extends StringCompanion[ClientId]
+
+case class ClientSecret(value: String) extends WrappedString
+object ClientSecret extends StringCompanion[ClientSecret]
+
+case class Issuer(value: String) extends WrappedString
+object Issuer extends StringCompanion[Issuer]
+
+case class Code(code: String) extends WrappedString {
+  override def value = code
+}
+object Code extends StringCompanion[Code]
 
 case class AuthConf(clientId: String, clientSecret: String)
 
@@ -50,13 +71,9 @@ class AuthConfReader(readKey: String => Option[String]) {
   def orFail(read: Either[String, AuthConf]) = read.fold(err => throw new Exception(err), identity)
 
   def github = readConf("github_client_id", "github_client_secret")
-
   def microsoft = readConf("microsoft_client_id", "microsoft_client_secret")
-
   def google = readConf("google_client_id", "google_client_secret")
-
   def facebook = readConf("facebook_client_id", "facebook_client_secret")
-
   def twitter = readConf("twitter_client_id", "twitter_client_secret")
 
   def readConf(clientIdKey: String, clientSecretKey: String): AuthConf = {
@@ -158,7 +175,7 @@ case class MicrosoftOAuthConf(
   jwksUri: FullUrl,
   endSessionEndpoint: FullUrl,
   scopesSupported: Seq[String],
-  issuer: String,
+  issuer: Issuer,
   claimsSupported: Seq[String]
 ) extends OpenIdConf
 
@@ -169,7 +186,7 @@ object MicrosoftOAuthConf {
       (JsPath \ "jwks_uri").read[FullUrl] and
       (JsPath \ "end_session_endpoint").read[FullUrl] and
       (JsPath \ "scopes_supported").read[Seq[String]] and
-      (JsPath \ "issuer").read[String] and
+      (JsPath \ "issuer").read[Issuer] and
       (JsPath \ "claims_supported").read[Seq[String]]
   )(MicrosoftOAuthConf.apply _)
 }
@@ -309,6 +326,17 @@ object EmailResponse {
   implicit val json = Json.format[EmailResponse]
 }
 
+trait Readable[R] {
+  def read(key: String): Either[ErrorMessage, R]
+  def map[S](f: R => S): Readable[S] = (s: String) => read(s).map(f)
+  def flatMap[S](f: R => Either[String, S]) = (s: String) => read(s).flatMap(f)
+}
+
+object Readable {
+  implicit val string: Readable[String] = (s: String) => Right(s)
+  implicit val email: Readable[Email] = string.map(Email.apply)
+}
+
 case class ParsedJWT(
   jwt: SignedJWT,
   claims: JWTClaimsSet,
@@ -318,7 +346,12 @@ case class ParsedJWT(
   token: TokenValue
 ) {
 
-  import scala.collection.JavaConverters.asScalaBufferConverter
+  import scala.jdk.CollectionConverters.CollectionHasAsScala
+
+  def parse[T](key: String)(implicit r: Readable[T]): Either[JWTError, T] =
+    readString(key).flatMap { s =>
+      r.read(s).left.map(err => InvalidClaims(token, err))
+    }
 
   def readString(key: String): Either[JWTError, String] =
     read(claims.getStringClaim(key), key)
@@ -335,16 +368,13 @@ case class ParsedJWT(
     read(claims.getBooleanClaim(key), key)
 
   def read[T](danger: => T, key: String): Either[JWTError, T] =
-    StaticTokenValidator.read(token, danger, s"Claim missing: '$key'.")
+    StaticTokenValidator.read(token, danger, ErrorMessage(s"Claim missing: '$key'."))
 }
 
 case class Verified(parsed: ParsedJWT) {
   def expiresIn: Duration = (parsed.exp.toEpochMilli - Instant.now().toEpochMilli).millis
-
   def readString(key: String) = parsed.readString(key)
-
   def readBoolean(key: String) = parsed.readBoolean(key)
-
   def token = parsed.token
 }
 
@@ -390,3 +420,14 @@ case class JWTKeys(keys: Seq[KeyConf])
 object JWTKeys {
   implicit val json = Json.reads[JWTKeys]
 }
+
+trait JWTUser {
+  def username: Username
+}
+
+case class CognitoUser(
+  username: Username,
+  email: Option[Email],
+  groups: Seq[String],
+  verified: Verified
+) extends JWTUser

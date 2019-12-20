@@ -1,14 +1,15 @@
 package com.malliina.oauth
 
+import com.malliina.values.{AccessToken, IdToken}
 import play.api.libs.json.Json
 
 case class TokenResponse(
-  access_token: String,
-  id_token: String,
+  access_token: AccessToken,
+  id_token: IdToken,
   expires_in: Long,
   token_type: String
 )
 
 object TokenResponse {
-  implicit val tokenFormat = Json.format[TokenResponse]
+  implicit val json = Json.format[TokenResponse]
 }
