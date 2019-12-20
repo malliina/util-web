@@ -4,7 +4,7 @@ import java.time.Instant
 
 import com.malliina.play.auth.CognitoValidator.{
   Access,
-  ClientId,
+  ClientId => ClientIdKey,
   EmailKey,
   GroupsKey,
   Id,
@@ -57,7 +57,7 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
   ): Either[JWTError, ParsedJWT] =
     for {
       _ <- checkClaim(TokenUse, Access, parsed)
-      _ <- checkClaim(ClientId, clientId, parsed)
+      _ <- checkClaim(ClientIdKey, clientId, parsed)
     } yield parsed
 }
 

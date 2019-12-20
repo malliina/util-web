@@ -346,7 +346,7 @@ case class ParsedJWT(
   token: TokenValue
 ) {
 
-  import scala.jdk.CollectionConverters.CollectionHasAsScala
+  import scala.collection.JavaConverters.asScalaBufferConverter
 
   def parse[T](key: String)(implicit r: Readable[T]): Either[JWTError, T] =
     readString(key).flatMap { s =>

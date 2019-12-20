@@ -5,7 +5,11 @@ import java.security.SecureRandom
 
 import com.malliina.http.FullUrl
 import com.malliina.play.auth.CodeValidator.log
-import com.malliina.play.auth.OAuthKeys._
+import com.malliina.play.auth.OAuthKeys.{
+  ClientId => ClientIdKey,
+  ClientSecret => ClientSecretKey,
+  _
+}
 import com.malliina.play.http.FullUrls
 import com.malliina.play.http.HttpConstants.NoCacheRevalidate
 import com.malliina.values.ErrorMessage
@@ -98,15 +102,15 @@ trait CodeValidator[U, V] extends AuthValidator with OAuthValidator[V] {
 
   protected def commonAuthParams(authScope: String, rh: RequestHeader): Map[String, String] = Map(
     RedirectUri -> FullUrls(redirCall, rh).url,
-    ClientId -> clientConf.clientId,
+    ClientIdKey -> clientConf.clientId,
     Scope -> authScope
   )
 
   /** Not encoded.
     */
   protected def validationParams(code: Code, req: RequestHeader): Map[String, String] = Map(
-    ClientId -> clientConf.clientId,
-    ClientSecret -> clientConf.clientSecret,
+    ClientIdKey -> clientConf.clientId,
+    ClientSecretKey -> clientConf.clientSecret,
     RedirectUri -> FullUrls(redirCall, req).url,
     CodeKey -> code.code
   )

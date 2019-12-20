@@ -1,3 +1,4 @@
+[![Build Status](https://github.com/malliina/util-play/workflows/Test/badge.svg)](https://github.com/malliina/util-play/actions)
 [![Build Status](https://travis-ci.org/malliina/util-play.png?branch=master)](https://travis-ci.org/malliina/util-play)
 [![Maven Central](https://img.shields.io/maven-central/v/com.malliina/util-play_2.13.svg)](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22com.malliina%22%20AND%20a%3A%22util-play_2.12%22)
 

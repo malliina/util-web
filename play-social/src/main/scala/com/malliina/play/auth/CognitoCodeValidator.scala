@@ -6,7 +6,7 @@ import com.malliina.play.auth.CognitoCodeValidator.{
   IdentityProviderKey,
   staticConf
 }
-import com.malliina.play.auth.OAuthKeys._
+import com.malliina.play.auth.OAuthKeys.{ClientId => ClientIdKey, _}
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.play.http.FullUrls
 import play.api.mvc.{RequestHeader, Result}
@@ -65,7 +65,7 @@ class CognitoCodeValidator(
 
   def tokenParameters(code: Code, redirUrl: FullUrl): Map[String, String] = Map(
     GrantType -> AuthorizationCode,
-    ClientId -> clientConf.clientId,
+    ClientIdKey -> clientConf.clientId,
     CodeKey -> code.code,
     RedirectUri -> redirUrl.url
   )
