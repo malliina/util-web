@@ -42,49 +42,6 @@ object AuthConf {
   def google = AuthConfReader.env.google
 }
 
-object AuthConfReader {
-  def env = apply(key => sys.env.get(key).orElse(sys.props.get(key)))
-
-  def conf(c: Configuration) = apply(key => c.getOptional[String](key))
-
-  def file(path: Path): AuthConfReader = {
-    import collection.JavaConverters._
-    val asMap = Files
-      .readAllLines(path)
-      .asScala
-      .toList
-      .filterNot(line => line.startsWith("#") || line.startsWith("//"))
-      .map(line => line.split("=", 2))
-      .collect { case Array(key, value) => key -> value }
-      .toMap
-    apply(asMap.get)
-  }
-
-  def apply(readKey: String => Option[String]): AuthConfReader =
-    new AuthConfReader(readKey)
-}
-
-class AuthConfReader(readKey: String => Option[String]) {
-  def read(key: String): Either[String, String] =
-    readKey(key).toRight(s"Key missing: '$key'.")
-
-  def orFail(read: Either[String, AuthConf]) = read.fold(err => throw new Exception(err), identity)
-
-  def github = readConf("github_client_id", "github_client_secret")
-  def microsoft = readConf("microsoft_client_id", "microsoft_client_secret")
-  def google = readConf("google_client_id", "google_client_secret")
-  def facebook = readConf("facebook_client_id", "facebook_client_secret")
-  def twitter = readConf("twitter_client_id", "twitter_client_secret")
-
-  def readConf(clientIdKey: String, clientSecretKey: String): AuthConf = {
-    val attempt = for {
-      clientId <- read(clientIdKey)
-      clientSecret <- read(clientSecretKey)
-    } yield AuthConf(clientId, clientSecret)
-    orFail(attempt)
-  }
-}
-
 sealed trait TokenValue {
   def token: String
 

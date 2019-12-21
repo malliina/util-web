@@ -16,7 +16,6 @@ object EmailValidator {
 }
 
 class EmailValidator(conf: CodeValidationConf[Email]) extends StandardOAuth(conf) {
-
   override def parse(v: Verified): Either[JWTError, Email] =
     v.readString(EmailKey).map(Email.apply)
 }
