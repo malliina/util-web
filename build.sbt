@@ -61,7 +61,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.7.0",
+      "com.lihaoyi" %%% "scalatags" % "0.8.4",
       "com.typesafe.play" %%% "play-json" % "2.8.1",
       "com.malliina" %%% "primitives" % primitiveVersion,
       "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
