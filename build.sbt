@@ -9,7 +9,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.13.0"
+val primitiveVersion = "1.14.0"
 // scalatestplus 5.0.0 depends on 3.0.8
 val scalaTestVersion = "3.0.8"
 
@@ -25,7 +25,7 @@ val commonSettings = baseSettings ++ Seq(
   publishArtifact in Test := true
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % "1.13"
+val commonsCodec = "commons-codec" % "commons-codec" % "1.14"
 
 val playCommon = Project("play-common", file("play-common"))
   .enablePlugins(MavenCentralPlugin)
@@ -61,10 +61,10 @@ val html = portableProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.8.4",
-      "com.typesafe.play" %%% "play-json" % "2.8.1",
+      "com.lihaoyi" %%% "scalatags" % "0.8.5",
+      "com.typesafe.play" %% "play-json" % "2.8.1",
       "com.malliina" %%% "primitives" % primitiveVersion,
-      "org.scalatest" %%% "scalatest" % scalaTestVersion % Test
+      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
@@ -103,3 +103,5 @@ val utilPlayRoot = project
     publishArtifact := false,
     publishTo := Some(Resolver.file("Unused transient repository", file("target/unusedrepo")))
   )
+
+Global / onChangedBuildSource := ReloadOnSourceChanges
