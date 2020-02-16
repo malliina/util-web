@@ -7,7 +7,7 @@ import java.util.Base64
 import com.malliina.http.{FullUrl, ResponseException}
 import com.malliina.play.auth.TwitterValidator._
 import com.malliina.play.http.FullUrls
-import com.malliina.values.Email
+import com.malliina.values.{AccessToken, Email, TokenValue}
 import okhttp3.Request
 import org.apache.commons.codec.digest.{HmacAlgorithms, HmacUtils}
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
@@ -67,7 +67,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
   val accessTokenUrl = FullUrl.https("api.twitter.com", "/oauth/access_token")
   val userInfoUrl = FullUrl.https("api.twitter.com", "/1.1/account/verify_credentials.json")
 
-  def authTokenUrl(token: RequestToken) =
+  def authTokenUrl(token: AccessToken) =
     FullUrl("https", "api.twitter.com", s"/oauth/authenticate?oauth_token=$token")
 
   def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] =
@@ -88,7 +88,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
       if req.session.get(RequestToken.Key).contains(token)
       verifier <- req.getQueryString(OauthVerifierKey)
     } yield {
-      fetchAccessToken(RequestToken(token), verifier).flatMap { maybeAccess =>
+      fetchAccessToken(AccessToken(token), verifier).flatMap { maybeAccess =>
         maybeAccess
           .map { access =>
             fetchUser(access)
@@ -119,7 +119,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
   }
 
   private def fetchAccessToken(
-    requestToken: RequestToken,
+    requestToken: AccessToken,
     verifier: String
   ): Future[Option[TwitterAccess]] = {
     val encodable = paramsStringWith(requestToken, buildNonce)
@@ -172,7 +172,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
     nonce: String,
     map: Map[String, String] = Map.empty
   ) =
-    Encodable(nonce, Map(OauthTokenKey -> token.token) ++ map)
+    Encodable(nonce, Map(OauthTokenKey -> token.value) ++ map)
 
   case class Encodable(nonce: String, map: Map[String, String]) {
     private val params = map ++ Map(

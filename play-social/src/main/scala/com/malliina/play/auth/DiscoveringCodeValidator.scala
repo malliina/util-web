@@ -2,7 +2,7 @@ package com.malliina.play.auth
 
 import com.malliina.play.auth.DiscoveringCodeValidator.log
 import com.malliina.play.auth.OAuthKeys._
-import com.malliina.values.ErrorMessage
+import com.malliina.values.{ErrorMessage, IdToken}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results.BadGateway

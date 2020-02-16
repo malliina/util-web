@@ -11,12 +11,9 @@ import com.malliina.play.auth.CognitoValidator.{
   TokenUse,
   UserKey
 }
-import com.malliina.values.{Email, ErrorMessage, Username}
-import play.api.Logger
+import com.malliina.values.{Email, ErrorMessage, Username, TokenValue, AccessToken, IdToken}
 
 object CognitoValidator extends OAuthKeys {
-  private val log = Logger(getClass)
-
   val Access = "access"
   val Id = "id"
   val TokenUse = "token_use"

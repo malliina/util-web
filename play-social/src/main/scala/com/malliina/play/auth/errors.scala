@@ -4,7 +4,7 @@ import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.http.{ResponseError, ResponseException, StatusError}
-import com.malliina.values.ErrorMessage
+import com.malliina.values.{ErrorMessage, TokenValue}
 import play.api.libs.json.{JsError, JsPath, JsonValidationError}
 
 import scala.concurrent.duration.{Duration, DurationLong}

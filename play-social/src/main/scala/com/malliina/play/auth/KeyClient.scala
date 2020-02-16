@@ -4,7 +4,7 @@ import java.time.Instant
 
 import com.malliina.http.{FullUrl, OkClient}
 import com.malliina.play.auth.Execution.cached
-import play.api.libs.json.Reads
+import com.malliina.values.TokenValue
 
 import scala.concurrent.Future
 

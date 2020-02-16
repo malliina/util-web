@@ -1,16 +1,18 @@
 package com.malliina.play.auth
 
-import java.nio.file.{Files, Path}
 import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationFormat
 import com.malliina.values.{
+  AccessToken,
   Email,
   ErrorMessage,
-  JsonCompanion,
+  IdToken,
+  RefreshToken,
   StringCompanion,
+  TokenValue,
   Username,
   WrappedString
 }
@@ -18,7 +20,6 @@ import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
 import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
-import play.api.Configuration
 
 import scala.concurrent.duration.{Duration, DurationLong}
 
@@ -42,32 +43,8 @@ object AuthConf {
   def google = AuthConfReader.env.google
 }
 
-sealed trait TokenValue {
-  def token: String
-
-  override def toString = token
-}
-
-case class AccessToken(token: String) extends TokenValue
-
-object AccessToken extends TokenCompanion[AccessToken]
-
-case class IdToken(token: String) extends TokenValue
-
-object IdToken extends TokenCompanion[IdToken]
-
-case class RefreshToken(token: String) extends TokenValue
-
-object RefreshToken extends TokenCompanion[RefreshToken]
-
-case class RequestToken(token: String) extends TokenValue
-
-object RequestToken extends TokenCompanion[RequestToken] {
+object RequestToken {
   val Key = "request_token"
-}
-
-abstract class TokenCompanion[T <: TokenValue] extends JsonCompanion[String, T] {
-  override def write(t: T) = t.token
 }
 
 import play.api.libs.functional.syntax._
@@ -214,7 +191,7 @@ object FacebookTokens {
 }
 
 case class TwitterTokens(
-  oauthToken: RequestToken,
+  oauthToken: AccessToken,
   oauthTokenSecret: String,
   oauthCallbackConfirmed: Boolean
 )
@@ -235,7 +212,7 @@ object TwitterTokens {
       }
       .toMap
     for {
-      ot <- map.get("oauth_token").map(RequestToken.apply)
+      ot <- map.get("oauth_token").map(AccessToken.apply)
       ots <- map.get("oauth_token_secret")
       c <- map.get("oauth_callback_confirmed")
     } yield TwitterTokens(ot, ots, c == "true")

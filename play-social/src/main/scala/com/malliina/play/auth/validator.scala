@@ -4,7 +4,7 @@ import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.play.auth.StaticTokenValidator.read
-import com.malliina.values.ErrorMessage
+import com.malliina.values.{AccessToken, ErrorMessage, TokenValue}
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.SignedJWT
@@ -50,7 +50,7 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
     } yield verified
 
   protected def parse(token: TokenValue): Either[JWTError, ParsedJWT] = for {
-    jwt <- read(token, SignedJWT.parse(token.token), ErrorMessage("token"))
+    jwt <- read(token, SignedJWT.parse(token.value), ErrorMessage("token"))
     claims <- read(token, jwt.getJWTClaimsSet, ErrorMessage("claims"))
     kid <- read(token, jwt.getHeader.getKeyID, ErrorMessage(Kid))
     iss <- read(token, claims.getIssuer, ErrorMessage(IssuerKey))
