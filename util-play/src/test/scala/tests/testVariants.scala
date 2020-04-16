@@ -8,35 +8,35 @@ import play.api.{BuiltInComponents, Play}
 abstract class AppSuite[T <: BuiltInComponents](build: Context => T)
   extends FunSuite
   with AppPerSuite[T] {
-  override def components(context: Context): T = build(context)
+  override def createComponents(context: Context): T = build(context)
 }
 
 abstract class ServerSuite[T <: BuiltInComponents](build: Context => T)
   extends FunSuite
   with ServerPerSuite[T] {
-  override def components(context: Context): T = build(context)
+  override def createComponents(context: Context): T = build(context)
 }
 
 trait PlayAppFixture[T <: BuiltInComponents] { self: FunSuite =>
   def components(context: Context): T
+  lazy val components: T = components(TestAppLoader.createTestAppContext)
   val app = FunFixture[T](
     opts => {
-      val comps = components(TestAppLoader.createTestAppContext)
-      Play.start(comps.application)
-      comps
+      Play.start(components.application)
+      components
     },
     comps => {
-      Play.stop(comps.application)
+      Play.stop(components.application)
     }
   )
 }
 
 trait PlayServerFixture[T <: BuiltInComponents] { self: FunSuite =>
   def components(context: Context): T
+  lazy val components: T = components(TestAppLoader.createTestAppContext)
   val server = FunFixture[RunningServer](
     opts => {
-      val comps = components(TestAppLoader.createTestAppContext)
-      DefaultTestServerFactory.start(comps.application)
+      DefaultTestServerFactory.start(components.application)
     },
     running => {
       running.stopServer.close()
@@ -45,14 +45,14 @@ trait PlayServerFixture[T <: BuiltInComponents] { self: FunSuite =>
 }
 
 trait AppPerSuite[T <: BuiltInComponents] { self: Suite =>
-  def components(context: Context): T
+  def createComponents(context: Context): T
+  lazy val components = createComponents(TestAppLoader.createTestAppContext)
   val testApp: Fixture[T] = new Fixture[T]("test-app") {
     private var comps: Option[T] = None
     def apply() = comps.get
     override def beforeAll(): Unit = {
-      val c = components(TestAppLoader.createTestAppContext)
-      comps = Option(c)
-      Play.start(c.application)
+      comps = Option(components)
+      Play.start(components.application)
     }
     override def afterAll(): Unit = {
       comps.foreach(c => Play.stop(c.application))
@@ -63,13 +63,13 @@ trait AppPerSuite[T <: BuiltInComponents] { self: Suite =>
 }
 
 trait ServerPerSuite[T <: BuiltInComponents] { self: Suite =>
-  def components(context: Context): T
+  def createComponents(context: Context): T
+  lazy val components = createComponents(TestAppLoader.createTestAppContext)
   val testServer: Fixture[RunningServer] = new Fixture[RunningServer]("test-server") {
     private var runningServer: RunningServer = null
     def apply() = runningServer
     override def beforeAll(): Unit = {
-      val app = components(TestAppLoader.createTestAppContext)
-      runningServer = DefaultTestServerFactory.start(app.application)
+      runningServer = DefaultTestServerFactory.start(components.application)
     }
     override def afterAll(): Unit = {
       runningServer.stopServer.close()
