@@ -2,12 +2,11 @@ package com.malliina.play.auth
 
 import com.malliina.http.OkClient
 import com.malliina.values.Email
-import org.scalatest.FunSuite
 import play.api.mvc._
 
 import scala.concurrent.Future
 
-class ReadmeSamples extends FunSuite {
+class ReadmeSamples extends munit.FunSuite {
   val http = OkClient.default
   val credentials = AuthConf("client_id_here", "client_secret_here")
   lazy val callback: Call = ???
@@ -17,7 +16,7 @@ class ReadmeSamples extends FunSuite {
     override def onUnauthorized(error: AuthError, req: RequestHeader): Result = ???
   }
 
-  ignore("samples") {
+  test("samples".ignore) {
     val google = GoogleCodeValidator(OAuthConf(callback, handler, credentials, http))
     val facebook = FacebookCodeValidator(OAuthConf(callback, handler, credentials, http))
     val microsoft = MicrosoftCodeValidator(OAuthConf(callback, handler, credentials, http))

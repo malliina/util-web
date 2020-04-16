@@ -1,8 +1,6 @@
 package com.malliina.play.auth
 
-import org.scalatest.FunSuite
-
-class CodeValidatorTests extends FunSuite {
+class CodeValidatorTests extends munit.FunSuite {
   test("rng") {
     val first = CodeValidator.randomString()
     val second = CodeValidator.randomString()

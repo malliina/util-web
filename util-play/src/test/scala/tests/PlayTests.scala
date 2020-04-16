@@ -3,14 +3,13 @@ package tests
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import org.scalatest.FunSuite
 
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Promise}
 
-class PlayTests extends FunSuite {
+class PlayTests extends munit.FunSuite {
   test("can run test") {
-    assert(1 + 1 === 2)
+    assert(1 + 1 == 2)
   }
 
   test("stream") {
@@ -22,6 +21,6 @@ class PlayTests extends FunSuite {
     val sinkWithCleanup = Sink.onComplete[Int](_ => completion.trySuccess(expected))
     source.runWith(sinkWithCleanup)
     val answer = Await.result(completion.future, 10.seconds)
-    assert(answer === expected)
+    assert(answer == expected)
   }
 }

@@ -9,27 +9,26 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.14.0"
-// scalatestplus 5.0.0 depends on 3.0.8
-val scalaTestVersion = "3.0.8"
+val primitiveVersion = "1.15.0"
+val munitVersion = "0.7.2"
 
-val baseSettings = Seq(
-  scalaVersion := "2.13.1",
-  crossScalaVersions := scalaVersion.value :: "2.12.10" :: Nil,
-  organization := "com.malliina"
-)
-
-val commonSettings = baseSettings ++ Seq(
-  gitUserName := "malliina",
-  developerName := "Michael Skogberg",
-  publishArtifact in Test := true
+inThisBuild(
+  Seq(
+    organization := "com.malliina",
+    scalaVersion := "2.13.1",
+    crossScalaVersions := scalaVersion.value :: "2.12.10" :: Nil,
+    gitUserName := "malliina",
+    developerName := "Michael Skogberg",
+    publishArtifact in Test := true,
+    libraryDependencies += "org.scalameta" %% "munit" % "0.7.2" % Test,
+    testFrameworks += new TestFramework("munit.Framework")
+  )
 )
 
 val commonsCodec = "commons-codec" % "commons-codec" % "1.14"
 
 val playCommon = Project("play-common", file("play-common"))
   .enablePlugins(MavenCentralPlugin)
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
@@ -40,14 +39,12 @@ val playCommon = Project("play-common", file("play-common"))
 
 val playSocial = Project("play-social", file("play-social"))
   .enablePlugins(MavenCentralPlugin)
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "8.3",
-      commonsCodec,
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      "com.nimbusds" % "nimbus-jose-jwt" % "8.14.1",
+      commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
@@ -57,14 +54,12 @@ val html = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
   .in(file("util-html"))
   .enablePlugins(MavenCentralPlugin)
-  .settings(commonSettings)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.8.5",
+      "com.lihaoyi" %%% "scalatags" % "0.8.6",
       "com.typesafe.play" %% "play-json" % "2.8.1",
-      "com.malliina" %%% "primitives" % primitiveVersion,
-      "org.scalatest" %% "scalatest" % scalaTestVersion % Test
+      "com.malliina" %%% "primitives" % primitiveVersion
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
@@ -74,7 +69,6 @@ val htmlJs = html.js
 
 val utilPlay = Project("util-play", file("util-play"))
   .enablePlugins(MavenCentralPlugin)
-  .settings(commonSettings)
   .settings(
     releaseCrossBuild := true,
     scalacOptions := Seq("-unchecked", "-deprecation"),
@@ -82,9 +76,8 @@ val utilPlay = Project("util-play", file("util-play"))
       playGroup %% "play" % playVersion,
       playGroup %% "play-server" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      malliinaGroup %% "logback-streams" % "1.7.0",
+      malliinaGroup %% "logback-streams" % "1.7.1",
       commonsCodec,
-      "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test,
       PlayImport.specs2 % Test
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -94,7 +87,6 @@ val utilPlay = Project("util-play", file("util-play"))
 val utilPlayRoot = project
   .in(file("."))
   .aggregate(utilPlay, playSocial, htmlJvm, htmlJs, playCommon)
-  .settings(baseSettings)
   .settings(
     releaseProcess := (releaseProcess in utilPlay).value,
     organization := malliinaGroup,
