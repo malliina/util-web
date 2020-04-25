@@ -76,7 +76,7 @@ val utilPlay = Project("util-play", file("util-play"))
       playGroup %% "play" % playVersion,
       playGroup %% "play-server" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      malliinaGroup %% "logback-streams" % "1.7.2",
+//      malliinaGroup %% "logback-streams" % "1.7.2",
       commonsCodec,
       PlayImport.specs2 % Test
     ),

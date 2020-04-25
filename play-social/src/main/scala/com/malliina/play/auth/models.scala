@@ -198,44 +198,34 @@ case class TwitterTokens(
 
 object TwitterTokens {
   def fromString(in: String) = {
-    val map = in
-      .split("&")
-      .toList
-      .flatMap { kv =>
-        val parts = kv.split("=")
-        if (parts.length == 2) {
-          val Array(k, v) = parts
-          Option(k -> v)
-        } else {
-          None
-        }
-      }
-      .toMap
+    val map = parseMap(in)
     for {
       ot <- map.get("oauth_token").map(AccessToken.apply)
       ots <- map.get("oauth_token_secret")
       c <- map.get("oauth_callback_confirmed")
     } yield TwitterTokens(ot, ots, c == "true")
   }
+
+  def parseMap(in: String) = in
+    .split("&")
+    .toList
+    .flatMap { kv =>
+      val parts = kv.split("=")
+      if (parts.length == 2) {
+        val Array(k, v) = parts
+        Option(k -> v)
+      } else {
+        None
+      }
+    }
+    .toMap
 }
 
 case class TwitterAccess(oauthToken: AccessToken, oauthTokenSecret: String)
 
 object TwitterAccess {
   def fromString(in: String) = {
-    val map = in
-      .split("&")
-      .toList
-      .flatMap { kv =>
-        val parts = kv.split("=")
-        if (parts.length == 2) {
-          val Array(k, v) = parts
-          Option(k -> v)
-        } else {
-          None
-        }
-      }
-      .toMap
+    val map = TwitterTokens.parseMap(in)
     for {
       ot <- map.get("oauth_token").map(AccessToken.apply)
       ots <- map.get("oauth_token_secret")

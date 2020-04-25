@@ -12,8 +12,8 @@ object FacebookCodeValidator {
 
   def staticConf(conf: AuthConf) = StaticConf(
     "public_profile email",
-    FullUrl.https("www.facebook.com", "/v2.12/dialog/oauth"),
-    FullUrl.https("graph.facebook.com", "/v2.12/oauth/access_token"),
+    FullUrl.https("www.facebook.com", "/v6.0/dialog/oauth"),
+    FullUrl.https("graph.facebook.com", "/v6.0/oauth/access_token"),
     conf
   )
 }
@@ -26,12 +26,12 @@ class FacebookCodeValidator(val oauth: OAuthConf[Email])
     val params = validationParams(code, req).map { case (k, v) => k -> urlEncode(v) }
     val url = staticConf.tokenEndpoint.append(s"?${stringify(params)}")
 
-    // https://developers.facebook.com/docs/php/howto/example_retrieve_user_profile
+    // https://developers.facebook.com/docs/graph-api/explorer/
     for {
       tokens <- getJson[FacebookTokens](url)
       emailUrl = FullUrl.https(
         "graph.facebook.com",
-        s"/v2.12/me?fields=email&access_token=${tokens.accessToken}"
+        s"/v6.0/me?fields=email&access_token=${tokens.accessToken}"
       )
       emailResponse <- getJson[EmailResponse](emailUrl)
     } yield Right(emailResponse.email)
