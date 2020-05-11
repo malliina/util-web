@@ -3,10 +3,9 @@ package com.malliina.play.auth
 import java.time.Instant
 
 import com.malliina.http.{FullUrl, OkClient}
-import com.malliina.play.auth.Execution.cached
 import com.malliina.values.TokenValue
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object KeyClient {
   def microsoft(clientIds: Seq[String], http: OkClient): KeyClient =
@@ -17,9 +16,14 @@ object KeyClient {
 }
 
 class KeyClient(val knownUrl: FullUrl, validator: TokenValidator, val http: OkClient) {
-  def validate(token: TokenValue): Future[Either[AuthError, Verified]] =
+  implicit val ec: ExecutionContext = http.exec
+
+  def validate(
+    token: TokenValue,
+    now: Instant = Instant.now()
+  ): Future[Either[AuthError, Verified]] =
     fetchKeys().map { keys =>
-      validator.validate(token, keys, Instant.now)
+      validator.validate(token, keys, now)
     }
 
   def fetchKeys(): Future[Seq[KeyConf]] =

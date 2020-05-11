@@ -6,13 +6,14 @@ import com.malliina.http.OkClient
 import play.api.Configuration
 import play.api.mvc.Call
 
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 object AuthConfReader {
   def env = apply(key => sys.env.get(key).orElse(sys.props.get(key)))
 
   def conf(c: Configuration) = apply(key => c.getOptional[String](key))
 
   def file(path: Path): AuthConfReader = {
-    import collection.JavaConverters._
     val asMap = Files
       .readAllLines(path)
       .asScala

@@ -32,8 +32,8 @@ object StaticTokenValidator {
 abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: String)
   extends TokenValidator(issuer) {
 
-  def validate(token: T): Either[JWTError, U] =
-    super.validate(token, keys, Instant.now()).flatMap(toUser)
+  def validate(token: T, now: Instant = Instant.now()): Either[JWTError, U] =
+    super.validate(token, keys, now).flatMap(toUser)
 
   protected def toUser(v: Verified): Either[JWTError, U]
 }
@@ -62,7 +62,6 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
     keys: Seq[KeyConf],
     now: Instant
   ): Either[JWTError, Verified] = {
-    val now = Instant.now()
     val token = parsed.token
     if (!issuers.contains(parsed.iss)) {
       Left(IssuerMismatch(token, parsed.iss, issuers))
@@ -86,14 +85,16 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
 
   def checkClaim(key: String, expected: String, parsed: ParsedJWT): Either[JWTError, ParsedJWT] = {
     parsed.readString(key).flatMap { actual =>
-      if (actual == expected) Right(parsed)
-      else
+      if (actual == expected) {
+        Right(parsed)
+      } else {
         Left(
           InvalidClaims(
             parsed.token,
             ErrorMessage(s"Claim '$key' must equal '$expected', was '$actual'.")
           )
         )
+      }
     }
   }
 
@@ -103,8 +104,9 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
     parsed: ParsedJWT
   ): Either[JWTError, Seq[String]] = {
     parsed.readStringListOrEmpty(key).flatMap { arr =>
-      if (expecteds.exists(e => arr.contains(e))) Right(arr)
-      else
+      if (expecteds.exists(e => arr.contains(e))) {
+        Right(arr)
+      } else {
         Left(
           InvalidClaims(
             parsed.token,
@@ -113,10 +115,11 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
             )
           )
         )
+      }
     }
   }
 
-  def buildVerifier(conf: KeyConf) = {
+  def buildVerifier(conf: KeyConf): RSASSAVerifier = {
     val rsaKey = new RSAKey.Builder(conf.n, conf.e)
       .keyUse(conf.use)
       .keyID(conf.kid)

@@ -10,13 +10,14 @@ val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
 val primitiveVersion = "1.15.0"
-val munitVersion = "0.7.2"
+val munitVersion = "0.7.6"
+val scalatagsVersion = "0.9.1"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "2.13.1",
-    crossScalaVersions := scalaVersion.value :: "2.12.10" :: Nil,
+    scalaVersion := "2.13.2",
+    crossScalaVersions := scalaVersion.value :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     publishArtifact in Test := true,
@@ -43,7 +44,7 @@ val playSocial = Project("play-social", file("play-social"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "8.14.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % "8.16",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -57,7 +58,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.8.6",
+      "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
       "com.typesafe.play" %% "play-json" % "2.8.1",
       "com.malliina" %%% "primitives" % primitiveVersion
     ),

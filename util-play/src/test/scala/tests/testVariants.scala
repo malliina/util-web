@@ -58,6 +58,7 @@ trait AppPerSuite[T <: BuiltInComponents] { self: Suite =>
       comps.foreach(c => Play.stop(c.application))
     }
   }
+  lazy val app = testApp().application
 
   override def munitFixtures = Seq(testApp)
 }

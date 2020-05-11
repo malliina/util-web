@@ -5,15 +5,13 @@ import java.nio.charset.StandardCharsets
 
 import play.api.mvc.{RequestHeader, Result}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 object AuthValidator {
   def urlEncode(s: String) = URLEncoder.encode(s, StandardCharsets.UTF_8.name())
 }
 
 trait AuthValidator {
-  implicit val ec = Execution.cached
-
   def brandName: String
 
   /** The initial result that initiates sign-in.
@@ -24,7 +22,7 @@ trait AuthValidator {
     */
   def validateCallback(req: RequestHeader): Future[Result]
 
-  protected def stringify(map: Map[String, String]) =
+  protected def stringify(map: Map[String, String]): String =
     map.map { case (key, value) => s"$key=$value" }.mkString("&")
 
   protected def fut[T](t: T): Future[T] = Future.successful(t)
@@ -43,6 +41,7 @@ trait LoginHintSupport { self: AuthValidator =>
 }
 
 trait OAuthValidator[U] {
+  implicit val exec: ExecutionContext = http.exec
   def oauth: OAuthConf[U]
   def handler = oauth.handler
   def redirCall = oauth.redirCall
