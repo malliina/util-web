@@ -9,7 +9,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.15.0"
+val primitiveVersion = "1.16.0"
 val munitVersion = "0.7.6"
 val scalatagsVersion = "0.9.1"
 
