@@ -41,7 +41,7 @@ trait LoginHintSupport { self: AuthValidator =>
 }
 
 trait OAuthValidator[U] {
-  implicit val exec: ExecutionContext = http.exec
+  implicit def exec: ExecutionContext = http.exec
   def oauth: OAuthConf[U]
   def handler = oauth.handler
   def redirCall = oauth.redirCall
