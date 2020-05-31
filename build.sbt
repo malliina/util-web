@@ -9,9 +9,10 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.16.0"
-val munitVersion = "0.7.6"
+val primitiveVersion = "1.17.0"
+val munitVersion = "0.7.7"
 val scalatagsVersion = "0.9.1"
+val playJsonVersion = "2.9.0"
 
 inThisBuild(
   Seq(
@@ -44,7 +45,7 @@ val playSocial = Project("play-social", file("play-social"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "8.16",
+      "com.nimbusds" % "nimbus-jose-jwt" % "8.17.1",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -59,7 +60,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
     name := "util-html",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
-      "com.typesafe.play" %% "play-json" % "2.8.1",
+      "com.typesafe.play" %% "play-json" % playJsonVersion,
       "com.malliina" %%% "primitives" % primitiveVersion
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -77,7 +78,6 @@ val utilPlay = Project("util-play", file("util-play"))
       playGroup %% "play" % playVersion,
       playGroup %% "play-server" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-//      malliinaGroup %% "logback-streams" % "1.7.2",
       commonsCodec,
       PlayImport.specs2 % Test
     ),
