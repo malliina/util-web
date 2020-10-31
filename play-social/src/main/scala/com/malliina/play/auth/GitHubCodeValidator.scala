@@ -23,9 +23,13 @@ class GitHubCodeValidator(val oauth: OAuthConf[Email])
   extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
   with HandlerLike {
 
-  override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, Email]] = {
+  override def validate(
+    code: Code,
+    redirectUrl: FullUrl,
+    requestNonce: Option[String]
+  ): Future[Either[AuthError, Email]] = {
     val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)
-    val params = validationParams(code, req)
+    val params = validationParams(code, redirectUrl)
 
     for {
       tokens <- postEmpty[GitHubTokens](staticConf.tokenEndpoint, headers, params)

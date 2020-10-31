@@ -23,21 +23,21 @@ import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
 
 import scala.concurrent.duration.{Duration, DurationLong}
 
-case class ClientId(value: String) extends WrappedString
+case class ClientId(value: String) extends AnyVal with WrappedString
 object ClientId extends StringCompanion[ClientId]
 
-case class ClientSecret(value: String) extends WrappedString
+case class ClientSecret(value: String) extends AnyVal with WrappedString
 object ClientSecret extends StringCompanion[ClientSecret]
 
-case class Issuer(value: String) extends WrappedString
+case class Issuer(value: String) extends AnyVal with WrappedString
 object Issuer extends StringCompanion[Issuer]
 
-case class Code(code: String) extends WrappedString {
+case class Code(code: String) extends AnyVal with WrappedString {
   override def value = code
 }
 object Code extends StringCompanion[Code]
 
-case class AuthConf(clientId: String, clientSecret: String)
+case class AuthConf(clientId: ClientId, clientSecret: ClientSecret)
 
 object AuthConf {
   def google = AuthConfReader.env.google
@@ -265,7 +265,7 @@ case class ParsedJWT(
   jwt: SignedJWT,
   claims: JWTClaimsSet,
   kid: String,
-  iss: String,
+  iss: Issuer,
   exp: Instant,
   token: TokenValue
 ) {
@@ -273,9 +273,7 @@ case class ParsedJWT(
   import scala.collection.JavaConverters.asScalaBufferConverter
 
   def parse[T](key: String)(implicit r: Readable[T]): Either[JWTError, T] =
-    readString(key).flatMap { s =>
-      r.read(s).left.map(err => InvalidClaims(token, err))
-    }
+    readString(key).flatMap { s => r.read(s).left.map(err => InvalidClaims(token, err)) }
 
   def readString(key: String): Either[JWTError, String] =
     read(claims.getStringClaim(key), key)

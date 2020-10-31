@@ -10,14 +10,14 @@ val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
 val primitiveVersion = "1.17.0"
-val munitVersion = "0.7.7"
-val scalatagsVersion = "0.9.1"
-val playJsonVersion = "2.9.0"
+val munitVersion = "0.7.14"
+val scalatagsVersion = "0.9.2"
+val playJsonVersion = "2.9.1"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "2.13.2",
+    scalaVersion := "2.13.3",
     crossScalaVersions := scalaVersion.value :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
@@ -27,7 +27,7 @@ inThisBuild(
   )
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % "1.14"
+val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
 
 val playCommon = Project("play-common", file("play-common"))
   .enablePlugins(MavenCentralPlugin)
@@ -45,7 +45,7 @@ val playSocial = Project("play-social", file("play-social"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "8.17.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.1.2",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value

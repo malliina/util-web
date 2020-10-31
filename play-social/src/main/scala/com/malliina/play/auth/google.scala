@@ -7,20 +7,18 @@ import com.malliina.play.auth.OAuthKeys.EmailKey
 import com.malliina.values.{Email, ErrorMessage}
 
 object GoogleValidator {
-  val issuers = Seq("https://accounts.google.com", "accounts.google.com")
+  val issuers = Seq("https://accounts.google.com", "accounts.google.com").map(Issuer.apply)
 
-  def apply(clientIds: Seq[String]): GoogleValidator = new GoogleValidator(clientIds, issuers)
+  def apply(clientIds: Seq[ClientId]): GoogleValidator = new GoogleValidator(clientIds, issuers)
 }
 
-class GoogleValidator(clientIds: Seq[String], issuers: Seq[String])
+class GoogleValidator(clientIds: Seq[ClientId], issuers: Seq[Issuer])
   extends TokenValidator(issuers) {
   override protected def validateClaims(
     parsed: ParsedJWT,
     now: Instant
   ): Either[JWTError, ParsedJWT] =
-    checkContains(Aud, clientIds, parsed).map { _ =>
-      parsed
-    }
+    checkContains(Aud, clientIds.map(_.value), parsed).map { _ => parsed }
 }
 
 object GoogleCodeValidator {
@@ -45,7 +43,7 @@ object GoogleCodeValidator {
     )
   )
 
-  def keyClient(clientIds: Seq[String], http: OkClient): KeyClient =
+  def keyClient(clientIds: Seq[ClientId], http: OkClient): KeyClient =
     new KeyClient(knownUrlGoogle, GoogleValidator(clientIds), http)
 }
 

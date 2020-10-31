@@ -4,7 +4,7 @@ import java.time.Instant
 
 import com.malliina.play.auth.CognitoValidator.{
   Access,
-  ClientId => ClientIdKey,
+  ClientIdKey,
   EmailKey,
   GroupsKey,
   Id,
@@ -28,10 +28,10 @@ case class CognitoValidation(
   clientId: String
 )
 
-abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: String)
+abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: Issuer)
   extends StaticTokenValidator[T, U](keys, issuer)
 
-class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: String)
+class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: ClientId)
   extends CognitoValidator[AccessToken, CognitoUser](keys, issuer) {
 
   protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
@@ -54,13 +54,13 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: String, clientId: Strin
   ): Either[JWTError, ParsedJWT] =
     for {
       _ <- checkClaim(TokenUse, Access, parsed)
-      _ <- checkClaim(ClientIdKey, clientId, parsed)
+      _ <- checkClaim(ClientIdKey, clientId.value, parsed)
     } yield parsed
 }
 
-class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientIds: Seq[String])
+class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[ClientId])
   extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
-  def this(keys: Seq[KeyConf], issuer: String, clientId: String) =
+  def this(keys: Seq[KeyConf], issuer: Issuer, clientId: ClientId) =
     this(keys, issuer, Seq(clientId))
 
   override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
@@ -77,6 +77,6 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: String, val clientIds: Seq[
   ): Either[JWTError, ParsedJWT] =
     for {
       _ <- checkClaim(TokenUse, Id, parsed)
-      _ <- checkContains(Aud, clientIds, parsed)
+      _ <- checkContains(Aud, clientIds.map(_.value), parsed)
     } yield parsed
 }

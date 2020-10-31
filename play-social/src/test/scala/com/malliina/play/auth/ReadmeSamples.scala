@@ -8,7 +8,7 @@ import scala.concurrent.Future
 
 class ReadmeSamples extends munit.FunSuite {
   val http = OkClient.default
-  val credentials = AuthConf("client_id_here", "client_secret_here")
+  val credentials = AuthConf(ClientId("client_id_here"), ClientSecret("client_secret_here"))
   lazy val callback: Call = ???
   val handler: AuthResults[Email] = new AuthResults[Email] {
     override def onAuthenticated(user: Email, req: RequestHeader): Result = ???
@@ -23,13 +23,9 @@ class ReadmeSamples extends munit.FunSuite {
     val twitter = TwitterValidator(OAuthConf(callback, handler, credentials, http))
     val github = GitHubCodeValidator(OAuthConf(callback, handler, credentials, http))
 
-    def startGoogle = Action.async { req =>
-      google.start(req)
-    }
+    def startGoogle = Action.async { req => google.start(req) }
 
-    def callbackGoogle = Action.async { req =>
-      google.validateCallback(req)
-    }
+    def callbackGoogle = Action.async { req => google.validateCallback(req) }
   }
 
   object Action {

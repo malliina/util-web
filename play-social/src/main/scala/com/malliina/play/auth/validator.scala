@@ -29,7 +29,7 @@ object StaticTokenValidator {
   * @tparam T type of token
   * @tparam U type of user
   */
-abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: String)
+abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: Issuer)
   extends TokenValidator(issuer) {
 
   def validate(token: T, now: Instant = Instant.now()): Either[JWTError, U] =
@@ -38,8 +38,8 @@ abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issu
   protected def toUser(v: Verified): Either[JWTError, U]
 }
 
-abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
-  def this(issuer: String) = this(Seq(issuer))
+abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys {
+  def this(issuer: Issuer) = this(Seq(issuer))
 
   protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT]
 
@@ -53,7 +53,7 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
     jwt <- read(token, SignedJWT.parse(token.value), ErrorMessage("token"))
     claims <- read(token, jwt.getJWTClaimsSet, ErrorMessage("claims"))
     kid <- read(token, jwt.getHeader.getKeyID, ErrorMessage(Kid))
-    iss <- read(token, claims.getIssuer, ErrorMessage(IssuerKey))
+    iss <- read(token, claims.getIssuer, ErrorMessage(IssuerKey)).map(Issuer.apply)
     exp <- read(token, claims.getExpirationTime, ErrorMessage(Exp))
   } yield ParsedJWT(jwt, claims, kid, iss, exp.toInstant, token)
 
@@ -129,7 +129,7 @@ abstract class TokenValidator(issuers: Seq[String]) extends ClaimKeys {
 }
 
 /** Accepts any claims, provides user as-is. */
-class LiberalValidator(conf: KeyConf, issuer: String)
+class LiberalValidator(conf: KeyConf, issuer: Issuer)
   extends StaticTokenValidator[AccessToken, Verified](Seq(conf), issuer) {
   override protected def validateClaims(
     parsed: ParsedJWT,

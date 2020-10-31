@@ -43,8 +43,8 @@ class AuthConfReader(readKey: String => Option[String]) {
 
   def readConf(clientIdKey: String, clientSecretKey: String): AuthConf = {
     val attempt = for {
-      clientId <- read(clientIdKey)
-      clientSecret <- read(clientSecretKey)
+      clientId <- read(clientIdKey).map(ClientId.apply)
+      clientSecret <- read(clientSecretKey).map(ClientSecret.apply)
     } yield AuthConf(clientId, clientSecret)
     orFail(attempt)
   }

@@ -4,7 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.Base64
 
-import com.malliina.http.{FullUrl, ResponseException}
+import com.malliina.http.FullUrl
+import com.malliina.play.auth.AuthValidator.Start
 import com.malliina.play.auth.TwitterValidator._
 import com.malliina.play.http.FullUrls
 import com.malliina.values.{AccessToken, Email, TokenValue}
@@ -29,8 +30,8 @@ object TwitterValidator {
     new String(Base64.getEncoder.encode(digest), StandardCharsets.UTF_8)
   }
 
-  def signingKey(clientSecret: String, tokenSecret: Option[String]) = {
-    val clientPart = percentEncode(clientSecret)
+  def signingKey(clientSecret: ClientSecret, tokenSecret: Option[String]) = {
+    val clientPart = percentEncode(clientSecret.value)
     val tokenPart = tokenSecret.fold("")(percentEncode)
     s"$clientPart&$tokenPart"
   }
@@ -71,51 +72,64 @@ class TwitterValidator(val oauth: OAuthConf[Email])
     FullUrl("https", "api.twitter.com", s"/oauth/authenticate?oauth_token=$token")
 
   def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result] =
-    fetchRequestToken(FullUrls(redirCall, req)).map { r =>
-      r.filter(_.oauthCallbackConfirmed)
-        .map { tokens =>
-          Redirect(authTokenUrl(tokens.oauthToken).url)
-            .addingToSession(RequestToken.Key -> tokens.oauthToken.token)(req)
-        }
-        .getOrElse {
-          handler.onUnauthorized(OAuthError("Callback not confirmed."), req)
-        }
+    requestToken(FullUrls(redirCall, req)).map { e =>
+      e.fold(
+        err => handler.onUnauthorized(err, req),
+        token =>
+          Redirect(authTokenUrl(token).url)
+            .addingToSession(RequestToken.Key -> token.token)(req)
+      )
+    }
+
+  // TODO this doesn't work, reimplement locally
+  def start(redirectUrl: FullUrl, extraParams: Map[String, String]): Future[Start] =
+    fut(Start(redirectUrl, extraParams, None))
+
+  def requestToken(redirectUrl: FullUrl): Future[Either[OAuthError, AccessToken]] =
+    fetchRequestToken(redirectUrl).map { optTokens =>
+      optTokens
+        .filter(_.oauthCallbackConfirmed)
+        .map { tokens => tokens.oauthToken }
+        .toRight(OAuthError("Callback not confirmed."))
     }
 
   def validateCallback(req: RequestHeader): Future[Result] = {
     val maybe = for {
-      token <- req.getQueryString(OauthTokenKey)
-      if req.session.get(RequestToken.Key).contains(token)
+      token <- req.getQueryString(OauthTokenKey).map(AccessToken.apply)
+      requestToken <- req.session.get(RequestToken.Key).map(AccessToken.apply)
       verifier <- req.getQueryString(OauthVerifierKey)
     } yield {
-      fetchAccessToken(AccessToken(token), verifier).flatMap { maybeAccess =>
-        maybeAccess
-          .map { access =>
-            fetchUser(access)
-              .map { user =>
-                handler.resultFor(user.email.toRight(OAuthError("Email missing.")), req)
-              }
-              .recover {
-                case re: ResponseException =>
-                  handler.onUnauthorized(OkError(re.error), req)
-              }
-          }
-          .getOrElse {
-            handler.onUnauthorizedFut(OAuthError("No access token in response."), req)
-          }
+      validateTwitterCallback(token, requestToken, verifier).map { e =>
+        e.fold(
+          err => handler.onUnauthorized(err, req),
+          user => handler.resultFor(user.email.toRight(OAuthError("Email missing.")), req)
+        )
       }
     }
     maybe.getOrElse(handler.onUnauthorizedFut(OAuthError("Invalid callback parameters."), req))
   }
+
+  def validateTwitterCallback(
+    oauthToken: AccessToken,
+    requestToken: AccessToken,
+    oauthVerifier: String
+  ): Future[Either[OAuthError, TwitterUser]] =
+    if (oauthToken == requestToken) {
+      fetchAccessToken(oauthToken, oauthVerifier).flatMap { optAccess =>
+        optAccess
+          .map { access => fetchUser(access).map(Right.apply) }
+          .getOrElse(fut(Left(OAuthError("No access token in response."))))
+      }
+    } else {
+      fut(Left(OAuthError(s"Invalid callback parameters.")))
+    }
 
   private def fetchRequestToken(redirUrl: FullUrl): Future[Option[TwitterTokens]] = {
     val encodable = Encodable(buildNonce, Map("oauth_callback" -> redirUrl.url))
     val authHeaderValue = encodable.signed("POST", requestTokenUrl, None)
     http
       .postForm(requestTokenUrl, form = Map.empty, headers = Map(AUTHORIZATION -> authHeaderValue))
-      .map { r =>
-        TwitterTokens.fromString(r.asString)
-      }
+      .map { r => TwitterTokens.fromString(r.asString) }
   }
 
   private def fetchAccessToken(
@@ -133,9 +147,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
           CONTENT_TYPE -> MimeTypes.FORM
         )
       )
-      .map { res =>
-        TwitterAccess.fromString(res.asString)
-      }
+      .map { res => TwitterAccess.fromString(res.asString) }
   }
 
   private def fetchUser(access: TwitterAccess): Future[TwitterUser] = {
@@ -176,7 +188,7 @@ class TwitterValidator(val oauth: OAuthConf[Email])
 
   case class Encodable(nonce: String, map: Map[String, String]) {
     private val params = map ++ Map(
-      "oauth_consumer_key" -> clientConf.clientId,
+      "oauth_consumer_key" -> clientConf.clientId.value,
       "oauth_nonce" -> nonce,
       "oauth_signature_method" -> "HMAC-SHA1",
       "oauth_timestamp" -> s"${Instant.now().getEpochSecond}",

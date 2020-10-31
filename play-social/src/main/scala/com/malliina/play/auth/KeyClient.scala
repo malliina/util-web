@@ -8,10 +8,10 @@ import com.malliina.values.TokenValue
 import scala.concurrent.{ExecutionContext, Future}
 
 object KeyClient {
-  def microsoft(clientIds: Seq[String], http: OkClient): KeyClient =
+  def microsoft(clientIds: Seq[ClientId], http: OkClient): KeyClient =
     MicrosoftCodeValidator.keyClient(clientIds, http)
 
-  def google(clientIds: Seq[String], http: OkClient): KeyClient =
+  def google(clientIds: Seq[ClientId], http: OkClient): KeyClient =
     GoogleCodeValidator.keyClient(clientIds, http)
 }
 
@@ -22,9 +22,7 @@ class KeyClient(val knownUrl: FullUrl, validator: TokenValidator, val http: OkCl
     token: TokenValue,
     now: Instant = Instant.now()
   ): Future[Either[AuthError, Verified]] =
-    fetchKeys().map { keys =>
-      validator.validate(token, keys, now)
-    }
+    fetchKeys().map { keys => validator.validate(token, keys, now) }
 
   def fetchKeys(): Future[Seq[KeyConf]] =
     for {

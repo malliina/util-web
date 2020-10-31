@@ -9,19 +9,19 @@ import com.malliina.values.{Email, ErrorMessage}
 
 object MicrosoftValidator {
   val issuerMicrosoftConsumer =
-    "https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0"
+    Issuer("https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0")
 
-  def apply(clientIds: Seq[String]): MicrosoftValidator =
+  def apply(clientIds: Seq[ClientId]): MicrosoftValidator =
     new MicrosoftValidator(clientIds, issuerMicrosoftConsumer)
 }
 
-class MicrosoftValidator(clientIds: Seq[String], issuer: String) extends TokenValidator(issuer) {
+class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer) extends TokenValidator(issuer) {
   override protected def validateClaims(
     parsed: ParsedJWT,
     now: Instant
   ): Either[JWTError, ParsedJWT] =
     for {
-      _ <- checkContains(Aud, clientIds, parsed)
+      _ <- checkContains(Aud, clientIds.map(_.value), parsed)
       _ <- checkNbf(parsed, now)
     } yield parsed
 
@@ -52,6 +52,6 @@ object MicrosoftCodeValidator {
     )
   )
 
-  def keyClient(clientIds: Seq[String], http: OkClient): KeyClient =
+  def keyClient(clientIds: Seq[ClientId], http: OkClient): KeyClient =
     new KeyClient(knownUrlMicrosoft, MicrosoftValidator(clientIds), http)
 }

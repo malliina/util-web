@@ -6,7 +6,7 @@ import com.malliina.play.auth.CognitoCodeValidator.{
   IdentityProviderKey,
   staticConf
 }
-import com.malliina.play.auth.OAuthKeys.{ClientId => ClientIdKey, _}
+import com.malliina.play.auth.OAuthKeys._
 import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.play.http.FullUrls
 import play.api.mvc.{RequestHeader, Result}
@@ -56,8 +56,15 @@ class CognitoCodeValidator(
   override def onOutcome(outcome: Either[AuthError, CognitoUser], req: RequestHeader): Result =
     handler.resultFor(outcome, req)
 
-  override def validate(code: Code, req: RequestHeader): Future[Either[AuthError, CognitoUser]] = {
-    val params = tokenParameters(code, FullUrls(redirCall, req))
+  def validate(code: Code, req: RequestHeader): Future[Either[AuthError, CognitoUser]] =
+    validate(code, FullUrls(redirCall, req), None)
+
+  override def validate(
+    code: Code,
+    redirectUrl: FullUrl,
+    requestNonce: Option[String]
+  ): Future[Either[AuthError, CognitoUser]] = {
+    val params = tokenParameters(code, redirectUrl)
     for {
       tokens <- postForm[CognitoTokens](staticConf.tokenEndpoint, params)
     } yield validator.validate(tokens.idToken)
@@ -65,12 +72,12 @@ class CognitoCodeValidator(
 
   def tokenParameters(code: Code, redirUrl: FullUrl): Map[String, String] = Map(
     GrantType -> AuthorizationCode,
-    ClientIdKey -> clientConf.clientId,
+    ClientIdKey -> clientConf.clientId.value,
     CodeKey -> code.code,
     RedirectUri -> redirUrl.url
   )
 
-  override def extraRedirParams(rh: RequestHeader): Map[String, String] = Map(
+  override def extraRedirParams(redirectUrl: FullUrl): Map[String, String] = Map(
     IdentityProviderKey -> identityProvider.name,
     ResponseType -> CodeKey
   )

@@ -64,7 +64,7 @@ case class NotYetValid(token: TokenValue, nbf: Instant, now: Instant)
   )
 }
 
-case class IssuerMismatch(token: TokenValue, actual: String, allowed: Seq[String])
+case class IssuerMismatch(token: TokenValue, actual: Issuer, allowed: Seq[Issuer])
   extends JWTError("issuer_mismatch") {
   def message = ErrorMessage(
     s"Issuer mismatch. Got '$actual', but expected one of '${allowed.mkString(", ")}'."
