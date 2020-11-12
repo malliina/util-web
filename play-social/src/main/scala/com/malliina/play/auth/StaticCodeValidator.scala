@@ -50,7 +50,7 @@ abstract class StaticCodeValidator[U, V](val brandName: String, val staticConf: 
   override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): Future[Start] = {
     val params =
       commonAuthParams(staticConf.scope, redirectUrl) ++ extraRedirParams(redirectUrl) ++ extraParams
-    fut(Start(redirectUrl, params, None))
+    fut(Start(staticConf.authorizationEndpoint, params, None))
   }
 
   def extraRedirParams(redirectUrl: FullUrl): Map[String, String] = Map.empty
