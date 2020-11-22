@@ -10,7 +10,7 @@ val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
 val primitiveVersion = "1.17.0"
-val munitVersion = "0.7.14"
+val munitVersion = "0.7.18"
 val scalatagsVersion = "0.9.2"
 val playJsonVersion = "2.9.1"
 
