@@ -1,17 +1,8 @@
-package com.malliina.play.auth
+package com.malliina.web
 
 import java.time.Instant
 
-import com.malliina.play.auth.CognitoValidator.{
-  Access,
-  ClientIdKey,
-  EmailKey,
-  GroupsKey,
-  Id,
-  TokenUse,
-  UserKey
-}
-import com.malliina.values.{Email, ErrorMessage, Username, TokenValue, AccessToken, IdToken}
+import com.malliina.values._
 
 object CognitoValidator extends OAuthKeys {
   val Access = "access"
@@ -33,6 +24,7 @@ abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: 
 
 class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: ClientId)
   extends CognitoValidator[AccessToken, CognitoUser](keys, issuer) {
+  import com.malliina.web.CognitoValidator._
 
   protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
     val jwt = verified.parsed
@@ -62,6 +54,7 @@ class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[
   extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
   def this(keys: Seq[KeyConf], issuer: Issuer, clientId: ClientId) =
     this(keys, issuer, Seq(clientId))
+  import com.malliina.web.CognitoValidator._
 
   override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
     val jwt = verified.parsed

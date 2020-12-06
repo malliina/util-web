@@ -1,4 +1,4 @@
-package com.malliina.play.auth
+package com.malliina.web
 
 import java.util.concurrent.Executors
 

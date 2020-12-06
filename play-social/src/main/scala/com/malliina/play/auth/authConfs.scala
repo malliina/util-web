@@ -3,6 +3,7 @@ package com.malliina.play.auth
 import java.nio.file.{Files, Path}
 
 import com.malliina.http.OkClient
+import com.malliina.web.{AuthCodeConf, AuthConf, ClientId, ClientSecret, GenericAuthConf, KeyClient}
 import play.api.Configuration
 import play.api.mvc.Call
 
@@ -51,15 +52,7 @@ class AuthConfReader(readKey: String => Option[String]) {
 }
 
 case class OAuthConf[U](redirCall: Call, handler: AuthResults[U], conf: AuthConf, http: OkClient)
-
-case class AuthCodeConf(
-  brandName: String,
-  redirCall: Call,
-  conf: AuthConf,
-  client: KeyClient,
-  extraStartParams: Map[String, String] = Map.empty,
-  extraValidateParams: Map[String, String] = Map.empty
-)
+  extends GenericAuthConf
 
 case class CodeValidationConf[U](oauth: OAuthConf[U], codeConf: AuthCodeConf) {
   def brandName = codeConf.brandName

@@ -1,21 +1,11 @@
-package com.malliina.play.auth
+package com.malliina.web
 
 import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationFormat
-import com.malliina.values.{
-  AccessToken,
-  Email,
-  ErrorMessage,
-  IdToken,
-  RefreshToken,
-  StringCompanion,
-  TokenValue,
-  Username,
-  WrappedString
-}
+import com.malliina.values._
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
@@ -39,9 +29,19 @@ object Code extends StringCompanion[Code]
 
 case class AuthConf(clientId: ClientId, clientSecret: ClientSecret)
 
-object AuthConf {
-  def google = AuthConfReader.env.google
-}
+case class Start(
+  authorizationEndpoint: FullUrl,
+  params: Map[String, String],
+  nonce: Option[String]
+)
+
+case class Callback(
+  requestState: Option[String],
+  sessionState: Option[String],
+  codeQuery: Option[String],
+  requestNonce: Option[String],
+  redirectUrl: FullUrl
+)
 
 object RequestToken {
   val Key = "request_token"
@@ -87,13 +87,10 @@ trait OpenIdConf {
 case class SimpleOpenIdConf(jwksUri: FullUrl) extends OpenIdConf
 
 object SimpleOpenIdConf {
-  implicit val reader = Reads[SimpleOpenIdConf] { json =>
-    (json \ "jwks_uri").validate[FullUrl].map(apply)
-  }
+  implicit val reader = Reads[SimpleOpenIdConf] { json => (json \ "jwks_uri").validate[FullUrl].map(apply) }
 }
 
-case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl)
-  extends OpenIdConf
+case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl) extends OpenIdConf
 
 object AuthEndpoints {
   implicit val reader: Reads[AuthEndpoints] = (
@@ -132,9 +129,7 @@ trait TokenSet {
 case class SimpleTokens(idToken: IdToken)
 
 object SimpleTokens {
-  implicit val reader = Reads[SimpleTokens] { json =>
-    (json \ "id_token").validate[IdToken].map(SimpleTokens(_))
-  }
+  implicit val reader = Reads[SimpleTokens] { json => (json \ "id_token").validate[IdToken].map(SimpleTokens(_)) }
 }
 
 /** https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-code
@@ -327,7 +322,7 @@ object KeyConf {
       case pe: ParseException => JsError(pe.getMessage)
     }
 
-  def rsa(n: String, kid: String, issuer: String) = KeyConf(
+  def rsa(n: String, kid: String) = KeyConf(
     new Base64URL(n),
     kid,
     KeyUse.SIGNATURE,
@@ -353,3 +348,20 @@ case class CognitoUser(
   groups: Seq[String],
   verified: Verified
 ) extends JWTUser
+
+sealed abstract class IdentityProvider(val name: String)
+
+object IdentityProvider {
+  case object LoginWithAmazon extends IdentityProvider("LoginWithAmazon")
+  case object IdentityFacebook extends IdentityProvider("Facebook")
+  case object IdentityGoogle extends IdentityProvider("Google")
+  case class IdentityOther(n: String) extends IdentityProvider(n)
+}
+
+case class AuthCodeConf(
+  brandName: String,
+  conf: AuthConf,
+  client: KeyClient,
+  extraStartParams: Map[String, String] = Map.empty,
+  extraValidateParams: Map[String, String] = Map.empty
+)

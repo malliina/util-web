@@ -1,17 +1,16 @@
-package com.malliina.play.auth
+package com.malliina.web
 
 import java.text.ParseException
 import java.time.Instant
 
-import com.malliina.play.auth.StaticTokenValidator.read
-import com.malliina.values.{AccessToken, ErrorMessage, TokenValue}
+import com.malliina.util.AppLogger
+import com.malliina.values.{ErrorMessage, TokenValue}
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.SignedJWT
-import play.api.Logger
 
 object StaticTokenValidator {
-  private val log = Logger(getClass)
+  private val log = AppLogger(getClass)
 
   def read[T](token: TokenValue, f: => T, onMissing: => ErrorMessage): Either[JWTError, T] =
     try {
@@ -40,7 +39,7 @@ abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issu
 
 abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys {
   def this(issuer: Issuer) = this(Seq(issuer))
-
+  import StaticTokenValidator.read
   protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT]
 
   def validate(token: TokenValue, keys: Seq[KeyConf], now: Instant): Either[JWTError, Verified] =
@@ -98,11 +97,7 @@ abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys {
     }
   }
 
-  def checkContains(
-    key: String,
-    expecteds: Seq[String],
-    parsed: ParsedJWT
-  ): Either[JWTError, Seq[String]] = {
+  def checkContains(key: String, expecteds: Seq[String], parsed: ParsedJWT): Either[JWTError, Seq[String]] = {
     parsed.readStringListOrEmpty(key).flatMap { arr =>
       if (expecteds.exists(e => arr.contains(e))) {
         Right(arr)
@@ -126,17 +121,4 @@ abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys {
       .build()
     new RSASSAVerifier(rsaKey)
   }
-}
-
-/** Accepts any claims, provides user as-is. */
-class LiberalValidator(conf: KeyConf, issuer: Issuer)
-  extends StaticTokenValidator[AccessToken, Verified](Seq(conf), issuer) {
-  override protected def validateClaims(
-    parsed: ParsedJWT,
-    now: Instant
-  ): Either[JWTError, ParsedJWT] =
-    Right(parsed)
-
-  override protected def toUser(v: Verified) =
-    Right(v)
 }

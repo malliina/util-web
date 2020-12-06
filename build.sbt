@@ -5,11 +5,12 @@ import sbtcrossproject.CrossPlugin.autoImport.{
   CrossType => PortableType,
   crossProject => portableProject
 }
+import com.malliina.sbtutils.SbtUtils
 
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.17.0"
+val primitiveVersion = "1.18.0"
 val munitVersion = "0.7.18"
 val scalatagsVersion = "0.9.2"
 val playJsonVersion = "2.9.1"
@@ -29,23 +30,36 @@ inThisBuild(
 
 val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
 
+val webAuth = Project("web-auth", file("web-auth"))
+  .enablePlugins(MavenCentralPlugin)
+  .settings(
+    libraryDependencies ++= SbtUtils.loggingDeps ++ Seq(
+      malliinaGroup %%% "primitives" % primitiveVersion,
+      malliinaGroup %% "okclient" % primitiveVersion,
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.1.2",
+      commonsCodec
+    ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
+  )
+
 val playCommon = Project("play-common", file("play-common"))
   .enablePlugins(MavenCentralPlugin)
+  .dependsOn(webAuth)
   .settings(
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
-      "com.malliina" %%% "primitives" % primitiveVersion
+      malliinaGroup %%% "primitives" % primitiveVersion
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
 val playSocial = Project("play-social", file("play-social"))
   .enablePlugins(MavenCentralPlugin)
+  .dependsOn(webAuth)
   .settings(
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       malliinaGroup %% "okclient" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "9.1.2",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -61,7 +75,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
       "com.typesafe.play" %% "play-json" % playJsonVersion,
-      "com.malliina" %%% "primitives" % primitiveVersion
+      malliinaGroup %%% "primitives" % primitiveVersion
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )

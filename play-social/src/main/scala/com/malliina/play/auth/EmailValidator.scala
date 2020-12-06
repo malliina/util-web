@@ -1,7 +1,8 @@
 package com.malliina.play.auth
 
-import com.malliina.play.auth.OAuthKeys.EmailKey
 import com.malliina.values.Email
+import com.malliina.web.{AuthError, EmailAuthFlow, JWTError, Verified}
+import play.api.mvc.RequestHeader
 
 object EmailValidator {
   def apply(conf: CodeValidationConf[Email]): EmailValidator =
@@ -15,7 +16,10 @@ object EmailValidator {
     }
 }
 
-class EmailValidator(conf: CodeValidationConf[Email]) extends StandardOAuth(conf) {
-  override def parse(v: Verified): Either[JWTError, Email] =
-    v.readString(EmailKey).map(Email.apply)
+class EmailValidator(conf: CodeValidationConf[Email])
+  extends EmailAuthFlow(conf.codeConf)
+  with PlaySupport[Verified] {
+  override def redirCall = conf.redirCall
+  override def onOutcome(outcome: Either[AuthError, Verified], req: RequestHeader) =
+    conf.handler.resultFor(outcome.flatMap(parse), req)
 }

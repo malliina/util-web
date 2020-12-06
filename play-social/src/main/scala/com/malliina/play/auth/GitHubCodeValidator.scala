@@ -1,9 +1,9 @@
 package com.malliina.play.auth
 
 import com.malliina.http.FullUrl
-import com.malliina.play.auth.StaticCodeValidator.StaticConf
 import com.malliina.values.Email
-import play.api.http.{HeaderNames, MimeTypes}
+import com.malliina.web.WebHeaders.Accept
+import com.malliina.web._
 import play.api.mvc.{RequestHeader, Result}
 
 import scala.concurrent.Future
@@ -20,7 +20,7 @@ object GitHubCodeValidator {
 }
 
 class GitHubCodeValidator(val oauth: OAuthConf[Email])
-  extends StaticCodeValidator[Email, Email]("GitHub", StaticConf.github(oauth.conf))
+  extends StaticCodeValidator[Email, Email]("GitHub", GitHubCodeValidator.staticConf(oauth.conf))
   with HandlerLike {
 
   override def validate(
@@ -28,11 +28,11 @@ class GitHubCodeValidator(val oauth: OAuthConf[Email])
     redirectUrl: FullUrl,
     requestNonce: Option[String]
   ): Future[Either[AuthError, Email]] = {
-    val headers = Map(HeaderNames.ACCEPT -> MimeTypes.JSON)
-    val params = validationParams(code, redirectUrl)
-
+    import oauth.http.exec
+    val headers = Map(Accept -> HttpConstants.Json)
+    val params = validationParams(code, redirectUrl, clientConf)
     for {
-      tokens <- postEmpty[GitHubTokens](staticConf.tokenEndpoint, headers, params)
+      tokens <- postEmpty[GitHubTokens](conf.tokenEndpoint, headers, params)
       tokenUrl = FullUrl.https("api.github.com", s"/user/emails?access_token=${tokens.accessToken}")
       emails <- getJson[Seq[GitHubEmail]](tokenUrl)
     } yield emails

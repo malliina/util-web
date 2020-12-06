@@ -2,6 +2,7 @@ package com.malliina.play.auth
 
 import com.malliina.http.OkClient
 import com.malliina.values.Email
+import com.malliina.web.{AuthConf, AuthError, ClientId, ClientSecret}
 import play.api.mvc._
 
 import scala.concurrent.Future
@@ -15,6 +16,7 @@ class ReadmeSamples extends munit.FunSuite {
 
     override def onUnauthorized(error: AuthError, req: RequestHeader): Result = ???
   }
+  import http.exec
 
   test("samples".ignore) {
     val google = GoogleCodeValidator(OAuthConf(callback, handler, credentials, http))

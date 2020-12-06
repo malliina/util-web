@@ -1,6 +1,6 @@
 package com.malliina.play.controllers
 
-import com.malliina.play.http.HttpConstants
+import com.malliina.web.HttpConstants
 import play.api.http.HeaderNames.CACHE_CONTROL
 import play.api.http.Writeable
 import play.api.mvc.{Result, Results}

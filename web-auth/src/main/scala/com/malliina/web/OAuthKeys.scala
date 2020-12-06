@@ -1,4 +1,4 @@
-package com.malliina.play.auth
+package com.malliina.web
 
 object OAuthKeys extends OAuthKeys
 

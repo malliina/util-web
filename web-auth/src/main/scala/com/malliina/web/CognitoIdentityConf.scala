@@ -1,4 +1,4 @@
-package com.malliina.play.auth
+package com.malliina.web
 
 import com.malliina.http.FullUrl
 
@@ -30,9 +30,9 @@ case class CognitoIdentityConf(clientId: String, domain: FullUrl, scope: String)
     domain.append(s"/logout?${stringify(params)}")
   }
 
-  def tokensUrl = domain.append("/oauth2/token")
+  def tokensUrl: FullUrl = domain.append("/oauth2/token")
 
-  def tokenParameters(code: String, redirUrl: FullUrl) =
+  def tokenParameters(code: String, redirUrl: FullUrl): Map[String, String] =
     Map(
       "grant_type" -> "authorization_code",
       "client_id" -> clientId,
@@ -40,6 +40,6 @@ case class CognitoIdentityConf(clientId: String, domain: FullUrl, scope: String)
       "redirect_uri" -> redirUrl.url
     )
 
-  def stringify(map: Map[String, String]) =
+  def stringify(map: Map[String, String]): String =
     map.map { case (key, value) => s"$key=$value" }.mkString("&")
 }

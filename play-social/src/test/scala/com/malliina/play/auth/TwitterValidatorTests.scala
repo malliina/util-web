@@ -1,7 +1,8 @@
 package com.malliina.play.auth
 
 import com.malliina.http.FullUrl
-import com.malliina.play.auth.TwitterValidator.{percentEncode, sign, signingKey}
+import com.malliina.web.ClientSecret
+import com.malliina.web.TwitterAuthFlow.{percentEncode, sign, signingKey}
 
 import scala.collection.SortedMap
 
