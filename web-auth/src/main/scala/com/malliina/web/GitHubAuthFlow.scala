@@ -18,7 +18,7 @@ object GitHubAuthFlow {
 class GitHubAuthFlow(authConf: AuthConf, http: OkClient)
   extends StaticFlowStart
   with CallbackValidator[Email] {
-  override val conf = staticConf(authConf)
+  override val conf: StaticConf = staticConf(authConf)
   implicit val ec: ExecutionContext = http.exec
 
   override def validate(

@@ -6,6 +6,7 @@ import java.time.Instant
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationFormat
 import com.malliina.values._
+import com.malliina.web.OAuthKeys.{ClientIdKey, ClientSecretKey, CodeKey, RedirectUri, Scope}
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
@@ -87,10 +88,13 @@ trait OpenIdConf {
 case class SimpleOpenIdConf(jwksUri: FullUrl) extends OpenIdConf
 
 object SimpleOpenIdConf {
-  implicit val reader = Reads[SimpleOpenIdConf] { json => (json \ "jwks_uri").validate[FullUrl].map(apply) }
+  implicit val reader = Reads[SimpleOpenIdConf] { json =>
+    (json \ "jwks_uri").validate[FullUrl].map(apply)
+  }
 }
 
-case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl) extends OpenIdConf
+case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl)
+  extends OpenIdConf
 
 object AuthEndpoints {
   implicit val reader: Reads[AuthEndpoints] = (
@@ -129,7 +133,9 @@ trait TokenSet {
 case class SimpleTokens(idToken: IdToken)
 
 object SimpleTokens {
-  implicit val reader = Reads[SimpleTokens] { json => (json \ "id_token").validate[IdToken].map(SimpleTokens(_)) }
+  implicit val reader = Reads[SimpleTokens] { json =>
+    (json \ "id_token").validate[IdToken].map(SimpleTokens(_))
+  }
 }
 
 /** https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-code
@@ -365,3 +371,36 @@ case class AuthCodeConf(
   extraStartParams: Map[String, String] = Map.empty,
   extraValidateParams: Map[String, String] = Map.empty
 )
+
+case class OAuthParams(
+  client: KeyClient,
+  conf: AuthConf,
+  extraStartParams: Map[String, String] = Map.empty,
+  extraValidateParams: Map[String, String] = Map.empty
+) {
+  protected def commonAuthParams(authScope: String, redirectUrl: FullUrl): Map[String, String] =
+    Map(
+      RedirectUri -> redirectUrl.url,
+      ClientIdKey -> conf.clientId.value,
+      Scope -> authScope
+    )
+
+  /** Not encoded.
+    */
+  protected def validationParams(code: Code, redirectUrl: FullUrl): Map[String, String] = Map(
+    ClientIdKey -> conf.clientId.value,
+    ClientSecretKey -> conf.clientSecret.value,
+    RedirectUri -> redirectUrl.url,
+    CodeKey -> code.code
+  )
+}
+
+case class StaticConf(
+  scope: String,
+  authorizationEndpoint: FullUrl,
+  tokenEndpoint: FullUrl,
+  authConf: AuthConf
+) {
+  def clientId = authConf.clientId
+  def clientSecret = authConf.clientSecret
+}

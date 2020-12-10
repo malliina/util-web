@@ -1,52 +1,17 @@
 package com.malliina.play.auth
 
-import com.malliina.http.FullUrl
 import com.malliina.values.Email
-import com.malliina.web.WebHeaders.Accept
 import com.malliina.web._
-import play.api.mvc.{RequestHeader, Result}
-
-import scala.concurrent.Future
+import play.api.mvc.RequestHeader
 
 object GitHubCodeValidator {
   def apply(conf: OAuthConf[Email]) = new GitHubCodeValidator(conf)
-
-  def staticConf(conf: AuthConf) = StaticConf(
-    "user:email",
-    FullUrl.https("github.com", "/login/oauth/authorize"),
-    FullUrl.https("github.com", "/login/oauth/access_token"),
-    conf
-  )
 }
 
 class GitHubCodeValidator(val oauth: OAuthConf[Email])
-  extends StaticCodeValidator[Email, Email]("GitHub", GitHubCodeValidator.staticConf(oauth.conf))
-  with HandlerLike {
-
-  override def validate(
-    code: Code,
-    redirectUrl: FullUrl,
-    requestNonce: Option[String]
-  ): Future[Either[AuthError, Email]] = {
-    import oauth.http.exec
-    val headers = Map(Accept -> HttpConstants.Json)
-    val params = validationParams(code, redirectUrl, clientConf)
-    for {
-      tokens <- postEmpty[GitHubTokens](conf.tokenEndpoint, headers, params)
-      tokenUrl = FullUrl.https("api.github.com", s"/user/emails?access_token=${tokens.accessToken}")
-      emails <- getJson[Seq[GitHubEmail]](tokenUrl)
-    } yield emails
-      .find(email => email.primary && email.verified)
-      .map(_.email)
-      .toRight(JsonError("No primary and verified email found."))
-  }
-}
-
-trait HandlerLike {
-  self: CodeValidator[Email, Email] =>
-
-  def handler: AuthResults[Email]
-
-  override def onOutcome(outcome: Either[AuthError, Email], req: RequestHeader): Result =
-    handler.resultFor(outcome, req)
+  extends GitHubAuthFlow(oauth.conf, oauth.http)
+  with PlayFlow[Email] {
+  override def redirCall = oauth.redirCall
+  override def onOutcome(outcome: Either[AuthError, Email], req: RequestHeader) =
+    oauth.handler.resultFor(outcome, req)
 }

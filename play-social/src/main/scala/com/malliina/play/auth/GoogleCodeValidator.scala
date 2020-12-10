@@ -20,7 +20,6 @@ class GoogleCodeValidator(conf: CodeValidationConf[Email])
   extends GoogleAuthFlow(conf.codeConf)
   with PlayFlow[Verified] {
   override def redirCall = conf.redirCall
-
   override def onOutcome(outcome: Either[AuthError, Verified], req: RequestHeader) =
     conf.handler.resultFor(outcome.flatMap(parse), req)
 }

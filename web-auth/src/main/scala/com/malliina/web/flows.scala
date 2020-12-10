@@ -118,36 +118,3 @@ trait CallbackValidator[U] {
     CodeKey -> code.code
   )
 }
-
-case class OAuthParams(
-  client: KeyClient,
-  conf: AuthConf,
-  extraStartParams: Map[String, String] = Map.empty,
-  extraValidateParams: Map[String, String] = Map.empty
-) {
-  protected def commonAuthParams(authScope: String, redirectUrl: FullUrl): Map[String, String] =
-    Map(
-      RedirectUri -> redirectUrl.url,
-      ClientIdKey -> conf.clientId.value,
-      Scope -> authScope
-    )
-
-  /** Not encoded.
-    */
-  protected def validationParams(code: Code, redirectUrl: FullUrl): Map[String, String] = Map(
-    ClientIdKey -> conf.clientId.value,
-    ClientSecretKey -> conf.clientSecret.value,
-    RedirectUri -> redirectUrl.url,
-    CodeKey -> code.code
-  )
-}
-
-case class StaticConf(
-  scope: String,
-  authorizationEndpoint: FullUrl,
-  tokenEndpoint: FullUrl,
-  authConf: AuthConf
-) {
-  def clientId = authConf.clientId
-  def clientSecret = authConf.clientSecret
-}
