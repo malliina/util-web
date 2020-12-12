@@ -1,4 +1,4 @@
-package com.malliina.http
+package com.malliina.util
 
 import java.net.URLEncoder
 

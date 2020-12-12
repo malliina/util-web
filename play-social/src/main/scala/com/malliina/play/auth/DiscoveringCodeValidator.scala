@@ -44,7 +44,3 @@ abstract class DiscoveringCodeValidator[V](
           BadGateway(Json.obj("message" -> "HTTP error."))
       }
 }
-
-abstract class StandardOAuth[V](conf: CodeValidationConf[V])
-  extends DiscoveringCodeValidator[V](conf.codeConf, conf.handler, conf.redirCall)
-  with LoginHintSupport

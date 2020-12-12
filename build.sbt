@@ -101,7 +101,7 @@ val utilPlay = Project("util-play", file("util-play"))
 
 val utilPlayRoot = project
   .in(file("."))
-  .aggregate(utilPlay, playSocial, htmlJvm, htmlJs, playCommon)
+  .aggregate(utilPlay, playSocial, webAuth, htmlJvm, htmlJs, playCommon)
   .settings(
     releaseProcess := (releaseProcess in utilPlay).value,
     organization := malliinaGroup,

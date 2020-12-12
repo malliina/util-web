@@ -5,6 +5,8 @@ import com.malliina.values.{Email, ErrorMessage}
 import com.malliina.web.GoogleAuthFlow.EmailVerified
 import com.malliina.web.OAuthKeys.EmailKey
 
+import scala.concurrent.Future
+
 object GoogleAuthFlow {
   val knownUrlGoogle =
     FullUrl("https", "accounts.google.com", "/.well-known/openid-configuration")
@@ -24,7 +26,9 @@ object GoogleAuthFlow {
     new KeyClient(knownUrlGoogle, GoogleValidator(clientIds), http)
 }
 
-class GoogleAuthFlow(conf: AuthCodeConf) extends DiscoveringAuthFlow[Email](conf) {
+class GoogleAuthFlow(conf: AuthCodeConf)
+  extends DiscoveringAuthFlow[Email](conf)
+  with LoginHint[Future] {
   override def parse(validated: Verified): Either[JWTError, Email] = {
     val emailVerified = validated.readBoolean(EmailVerified)
     for {
