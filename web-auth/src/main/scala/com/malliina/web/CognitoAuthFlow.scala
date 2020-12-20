@@ -1,21 +1,13 @@
 package com.malliina.web
 
-import com.malliina.http.{FullUrl, OkClient}
+import cats.effect.IO
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.web.CognitoAuthFlow.{IdentityProviderKey, staticConf}
-import com.malliina.web.OAuthKeys.{
-  AuthorizationCode,
-  ClientIdKey,
-  CodeKey,
-  GrantType,
-  RedirectUri,
-  ResponseType
-}
-
-import scala.concurrent.{ExecutionContext, Future}
+import com.malliina.web.OAuthKeys._
 
 trait GenericAuthConf {
   def conf: AuthConf
-  def http: OkClient
+  def http: HttpClient[IO]
 }
 
 object CognitoAuthFlow {
@@ -42,13 +34,12 @@ class CognitoAuthFlow(
   with StaticFlowStart {
   val clientConf = oauth.conf
   override val conf: StaticConf = staticConf(host, oauth.conf)
-  implicit val ec: ExecutionContext = oauth.http.exec
 
   override def validate(
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): Future[Either[AuthError, CognitoUser]] = {
+  ): IO[Either[AuthError, CognitoUser]] = {
     val params = tokenParameters(code, redirectUrl)
     for {
       tokens <- oauth.http.postFormAs[CognitoTokens](conf.tokenEndpoint, params)

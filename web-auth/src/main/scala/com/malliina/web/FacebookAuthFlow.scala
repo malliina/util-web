@@ -1,10 +1,9 @@
 package com.malliina.web
 
-import com.malliina.http.{FullUrl, OkClient}
+import cats.effect.IO
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.Email
 import com.malliina.web.Utils.{stringify, urlEncode}
-
-import scala.concurrent.Future
 
 object FacebookAuthFlow {
   def staticConf(conf: AuthConf) = StaticConf(
@@ -15,18 +14,17 @@ object FacebookAuthFlow {
   )
 }
 
-class FacebookAuthFlow(authConf: AuthConf, http: OkClient)
+class FacebookAuthFlow(authConf: AuthConf, http: HttpClient[IO])
   extends StaticFlowStart
   with CallbackValidator[Email] {
   val brandName = "Facebook"
   val conf = FacebookAuthFlow.staticConf(authConf)
-  implicit val ec = http.exec
 
   override def validate(
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): Future[Either[AuthError, Email]] = {
+  ): IO[Either[AuthError, Email]] = {
     val params = validationParams(code, redirectUrl, authConf).map {
       case (k, v) => k -> urlEncode(v)
     }

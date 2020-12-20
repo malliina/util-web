@@ -1,5 +1,6 @@
 package com.malliina.play.auth
 
+import cats.effect.IO
 import com.malliina.http.FullUrl
 import com.malliina.play.http.FullUrls
 import com.malliina.util.AppLogger
@@ -12,8 +13,6 @@ import play.api.libs.json.Json
 import play.api.mvc.Results.{BadGateway, Redirect}
 import play.api.mvc.{Call, RequestHeader, Result}
 
-import scala.concurrent.{ExecutionContext, Future}
-
 object PlaySupport {
   private val log = AppLogger(getClass)
 }
@@ -25,7 +24,7 @@ trait PlaySupport[U] { self: CallbackValidator[U] =>
 
   def onOutcome(outcome: Either[AuthError, U], req: RequestHeader): Result
 
-  def validateCallback(req: RequestHeader)(implicit ec: ExecutionContext): Future[Result] =
+  def validateCallback(req: RequestHeader): IO[Result] =
     self
       .validateCallback(
         Callback(
@@ -66,19 +65,15 @@ object PlayFlow {
   private val log = AppLogger(getClass)
 }
 
-trait PlayFlow[U] extends PlaySupport[U] with FlowStart[Future] { self: CallbackValidator[U] =>
+trait PlayFlow[U] extends PlaySupport[U] with FlowStart[IO] { self: CallbackValidator[U] =>
 
   /** The initial result that initiates sign-in.
     */
-  def start(
-    req: RequestHeader,
-    extraParams: Map[String, String] = Map.empty
-  )(implicit ec: ExecutionContext): Future[Result] =
+  def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): IO[Result] =
     start(FullUrls(redirCall, req), extraParams)
       .map { s => redirResult(s.authorizationEndpoint, s.params, s.nonce) }
-      .recover {
-        case e =>
-          PlayFlow.log.error(s"HTTP error.", e)
-          BadGateway(Json.obj("message" -> "HTTP error."))
+      .handleErrorWith { e =>
+        PlayFlow.log.error(s"HTTP error.", e)
+        IO.pure(BadGateway(Json.obj("message" -> "HTTP error.")))
       }
 }

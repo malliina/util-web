@@ -35,7 +35,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .settings(
     libraryDependencies ++= SbtUtils.loggingDeps ++ Seq(
       malliinaGroup %%% "primitives" % primitiveVersion,
-      malliinaGroup %% "okclient" % primitiveVersion,
+      malliinaGroup %% "okclient-io" % primitiveVersion,
       "com.nimbusds" % "nimbus-jose-jwt" % "9.1.2",
       commonsCodec
     ),
@@ -59,7 +59,6 @@ val playSocial = Project("play-social", file("play-social"))
   .settings(
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
-      malliinaGroup %% "okclient" % primitiveVersion,
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -91,7 +90,6 @@ val utilPlay = Project("util-play", file("util-play"))
     libraryDependencies ++= Seq(
       playGroup %% "play" % playVersion,
       playGroup %% "play-server" % playVersion,
-      malliinaGroup %% "okclient" % primitiveVersion,
       commonsCodec,
       PlayImport.specs2 % Test
     ),

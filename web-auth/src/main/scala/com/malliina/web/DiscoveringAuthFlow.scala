@@ -1,22 +1,20 @@
 package com.malliina.web
 
+import cats.effect.IO
 import com.malliina.http.FullUrl
 import com.malliina.values.{ErrorMessage, IdToken}
 import com.malliina.web.OAuthKeys._
 import com.malliina.web.Utils.randomString
 
-import scala.concurrent.{ExecutionContext, Future}
-
-abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[Future, Verified] {
+abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[IO, Verified] {
   val brandName = codeConf.brandName
   val client = codeConf.client
   val conf = codeConf.conf
   val http = codeConf.client.http
-  implicit val ec: ExecutionContext = http.exec
 
   def parse(v: Verified): Either[JWTError, V]
 
-  override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): Future[Start] =
+  override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): IO[Start] =
     fetchConf().map { oauthConf =>
       val nonce = randomString()
       val params = commonAuthParams(scope, redirectUrl, conf.clientId) ++
@@ -30,7 +28,7 @@ abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[F
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): Future[Either[AuthError, Verified]] = {
+  ): IO[Either[AuthError, Verified]] = {
     val params = validationParams(code, redirectUrl, conf) ++
       Map(GrantType -> AuthorizationCode) ++
       codeConf.extraValidateParams
@@ -56,5 +54,5 @@ abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[F
       else Left(InvalidClaims(idToken, ErrorMessage("Nonce mismatch.")))
     }
 
-  def fetchConf(): Future[AuthEndpoints] = http.getAs[AuthEndpoints](client.knownUrl)
+  def fetchConf(): IO[AuthEndpoints] = http.getAs[AuthEndpoints](client.knownUrl)
 }

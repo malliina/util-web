@@ -1,6 +1,6 @@
 package com.malliina.play.auth
 
-import com.malliina.http.OkClient
+import com.malliina.http.io.HttpClientIO
 import com.malliina.values.Email
 import com.malliina.web.{AuthConf, AuthError, ClientId, ClientSecret}
 import play.api.mvc._
@@ -8,7 +8,7 @@ import play.api.mvc._
 import scala.concurrent.Future
 
 class ReadmeSamples extends munit.FunSuite {
-  val http = OkClient.default
+  val http = HttpClientIO()
   val credentials = AuthConf(ClientId("client_id_here"), ClientSecret("client_secret_here"))
   lazy val callback: Call = ???
   val handler: AuthResults[Email] = new AuthResults[Email] {
@@ -16,7 +16,6 @@ class ReadmeSamples extends munit.FunSuite {
 
     override def onUnauthorized(error: AuthError, req: RequestHeader): Result = ???
   }
-  import http.exec
 
   test("samples".ignore) {
     val google = GoogleCodeValidator(OAuthConf(callback, handler, credentials, http))
@@ -25,9 +24,9 @@ class ReadmeSamples extends munit.FunSuite {
     val twitter = TwitterValidator(OAuthConf(callback, handler, credentials, http))
     val github = GitHubCodeValidator(OAuthConf(callback, handler, credentials, http))
 
-    def startGoogle = Action.async { req => google.start(req) }
+    def startGoogle = Action.async { req => google.start(req).unsafeToFuture() }
 
-    def callbackGoogle = Action.async { req => google.validateCallback(req) }
+    def callbackGoogle = Action.async { req => google.validateCallback(req).unsafeToFuture() }
   }
 
   object Action {

@@ -1,5 +1,6 @@
 package com.malliina.web
 
+import cats.effect.IO
 import com.malliina.http.FullUrl
 import com.malliina.util.AppLogger
 import com.malliina.values.{Email, ErrorMessage}
@@ -35,15 +36,15 @@ trait FlowStart[F[_]] {
     )
 }
 
-trait StaticFlowStart extends FlowStart[Future] {
+trait StaticFlowStart extends FlowStart[IO] {
   def conf: StaticConf
 
-  override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): Future[Start] = {
+  override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): IO[Start] = {
     val params =
       commonAuthParams(conf.scope, redirectUrl, conf.authConf.clientId) ++ extraRedirParams(
         redirectUrl
       ) ++ extraParams
-    Future.successful(Start(conf.authorizationEndpoint, params, None))
+    IO.pure(Start(conf.authorizationEndpoint, params, None))
   }
 }
 
@@ -61,7 +62,7 @@ trait LoginHint[F[_]] { self: FlowStart[F] =>
 
 abstract class StandardAuthFlow[V](conf: AuthCodeConf)
   extends DiscoveringAuthFlow[V](conf)
-  with LoginHint[Future]
+  with LoginHint[IO]
 
 object CallbackValidator {
   private val log = AppLogger(getClass)
@@ -82,16 +83,16 @@ trait CallbackValidator[U] {
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): Future[Either[AuthError, U]]
+  ): IO[Either[AuthError, U]]
 
-  def validateCallback(cb: Callback): Future[Either[AuthError, U]] = {
+  def validateCallback(cb: Callback): IO[Either[AuthError, U]] = {
     val isStateOk = cb.requestState.exists(rs => cb.sessionState.contains(rs))
     if (isStateOk) {
       cb.codeQuery
         .map { code => validate(Code(code), cb.redirectUrl, cb.requestNonce) }
         .getOrElse {
           log.error(s"Authentication failed, code missing.")
-          Future.successful(Left(OAuthError(ErrorMessage("Code missing."))))
+          IO.pure(Left(OAuthError(ErrorMessage("Code missing."))))
         }
     } else {
       val detailed = (cb.requestState, cb.sessionState) match {
@@ -101,7 +102,7 @@ trait CallbackValidator[U] {
         case _                    => "No state in request and nothing to compare to either."
       }
       log.error(s"Authentication failed, state mismatch. $detailed")
-      Future.successful(Left(OAuthError(ErrorMessage("State mismatch."))))
+      IO.pure(Left(OAuthError(ErrorMessage("State mismatch."))))
     }
   }
 

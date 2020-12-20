@@ -2,15 +2,16 @@ package com.malliina.web
 
 import java.time.Instant
 
-import com.malliina.http.{FullUrl, OkClient}
+import cats.effect.IO
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.ErrorMessage
 import com.malliina.web.MicrosoftValidator.knownUrlMicrosoft
 import com.malliina.web.OAuthKeys.{Scope, scope}
 
 object MicrosoftAuthFlow {
-  def apply(creds: AuthConf, http: OkClient) = EmailAuthFlow(conf(creds, http))
+  def apply(creds: AuthConf, http: HttpClient[IO]) = EmailAuthFlow(conf(creds, http))
 
-  def conf(creds: AuthConf, http: OkClient) = AuthCodeConf(
+  def conf(creds: AuthConf, http: HttpClient[IO]) = AuthCodeConf(
     "Microsoft",
     creds,
     keyClient(Seq(creds.clientId), http),
@@ -18,7 +19,7 @@ object MicrosoftAuthFlow {
     extraValidateParams = Map(Scope -> scope)
   )
 
-  def keyClient(clientIds: Seq[ClientId], http: OkClient): KeyClient =
+  def keyClient(clientIds: Seq[ClientId], http: HttpClient[IO]): KeyClient =
     new KeyClient(knownUrlMicrosoft, MicrosoftValidator(clientIds), http)
 }
 

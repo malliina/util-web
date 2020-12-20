@@ -4,7 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.util.Base64
 
-import com.malliina.http.{FullUrl, OkClient}
+import cats.effect.IO
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{AccessToken, TokenValue}
 import com.malliina.web.TwitterAuthFlow._
 import com.malliina.web.Utils.{randomString, urlEncode}
@@ -13,7 +14,6 @@ import okhttp3.Request
 import org.apache.commons.codec.digest.{HmacAlgorithms, HmacUtils}
 
 import scala.collection.SortedMap
-import scala.concurrent.{ExecutionContext, Future}
 
 object TwitterAuthFlow {
   val OauthTokenKey = "oauth_token"
@@ -54,22 +54,21 @@ object TwitterAuthFlow {
   }
 }
 
-class TwitterAuthFlow(conf: AuthConf, val http: OkClient) extends FlowStart[Future] {
+class TwitterAuthFlow(conf: AuthConf, val http: HttpClient[IO]) extends FlowStart[IO] {
   val brandName = "Twitter"
   val baseUrl = FullUrl.https("api.twitter.com", "")
   val requestTokenUrl = baseUrl / "oauth" / "request_token"
   val accessTokenUrl = baseUrl / "oauth" / "access_token"
   val userInfoUrl = baseUrl / "1.1" / "account" / "verify_credentials.json"
-  implicit val ec: ExecutionContext = http.exec
 
   def authTokenUrl(token: AccessToken) =
     FullUrl("https", "api.twitter.com", s"/oauth/authenticate?oauth_token=$token")
 
   // TODO this doesn't work, reimplement locally
-  def start(redirectUrl: FullUrl, extraParams: Map[String, String]): Future[Start] =
-    Future.successful(Start(redirectUrl, extraParams, None))
+  def start(redirectUrl: FullUrl, extraParams: Map[String, String]): IO[Start] =
+    IO.pure(Start(redirectUrl, extraParams, None))
 
-  def requestToken(redirectUrl: FullUrl): Future[Either[OAuthError, AccessToken]] =
+  def requestToken(redirectUrl: FullUrl): IO[Either[OAuthError, AccessToken]] =
     fetchRequestToken(redirectUrl).map { optTokens =>
       optTokens
         .filter(_.oauthCallbackConfirmed)
@@ -81,18 +80,18 @@ class TwitterAuthFlow(conf: AuthConf, val http: OkClient) extends FlowStart[Futu
     oauthToken: AccessToken,
     requestToken: AccessToken,
     oauthVerifier: String
-  ): Future[Either[OAuthError, TwitterUser]] =
+  ): IO[Either[OAuthError, TwitterUser]] =
     if (oauthToken == requestToken) {
       fetchAccessToken(oauthToken, oauthVerifier).flatMap { optAccess =>
         optAccess
           .map { access => fetchUser(access).map(Right.apply) }
-          .getOrElse(Future.successful(Left(OAuthError("No access token in response."))))
+          .getOrElse(IO.pure(Left(OAuthError("No access token in response."))))
       }
     } else {
-      Future.successful(Left(OAuthError(s"Invalid callback parameters.")))
+      IO.pure(Left(OAuthError(s"Invalid callback parameters.")))
     }
 
-  private def fetchRequestToken(redirUrl: FullUrl): Future[Option[TwitterTokens]] = {
+  private def fetchRequestToken(redirUrl: FullUrl): IO[Option[TwitterTokens]] = {
     val encodable = Encodable(buildNonce, Map("oauth_callback" -> redirUrl.url))
     val authHeaderValue = encodable.signed("POST", requestTokenUrl, None)
     http
@@ -103,7 +102,7 @@ class TwitterAuthFlow(conf: AuthConf, val http: OkClient) extends FlowStart[Futu
   private def fetchAccessToken(
     requestToken: AccessToken,
     verifier: String
-  ): Future[Option[TwitterAccess]] = {
+  ): IO[Option[TwitterAccess]] = {
     val encodable = paramsStringWith(requestToken, buildNonce)
     val authHeaderValue = encodable.signed("POST", accessTokenUrl, None)
     http
@@ -115,7 +114,7 @@ class TwitterAuthFlow(conf: AuthConf, val http: OkClient) extends FlowStart[Futu
       .map { res => TwitterAccess.fromString(res.asString) }
   }
 
-  private def fetchUser(access: TwitterAccess): Future[TwitterUser] = {
+  private def fetchUser(access: TwitterAccess): IO[TwitterUser] = {
     val queryParams = Map(
       "skip_status" -> "true",
       "include_entities" -> "false",
@@ -132,8 +131,8 @@ class TwitterAuthFlow(conf: AuthConf, val http: OkClient) extends FlowStart[Futu
       res
         .parse[TwitterUser]
         .fold(
-          err => Future.failed(com.malliina.http.JsonError(err, res, reqUrl).toException),
-          user => Future.successful(user)
+          err => IO.raiseError(com.malliina.http.JsonError(err, res, reqUrl).toException),
+          user => IO.pure(user)
         )
     }
   }

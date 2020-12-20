@@ -1,29 +1,28 @@
 package com.malliina.play.auth
 
+import cats.effect.IO
 import com.malliina.web.OAuthKeys.LoginHint
 import com.malliina.web.{FlowStart, LoginHint}
 import play.api.mvc.{RequestHeader, Result}
 
-import scala.concurrent.{ExecutionContext, Future}
-
-trait AuthValidator extends FlowStart[Future] {
+trait AuthValidator extends FlowStart[IO] {
   def brandName: String
 
   /** The initial result that initiates sign-in.
     */
-  def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): Future[Result]
+  def start(req: RequestHeader, extraParams: Map[String, String] = Map.empty): IO[Result]
 
   /** The callback in the auth flow, i.e. the result for redirect URIs.
     */
-  def validateCallback(req: RequestHeader)(implicit ec: ExecutionContext): Future[Result]
+  def validateCallback(req: RequestHeader): IO[Result]
 }
 
-trait LoginHintSupport extends LoginHint[Future] { self: AuthValidator =>
+trait LoginHintSupport extends LoginHint[IO] { self: AuthValidator =>
   def startHinted(
     req: RequestHeader,
     loginHint: Option[String],
     extraParams: Map[String, String] = Map.empty
-  ): Future[Result] = self.start(
+  ): IO[Result] = self.start(
     req,
     extraParams ++ loginHint.map(lh => Map(LoginHint -> lh)).getOrElse(Map.empty)
   )

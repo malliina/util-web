@@ -1,11 +1,10 @@
 package com.malliina.web
 
-import com.malliina.http.{FullUrl, OkClient}
+import cats.effect.IO
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.Email
 import com.malliina.web.GitHubAuthFlow.staticConf
 import com.malliina.web.WebHeaders.Accept
-
-import scala.concurrent.{ExecutionContext, Future}
 
 object GitHubAuthFlow {
   def staticConf(conf: AuthConf) = StaticConf(
@@ -15,17 +14,16 @@ object GitHubAuthFlow {
     conf
   )
 }
-class GitHubAuthFlow(authConf: AuthConf, http: OkClient)
+class GitHubAuthFlow(authConf: AuthConf, http: HttpClient[IO])
   extends StaticFlowStart
   with CallbackValidator[Email] {
   override val conf: StaticConf = staticConf(authConf)
-  implicit val ec: ExecutionContext = http.exec
 
   override def validate(
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): Future[Either[AuthError, Email]] = {
+  ): IO[Either[AuthError, Email]] = {
     val headers = Map(Accept -> HttpConstants.Json)
     val params = validationParams(code, redirectUrl, authConf)
     for {

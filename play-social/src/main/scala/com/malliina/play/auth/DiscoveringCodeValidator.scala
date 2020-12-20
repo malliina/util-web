@@ -1,5 +1,6 @@
 package com.malliina.play.auth
 
+import cats.effect.IO
 import com.malliina.play.auth.DiscoveringCodeValidator.log
 import com.malliina.play.http.FullUrls
 import com.malliina.web._
@@ -7,8 +8,6 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results.BadGateway
 import play.api.mvc.{Call, RequestHeader, Result}
-
-import scala.concurrent.Future
 
 object DiscoveringCodeValidator {
   private val log = Logger(getClass)
@@ -35,12 +34,11 @@ abstract class DiscoveringCodeValidator[V](
   override def start(
     req: RequestHeader,
     extraParams: Map[String, String] = Map.empty
-  ): Future[Result] =
+  ): IO[Result] =
     start(FullUrls(redirCall, req), extraParams)
       .map { s => redirResult(s.authorizationEndpoint, s.params, s.nonce) }
-      .recover {
-        case e =>
-          log.error(s"HTTP error.", e)
-          BadGateway(Json.obj("message" -> "HTTP error."))
+      .handleErrorWith { e =>
+        log.error(s"HTTP error.", e)
+        IO.pure(BadGateway(Json.obj("message" -> "HTTP error.")))
       }
 }

@@ -1,10 +1,9 @@
 package com.malliina.play.auth
 
+import cats.effect.IO
 import com.malliina.play.http.FullUrls
 import com.malliina.web._
 import play.api.mvc.{Call, RequestHeader, Result}
-
-import scala.concurrent.Future
 
 object CognitoCodeValidator {
   def apply(
@@ -27,6 +26,6 @@ class CognitoCodeValidator(
   override def onOutcome(outcome: Either[AuthError, CognitoUser], req: RequestHeader): Result =
     oauth.handler.resultFor(outcome, req)
 
-  def validate(code: Code, req: RequestHeader): Future[Either[AuthError, CognitoUser]] =
+  def validate(code: Code, req: RequestHeader): IO[Either[AuthError, CognitoUser]] =
     validate(code, FullUrls(redirCall, req), None)
 }
