@@ -10,19 +10,19 @@ import com.malliina.sbtutils.SbtUtils
 val playGroup = "com.typesafe.play"
 val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "1.18.0"
-val munitVersion = "0.7.18"
-val scalatagsVersion = "0.9.2"
-val playJsonVersion = "2.9.1"
+val primitiveVersion = "1.19.0"
+val munitVersion = "0.7.23"
+val scalatagsVersion = "0.9.4"
+val playJsonVersion = "2.9.2"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "2.13.3",
+    scalaVersion := "2.13.5",
     crossScalaVersions := scalaVersion.value :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
-    publishArtifact in Test := true,
+    Test / publishArtifact := true,
     libraryDependencies += "org.scalameta" %% "munit" % munitVersion % Test,
     testFrameworks += new TestFramework("munit.Framework")
   )
@@ -101,7 +101,7 @@ val utilPlayRoot = project
   .in(file("."))
   .aggregate(utilPlay, playSocial, webAuth, htmlJvm, htmlJs, playCommon)
   .settings(
-    releaseProcess := (releaseProcess in utilPlay).value,
+    releaseProcess := (utilPlay / releaseProcess).value,
     organization := malliinaGroup,
     publish := {},
     publishLocal := {},
