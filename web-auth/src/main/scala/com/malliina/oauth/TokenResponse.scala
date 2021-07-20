@@ -1,7 +1,8 @@
 package com.malliina.oauth
 
 import com.malliina.values.{AccessToken, IdToken}
-import play.api.libs.json.Json
+import io.circe._
+import io.circe.generic.semiauto._
 
 case class TokenResponse(
   access_token: AccessToken,
@@ -11,5 +12,5 @@ case class TokenResponse(
 )
 
 object TokenResponse {
-  implicit val json = Json.format[TokenResponse]
+  implicit val json: Codec[TokenResponse] = deriveCodec[TokenResponse]
 }

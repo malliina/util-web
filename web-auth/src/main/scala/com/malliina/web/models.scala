@@ -4,13 +4,15 @@ import java.text.ParseException
 import java.time.Instant
 
 import com.malliina.http.FullUrl
-import com.malliina.json.PrimitiveFormats.durationFormat
+import com.malliina.json.PrimitiveFormats.durationCodec
 import com.malliina.values._
 import com.malliina.web.OAuthKeys.{ClientIdKey, ClientSecretKey, CodeKey, RedirectUri, Scope}
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
 import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
+import io.circe._
+import io.circe.generic.semiauto._
 
 import scala.concurrent.duration.{Duration, DurationLong}
 
@@ -48,26 +50,46 @@ object RequestToken {
   val Key = "request_token"
 }
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-
-case class CognitoTokens(accessToken: AccessToken, idToken: IdToken, refreshToken: RefreshToken)
-
-object CognitoTokens {
-  implicit val json: Format[CognitoTokens] = (
-    (JsPath \ "access_token").format[AccessToken] and
-      (JsPath \ "id_token").format[IdToken] and
-      (JsPath \ "refresh_token").format[RefreshToken]
-  )(CognitoTokens.apply, unlift(CognitoTokens.unapply))
+case class CognitoTokensJson(
+  access_token: AccessToken,
+  id_token: IdToken,
+  refresh_token: RefreshToken
+) {
+  def canonical = CognitoTokens(access_token, id_token, refresh_token)
 }
 
-case class GitHubTokens(accessToken: AccessToken, tokenType: String)
+object CognitoTokensJson {
+  implicit val json: Codec[CognitoTokensJson] = deriveCodec[CognitoTokensJson]
+}
+
+case class CognitoTokens(accessToken: AccessToken, idToken: IdToken, refreshToken: RefreshToken) {
+  def json = CognitoTokensJson(accessToken, idToken, refreshToken)
+}
+
+object CognitoTokens {
+  implicit val json: Codec[CognitoTokens] = Codec.from(
+    CognitoTokensJson.json.map(_.canonical),
+    deriveEncoder[CognitoTokens]
+  )
+}
+
+case class GitHubTokensJson(access_token: AccessToken, token_type: Option[String]) {
+  def canonical = GitHubTokens(access_token, token_type)
+}
+
+object GitHubTokensJson {
+  implicit val json: Codec[GitHubTokensJson] = deriveCodec[GitHubTokensJson]
+}
+
+case class GitHubTokens(accessToken: AccessToken, tokenType: Option[String]) {
+  def json = GitHubTokensJson(accessToken, tokenType)
+}
 
 object GitHubTokens {
-  implicit val json: Format[GitHubTokens] = (
-    (JsPath \ "access_token").format[AccessToken] and
-      (JsPath \ "token_type").formatWithDefault[String]("dummy")
-  )(GitHubTokens.apply, unlift(GitHubTokens.unapply))
+  implicit val json: Codec[GitHubTokens] = Codec.from(
+    GitHubTokensJson.json.map(_.canonical),
+    deriveEncoder[GitHubTokens]
+  )
 }
 
 case class GitHubEmail(
@@ -78,7 +100,7 @@ case class GitHubEmail(
 )
 
 object GitHubEmail {
-  implicit val json = Json.format[GitHubEmail]
+  implicit val json: Codec[GitHubEmail] = deriveCodec[GitHubEmail]
 }
 
 trait OpenIdConf {
@@ -88,20 +110,16 @@ trait OpenIdConf {
 case class SimpleOpenIdConf(jwksUri: FullUrl) extends OpenIdConf
 
 object SimpleOpenIdConf {
-  implicit val reader = Reads[SimpleOpenIdConf] { json =>
-    (json \ "jwks_uri").validate[FullUrl].map(apply)
-  }
+  implicit val decoder: Decoder[SimpleOpenIdConf] =
+    Decoder.forProduct1("jwks_uri")(apply)
 }
 
 case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl)
   extends OpenIdConf
 
 object AuthEndpoints {
-  implicit val reader: Reads[AuthEndpoints] = (
-    (JsPath \ "authorization_endpoint").read[FullUrl] and
-      (JsPath \ "token_endpoint").read[FullUrl] and
-      (JsPath \ "jwks_uri").read[FullUrl]
-  )(AuthEndpoints.apply _)
+  implicit val decoder: Decoder[AuthEndpoints] =
+    Decoder.forProduct3("authorization_endpoint", "token_endpoint", "jwks_uri")(apply)
 }
 
 case class MicrosoftOAuthConf(
@@ -115,15 +133,16 @@ case class MicrosoftOAuthConf(
 ) extends OpenIdConf
 
 object MicrosoftOAuthConf {
-  implicit val reader: Reads[MicrosoftOAuthConf] = (
-    (JsPath \ "authorization_endpoint").read[FullUrl] and
-      (JsPath \ "token_endpoint").read[FullUrl] and
-      (JsPath \ "jwks_uri").read[FullUrl] and
-      (JsPath \ "end_session_endpoint").read[FullUrl] and
-      (JsPath \ "scopes_supported").read[Seq[String]] and
-      (JsPath \ "issuer").read[Issuer] and
-      (JsPath \ "claims_supported").read[Seq[String]]
-  )(MicrosoftOAuthConf.apply _)
+  implicit val decoder: Decoder[MicrosoftOAuthConf] =
+    Decoder.forProduct7(
+      "authorization_endpoint",
+      "token_endpoint",
+      "jwks_uri",
+      "end_session_endpoint",
+      "scopes_supported",
+      "issuer",
+      "claims_supported"
+    )(apply)
 }
 
 trait TokenSet {
@@ -133,9 +152,8 @@ trait TokenSet {
 case class SimpleTokens(idToken: IdToken)
 
 object SimpleTokens {
-  implicit val reader = Reads[SimpleTokens] { json =>
-    (json \ "id_token").validate[IdToken].map(SimpleTokens(_))
-  }
+  implicit val decoder: Decoder[SimpleTokens] =
+    Decoder.forProduct1("id_token")(apply)
 }
 
 /** https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-code
@@ -155,14 +173,15 @@ case class MicrosoftTokens(
 ) extends TokenSet
 
 object MicrosoftTokens {
-  implicit val json: Format[MicrosoftTokens] = (
-    (JsPath \ "id_token").format[IdToken] and
-      (JsPath \ "access_token").formatNullable[AccessToken] and
-      (JsPath \ "refresh_token").formatNullable[RefreshToken] and
-      (JsPath \ "token_type").formatNullable[String] and
-      (JsPath \ "expires_in").formatNullable[Duration] and
-      (JsPath \ "scope").formatNullable[String]
-  )(MicrosoftTokens.apply, unlift(MicrosoftTokens.unapply))
+  implicit val decoder: Decoder[MicrosoftTokens] =
+    Decoder.forProduct6(
+      "id_token",
+      "access_token",
+      "refresh_token",
+      "token_type",
+      "expires_in",
+      "scope"
+    )(apply)
 }
 
 case class GoogleTokens(
@@ -173,22 +192,24 @@ case class GoogleTokens(
 ) extends TokenSet
 
 object GoogleTokens {
-  implicit val json: Format[GoogleTokens] = (
-    (JsPath \ "id_token").format[IdToken] and
-      (JsPath \ "access_token").format[AccessToken] and
-      (JsPath \ "expires_in").format[Duration] and
-      (JsPath \ "token_type").format[String]
-  )(GoogleTokens.apply, unlift(GoogleTokens.unapply))
+  implicit val decoder: Decoder[GoogleTokens] =
+    Decoder.forProduct4(
+      "id_token",
+      "access_token",
+      "expires_in",
+      "token_type"
+    )(apply)
 }
 
 case class FacebookTokens(accessToken: AccessToken, tokenType: String, expiresIn: Duration)
 
 object FacebookTokens {
-  implicit val json: Format[FacebookTokens] = (
-    (JsPath \ "access_token").format[AccessToken] and
-      (JsPath \ "token_type").format[String] and
-      (JsPath \ "expires_in").format[Duration]
-  )(FacebookTokens.apply, unlift(FacebookTokens.unapply))
+  implicit val decoder: Decoder[FacebookTokens] =
+    Decoder.forProduct3(
+      "access_token",
+      "token_type",
+      "expires_in"
+    )(apply)
 }
 
 case class TwitterTokens(
@@ -237,18 +258,19 @@ object TwitterAccess {
 case class TwitterUser(id: String, name: String, screenName: String, email: Option[Email])
 
 object TwitterUser {
-  implicit val json: Format[TwitterUser] = (
-    (JsPath \ "id_str").format[String] and
-      (JsPath \ "name").format[String] and
-      (JsPath \ "screen_name").format[String] and
-      (JsPath \ "email").formatNullable[Email]
-  )(TwitterUser.apply, unlift(TwitterUser.unapply))
+  implicit val decoder: Decoder[TwitterUser] =
+    Decoder.forProduct4(
+      "id_str",
+      "name",
+      "screen_name",
+      "email"
+    )(apply)
 }
 
 case class EmailResponse(email: Email)
 
 object EmailResponse {
-  implicit val json = Json.format[EmailResponse]
+  implicit val json: Codec[EmailResponse] = deriveCodec[EmailResponse]
 }
 
 trait Readable[R] {
@@ -271,7 +293,7 @@ case class ParsedJWT(
   token: TokenValue
 ) {
 
-  import scala.collection.JavaConverters.asScalaBufferConverter
+  import scala.jdk.CollectionConverters.CollectionHasAsScala
 
   def parse[T](key: String)(implicit r: Readable[T]): Either[JWTError, T] =
     readString(key).flatMap { s => r.read(s).left.map(err => InvalidClaims(token, err)) }
@@ -311,21 +333,26 @@ case class KeyConf(
 )
 
 object KeyConf {
-  implicit val reader = Reads[KeyConf] { json =>
-    for {
-      n <- (json \ "n").validate[String].map(new Base64URL(_))
-      kid <- (json \ "kid").validate[String]
-      use <- (json \ "use").validate[String].flatMap(parseUse)
-      e <- (json \ "e").validate[String].map(new Base64URL(_))
-      kty <- (json \ "kty").validate[String]
-    } yield KeyConf(n, kid, use, e, JWSAlgorithm.RS256, kty)
-  }
+  implicit val keyUseDecoder: Decoder[KeyUse] = Decoder.decodeString.emap(s => parseUse(s))
+  implicit val base64UrlDecoder: Decoder[Base64URL] =
+    Decoder.decodeString.map(s => new Base64URL(s))
+  implicit val decoder: Decoder[KeyConf] =
+    Decoder.forProduct5(
+      "n",
+      "kid",
+      "use",
+      "e",
+      "kty"
+    )(rs256)
 
-  def parseUse(s: String): JsResult[KeyUse] =
+  def rs256(n: Base64URL, kid: String, use: KeyUse, e: Base64URL, kty: String) =
+    KeyConf(n, kid, use, e, JWSAlgorithm.RS256, kty)
+
+  def parseUse(s: String): Either[String, KeyUse] =
     try {
-      JsSuccess(KeyUse.parse(s))
+      Right(KeyUse.parse(s))
     } catch {
-      case pe: ParseException => JsError(pe.getMessage)
+      case pe: ParseException => Left(pe.getMessage)
     }
 
   def rsa(n: String, kid: String) = KeyConf(
@@ -341,7 +368,7 @@ object KeyConf {
 case class JWTKeys(keys: Seq[KeyConf])
 
 object JWTKeys {
-  implicit val json = Json.reads[JWTKeys]
+  implicit val json: Decoder[JWTKeys] = deriveDecoder[JWTKeys]
 }
 
 trait JWTUser {
