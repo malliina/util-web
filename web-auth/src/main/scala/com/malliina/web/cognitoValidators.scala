@@ -13,10 +13,10 @@ object CognitoValidator extends OAuthKeys {
 }
 
 case class CognitoValidation(
-  issuer: String,
+  issuer: Issuer,
   tokenUse: String,
   clientIdKey: String,
-  clientId: String
+  clientId: ClientId
 )
 
 abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: Issuer)
