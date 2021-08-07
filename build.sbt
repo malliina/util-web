@@ -41,29 +41,6 @@ val webAuth = Project("web-auth", file("web-auth"))
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
-//val playCommon = Project("play-common", file("play-common"))
-//  .enablePlugins(MavenCentralPlugin)
-//  .dependsOn(webAuth)
-//  .settings(
-//    libraryDependencies ++= Seq(
-//      playGroup %% "play" % playVersion,
-//      malliinaGroup %%% "primitives" % primitiveVersion
-//    ),
-//    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
-//  )
-
-//val playSocial = Project("play-social", file("play-social"))
-//  .enablePlugins(MavenCentralPlugin)
-//  .dependsOn(webAuth)
-//  .settings(
-//    libraryDependencies ++= Seq(
-//      playGroup %% "play" % playVersion,
-//      commonsCodec
-//    ),
-//    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
-//  )
-//  .dependsOn(playCommon)
-
 val html = portableProject(JSPlatform, JVMPlatform)
   .crossType(PortableType.Full)
   .in(file("util-html"))
@@ -80,24 +57,8 @@ val html = portableProject(JSPlatform, JVMPlatform)
 val htmlJvm = html.jvm
 val htmlJs = html.js
 
-//val utilPlay = Project("util-play", file("util-play"))
-//  .enablePlugins(MavenCentralPlugin)
-//  .settings(
-//    releaseCrossBuild := true,
-//    scalacOptions := Seq("-unchecked", "-deprecation"),
-//    libraryDependencies ++= Seq(
-//      playGroup %% "play" % playVersion,
-//      playGroup %% "play-server" % playVersion,
-//      commonsCodec,
-//      PlayImport.specs2 % Test
-//    ),
-//    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
-//  )
-//  .dependsOn(htmlJvm, playCommon)
-
 val webAuthRoot = project
   .in(file("."))
-  //  .aggregate(utilPlay, playSocial, webAuth, htmlJvm, htmlJs, playCommon)
   .aggregate(webAuth, htmlJvm, htmlJs)
   .settings(
     releaseProcess := (webAuth / releaseProcess).value,
