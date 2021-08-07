@@ -18,7 +18,7 @@ val playJsonVersion = "2.9.2"
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "3.0.1",
+    scalaVersion := "3.0.0",
     crossScalaVersions := scalaVersion.value :: "2.13.6" :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
