@@ -1,19 +1,14 @@
 import com.malliina.sbtutils.MavenCentralKeys
-import play.core.PlayVersion
-import play.sbt.PlayImport
 import sbtcrossproject.CrossPlugin.autoImport.{
   CrossType => PortableType,
   crossProject => portableProject
 }
 import com.malliina.sbtutils.SbtUtils
 
-val playGroup = "com.typesafe.play"
-val playVersion = PlayVersion.current
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "2.0.2"
-val munitVersion = "0.7.27"
+val primitiveVersion = "3.0.1-SNAPSHOT"
+val munitVersion = "0.7.29"
 val scalatagsVersion = "0.9.4"
-val playJsonVersion = "2.9.2"
 
 inThisBuild(
   Seq(
@@ -35,7 +30,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .settings(
     libraryDependencies ++= SbtUtils.loggingDeps ++ Seq(
       malliinaGroup %% "okclient-io" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "9.10.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.13",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
