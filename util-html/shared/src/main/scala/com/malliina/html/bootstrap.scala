@@ -217,8 +217,8 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
   import tags.impl.all._
 
   val dataParent = data("parent")
-  val dataTarget = data("target")
-  val dataToggle = data("toggle")
+  val dataTarget = data("bs-target")
+  val dataToggle = data("bs-toggle")
 
   val nav = tag(Nav)
 
