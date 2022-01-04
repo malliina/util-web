@@ -3,7 +3,6 @@ package com.malliina.web
 import cats.effect.IO
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{Email, ErrorMessage}
-import com.malliina.web.GoogleAuthFlow.EmailVerified
 import com.malliina.web.OAuthKeys.{EmailKey, EmailVerified}
 
 object GoogleAuthFlow {
