@@ -8,6 +8,7 @@ trait OAuthKeys extends ClaimKeys {
   val ClientSecretKey = "client_secret"
   val CodeKey = "code"
   val EmailKey = "email"
+  val EmailVerified = "email_verified"
   val GrantType = "grant_type"
   val IdTokenKey = "id_token"
   val LoginHint = "login_hint"

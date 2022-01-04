@@ -6,15 +6,15 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 import com.malliina.sbtutils.SbtUtils
 
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.0.2"
+val primitiveVersion = "3.1.0"
 val munitVersion = "0.7.29"
-val scalatagsVersion = "0.10.0"
+val scalatagsVersion = "0.11.0"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
     scalaVersion := "3.1.0",
-    crossScalaVersions := scalaVersion.value :: "2.13.6" :: Nil,
+    crossScalaVersions := scalaVersion.value :: "2.13.7" :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,
@@ -43,7 +43,7 @@ val html = portableProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      ("com.lihaoyi" %%% "scalatags" % scalatagsVersion).cross(CrossVersion.for3Use2_13),
+      "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
       malliinaGroup %%% "primitives" % primitiveVersion
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value

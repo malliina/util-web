@@ -4,12 +4,11 @@ import cats.effect.IO
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{Email, ErrorMessage}
 import com.malliina.web.GoogleAuthFlow.EmailVerified
-import com.malliina.web.OAuthKeys.EmailKey
+import com.malliina.web.OAuthKeys.{EmailKey, EmailVerified}
 
 object GoogleAuthFlow {
   val knownUrlGoogle =
     FullUrl("https", "accounts.google.com", "/.well-known/openid-configuration")
-  val EmailVerified = "email_verified"
 
   def apply(conf: AuthCodeConf): GoogleAuthFlow = new GoogleAuthFlow(conf)
   def apply(creds: AuthConf, http: HttpClient[IO]): GoogleAuthFlow = apply(conf(creds, http))
