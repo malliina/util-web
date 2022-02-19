@@ -18,7 +18,7 @@ class FacebookAuthFlow(authConf: AuthConf, http: HttpClient[IO])
   extends StaticFlowStart
   with CallbackValidator[Email] {
   val brandName = "Facebook"
-  val conf = FacebookAuthFlow.staticConf(authConf)
+  val conf: StaticConf = FacebookAuthFlow.staticConf(authConf)
 
   override def validate(
     code: Code,

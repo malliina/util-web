@@ -1,16 +1,16 @@
 package com.malliina.web
 
 import cats.effect.IO
-import com.malliina.http.FullUrl
+import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{ErrorMessage, IdToken}
 import com.malliina.web.OAuthKeys._
 import com.malliina.web.Utils.randomString
 
 abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[IO, Verified] {
-  val brandName = codeConf.brandName
-  val client = codeConf.client
-  val conf = codeConf.conf
-  val http = codeConf.client.http
+  val brandName: String = codeConf.brandName
+  val client: KeyClient = codeConf.client
+  val conf: AuthConf = codeConf.conf
+  val http: HttpClient[IO] = codeConf.client.http
 
   def parse(v: Verified): Either[JWTError, V]
 
