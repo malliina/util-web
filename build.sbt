@@ -6,15 +6,15 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 import com.malliina.sbtutils.SbtUtils
 
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.1.0"
+val primitiveVersion = "3.1.2"
 val munitVersion = "0.7.29"
-val scalatagsVersion = "0.11.0"
+val scalatagsVersion = "0.11.1"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "3.1.0",
-    crossScalaVersions := scalaVersion.value :: "2.13.7" :: Nil,
+    scalaVersion := "3.1.1",
+    crossScalaVersions := scalaVersion.value :: "2.13.8" :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,
@@ -30,7 +30,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .settings(
     libraryDependencies ++= SbtUtils.loggingDeps ++ Seq(
       malliinaGroup %% "okclient-io" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "9.15.2",
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.19",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
