@@ -6,7 +6,7 @@ import sbtcrossproject.CrossPlugin.autoImport.{
 import com.malliina.sbtutils.SbtUtils
 
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.1.2"
+val primitiveVersion = "3.1.3"
 val munitVersion = "0.7.29"
 val scalatagsVersion = "0.11.1"
 
