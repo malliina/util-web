@@ -11,3 +11,7 @@ Social login implementations.
 
 [Scalatags](http://www.lihaoyi.com/scalatags/) helpers for [Bootstrap 4](https://getbootstrap.com). Supports 
 [Scala.js](https://www.scala-js.org) in addition to the JVM.
+
+# Releasing
+
+    sbt release
