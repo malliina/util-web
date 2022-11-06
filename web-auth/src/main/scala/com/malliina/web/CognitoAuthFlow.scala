@@ -1,21 +1,22 @@
 package com.malliina.web
 
-import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all.*
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.web.CognitoAuthFlow.{IdentityProviderKey, staticConf}
-import com.malliina.web.OAuthKeys._
+import com.malliina.web.OAuthKeys.*
 
-trait GenericAuthConf {
+trait GenericAuthConf[F[_]]:
   def conf: AuthConf
-  def http: HttpClient[IO]
-}
+  def http: HttpClient[F]
 
-object CognitoAuthFlow {
+object CognitoAuthFlow:
   val IdentityProviderKey = "identity_provider"
 
-  /**
-    * @param host e.g. myapp.auth.eu-west-1.amazoncognito.com
-    * @return conf
+  /** @param host
+    *   e.g. myapp.auth.eu-west-1.amazoncognito.com
+    * @return
+    *   conf
     */
   def staticConf(host: String, authConf: AuthConf) = StaticConf(
     "aws.cognito.signin.user.admin email openid phone profile",
@@ -23,15 +24,14 @@ object CognitoAuthFlow {
     FullUrl.https(host, "/oauth2/token"),
     authConf
   )
-}
 
-class CognitoAuthFlow(
+class CognitoAuthFlow[F[_]: Sync](
   host: String,
   identityProvider: IdentityProvider,
   validator: CognitoIdValidator,
-  val oauth: GenericAuthConf
-) extends CallbackValidator[CognitoUser]
-  with StaticFlowStart {
+  val oauth: GenericAuthConf[F]
+) extends CallbackValidator[F, CognitoUser]
+  with StaticFlowStart[F]:
   val clientConf = oauth.conf
   override val conf: StaticConf = staticConf(host, oauth.conf)
 
@@ -39,12 +39,10 @@ class CognitoAuthFlow(
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): IO[Either[AuthError, CognitoUser]] = {
+  ): F[Either[AuthError, CognitoUser]] =
     val params = tokenParameters(code, redirectUrl)
-    for {
-      tokens <- oauth.http.postFormAs[CognitoTokens](conf.tokenEndpoint, params)
-    } yield validator.validate(tokens.idToken)
-  }
+    for tokens <- oauth.http.postFormAs[CognitoTokens](conf.tokenEndpoint, params)
+    yield validator.validate(tokens.idToken)
 
   def tokenParameters(code: Code, redirUrl: FullUrl): Map[String, String] = Map(
     GrantType -> AuthorizationCode,
@@ -57,4 +55,3 @@ class CognitoAuthFlow(
     IdentityProviderKey -> identityProvider.name,
     ResponseType -> CodeKey
   )
-}

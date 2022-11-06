@@ -1,39 +1,37 @@
 package com.malliina.web
 
-import cats.effect.IO
+import cats.effect.Sync
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{Email, ErrorMessage}
 import com.malliina.web.OAuthKeys.{EmailKey, EmailVerified}
 
-object GoogleAuthFlow {
+object GoogleAuthFlow:
   val knownUrlGoogle =
     FullUrl("https", "accounts.google.com", "/.well-known/openid-configuration")
 
-  def apply(conf: AuthCodeConf): GoogleAuthFlow = new GoogleAuthFlow(conf)
-  def apply(creds: AuthConf, http: HttpClient[IO]): GoogleAuthFlow = apply(conf(creds, http))
+  def apply[F[_]: Sync](conf: AuthCodeConf[F]): GoogleAuthFlow[F] = new GoogleAuthFlow(conf)
+  def apply[F[_]: Sync](creds: AuthConf, http: HttpClient[F]): GoogleAuthFlow[F] =
+    apply(conf(creds, http))
 
-  def conf(creds: AuthConf, http: HttpClient[IO]) = AuthCodeConf(
+  def conf[F[_]: Sync](creds: AuthConf, http: HttpClient[F]) = AuthCodeConf(
     "Google",
     creds,
     keyClient(Seq(creds.clientId), http),
     Map.empty
   )
 
-  def keyClient(clientIds: Seq[ClientId], http: HttpClient[IO]): KeyClient =
-    new KeyClient(knownUrlGoogle, GoogleValidator(clientIds), http)
-}
+  def keyClient[F[_]: Sync](clientIds: Seq[ClientId], http: HttpClient[F]): KeyClient[F] =
+    KeyClient(knownUrlGoogle, GoogleValidator(clientIds), http)
 
-class GoogleAuthFlow(conf: AuthCodeConf)
-  extends DiscoveringAuthFlow[Email](conf)
-  with LoginHint[IO] {
-  override def parse(validated: Verified): Either[JWTError, Email] = {
+class GoogleAuthFlow[F[_]: Sync](conf: AuthCodeConf[F])
+  extends DiscoveringAuthFlow[F, Email](conf)
+  with LoginHint[F]:
+  override def parse(validated: Verified): Either[JWTError, Email] =
     val emailVerified = validated.readBoolean(EmailVerified)
-    for {
+    for
       _ <- emailVerified.filterOrElse(
         _ == true,
         InvalidClaims(validated.token, ErrorMessage("Email not verified."))
       )
       email <- validated.readString(EmailKey).map(Email.apply)
-    } yield email
-  }
-}
+    yield email

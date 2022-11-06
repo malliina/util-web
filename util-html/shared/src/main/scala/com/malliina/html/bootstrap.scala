@@ -1,6 +1,6 @@
 package com.malliina.html
 
-trait BootstrapStrings {
+trait BootstrapStrings:
   val FormSignin = "form-signin"
   val FormSigninHeading = "form-signin-heading"
   val NoGutters = "no-gutters"
@@ -40,7 +40,7 @@ trait BootstrapStrings {
   val Caret = "caret"
   val Collapse = "collapse"
 
-  object navbars {
+  object navbars:
     val CollapseWord = "collapse"
     val Navbar = "navbar"
     val ExpandLg = "navbar-expand-lg"
@@ -67,17 +67,13 @@ trait BootstrapStrings {
     val VisibleLg = "visible-lg"
     val VisibleMd = "visible-md"
     val VisibleSm = "visible-sm"
-  }
 
-}
+trait BootstrapParts:
 
-trait BootstrapParts {
-
-  trait Component extends MiniComponent {
+  trait Component extends MiniComponent:
     lazy val default = named("default")
-  }
 
-  trait MiniComponent {
+  trait MiniComponent:
     lazy val danger = named("danger")
     lazy val dark = named("dark")
     lazy val info = named("info")
@@ -88,15 +84,13 @@ trait BootstrapParts {
     lazy val warning = named("warning")
 
     def named(name: String): String
-  }
 
-  object alert extends Component {
+  object alert extends Component:
     val Alert = "alert"
 
     def named(name: String) = s"alert alert-$name"
-  }
 
-  object btn extends Component {
+  object btn extends Component:
     lazy val Btn = "btn"
     lazy val group = "btn-group"
     lazy val lg = "btn-lg"
@@ -104,32 +98,27 @@ trait BootstrapParts {
     lazy val block = "btn-block"
 
     def named(name: String) = s"btn btn-$name"
-  }
 
-  object btnOutline extends Component {
+  object btnOutline extends Component:
     override def named(name: String) = s"btn btn-outline-$name"
-  }
 
-  object text extends Component {
+  object text extends Component:
     lazy val muted = named("muted")
     lazy val white = named("white")
 
     override def named(name: String) = s"text-$name"
-  }
 
-  object bg extends MiniComponent {
+  object bg extends MiniComponent:
     lazy val white = named("white")
 
     override def named(name: String) = s"bg-$name"
-  }
 
-  object bgGradient extends MiniComponent {
+  object bgGradient extends MiniComponent:
     override def named(name: String) = s"bg-gradient-$name"
-  }
 
   val Col = col.Col
 
-  object col extends ColPrefixed {
+  object col extends ColPrefixed:
     val Col = "col"
 
     def width(num: String) = s"$Col-$num"
@@ -139,18 +128,13 @@ trait BootstrapParts {
     object lg extends Prefixed("lg")
     object xl extends Prefixed("xl")
 
-    abstract class Prefixed(prefix: String) extends ColPrefixed {
+    abstract class Prefixed(prefix: String) extends ColPrefixed:
       def width(num: String) = s"$Col-$prefix-$num"
 
-      object offset extends ColPrefixed {
+      object offset extends ColPrefixed:
         override def width(num: String) = s"offset-$prefix-$num"
-      }
 
-    }
-
-  }
-
-  trait ColPrefixed {
+  trait ColPrefixed:
     lazy val two = width("2")
     lazy val four = width("4")
     lazy val six = width("6")
@@ -158,40 +142,31 @@ trait BootstrapParts {
     lazy val twelve = width("12")
 
     def width(num: String): String
-  }
 
-  object align {
+  object align:
 
-    object items extends Aligned {
+    object items extends Aligned:
       override def named(name: String) = s"align-items-$name"
-    }
 
-    object self extends Aligned {
+    object self extends Aligned:
       override def named(name: String) = s"align-self-$name"
-    }
 
-  }
+  object justify:
 
-  object justify {
-
-    object content extends Aligned {
+    object content extends Aligned:
       lazy val around = named("around")
       lazy val between = named("between")
 
       override def named(name: String) = s"justify-content-$name"
-    }
 
-  }
-
-  trait Aligned {
+  trait Aligned:
     lazy val start = named("start")
     lazy val center = named("center")
     lazy val end = named("end")
 
     def named(name: String): String
-  }
 
-  object tables {
+  object tables:
     lazy val Table = "table"
     lazy val responsive = named("responsive")
     lazy val striped = named("striped")
@@ -203,18 +178,15 @@ trait BootstrapParts {
     lazy val defaultClass = s"$Table $striped $hover $sm"
 
     def named(name: String) = s"$Table-$name"
-  }
-
-}
 
 /** Scalatags for Twitter Bootstrap.
   */
 class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output, FragT])
   extends BootstrapStrings
-  with BootstrapParts {
+  with BootstrapParts:
 
-  import tags._
-  import tags.impl.all._
+  import tags.*
+  import tags.impl.all.*
 
   val dataParent = data("parent")
   val dataTarget = data("bs-target")
@@ -222,9 +194,9 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
 
   val nav = tag(Nav)
 
-  object navbar {
+  object navbar:
 
-    import navbars._
+    import navbars.*
 
     def simple[V: AttrValue](
       home: V,
@@ -260,7 +232,6 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
           )
         )
       )
-  }
 
   def alertDanger(message: String) = alertDiv(alert.danger, message)
 
@@ -305,4 +276,3 @@ class Bootstrap[Builder, Output <: FragT, FragT](val tags: Tags[Builder, Output,
     headeredTable(tables.stripedHoverResponsive, headers.map(stringFrag))(
       tbody(entries.map(entry => tr(cells(entry))))
     )
-}

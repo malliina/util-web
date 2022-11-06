@@ -1,20 +1,22 @@
 package com.malliina.web
 
-import cats.effect.IO
+import cats.effect.Sync
+import cats.syntax.all.*
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{ErrorMessage, IdToken}
-import com.malliina.web.OAuthKeys._
+import com.malliina.web.OAuthKeys.*
 import com.malliina.web.Utils.randomString
 
-abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[IO, Verified] {
+abstract class DiscoveringAuthFlow[F[_]: Sync, V](codeConf: AuthCodeConf[F])
+  extends AuthFlow[F, Verified]:
   val brandName: String = codeConf.brandName
-  val client: KeyClient = codeConf.client
+  val client: KeyClient[F] = codeConf.client
   val conf: AuthConf = codeConf.conf
-  val http: HttpClient[IO] = codeConf.client.http
+  val http: HttpClient[F] = codeConf.client.http
 
   def parse(v: Verified): Either[JWTError, V]
 
-  override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): IO[Start] =
+  override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): F[Start] =
     fetchConf().map { oauthConf =>
       val nonce = randomString()
       val params = commonAuthParams(scope, redirectUrl, conf.clientId) ++
@@ -28,21 +30,18 @@ abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[I
     code: Code,
     redirectUrl: FullUrl,
     requestNonce: Option[String]
-  ): IO[Either[AuthError, Verified]] = {
+  ): F[Either[AuthError, Verified]] =
     val params = validationParams(code, redirectUrl, conf) ++
       Map(GrantType -> AuthorizationCode) ++
       codeConf.extraValidateParams
-    for {
+    for
       oauthConf <- fetchConf()
       tokens <- http.postFormAs[SimpleTokens](oauthConf.tokenEndpoint, params)
       result <- client.validate(tokens.idToken)
-    } yield {
-      for {
-        verified <- result
-        _ <- checkNonce(tokens.idToken, verified, requestNonce)
-      } yield verified
-    }
-  }
+    yield for
+      verified <- result
+      _ <- checkNonce(tokens.idToken, verified, requestNonce)
+    yield verified
 
   def checkNonce(
     idToken: IdToken,
@@ -50,9 +49,8 @@ abstract class DiscoveringAuthFlow[V](codeConf: AuthCodeConf) extends AuthFlow[I
     requestNonce: Option[String]
   ): Either[JWTError, Verified] =
     verified.parsed.readString(Nonce).flatMap { n =>
-      if (requestNonce.contains(n)) Right(verified)
+      if requestNonce.contains(n) then Right(verified)
       else Left(InvalidClaims(idToken, ErrorMessage("Nonce mismatch.")))
     }
 
-  def fetchConf(): IO[AuthEndpoints] = http.getAs[AuthEndpoints](client.knownUrl)
-}
+  def fetchConf(): F[AuthEndpoints] = http.getAs[AuthEndpoints](client.knownUrl)

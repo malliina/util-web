@@ -5,7 +5,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
-object Utils {
+object Utils:
   private val rng = new SecureRandom()
 
   def randomString(): String = new BigInteger(130, rng).toString(32)
@@ -14,4 +14,3 @@ object Utils {
 
   def stringify(map: Map[String, String]): String =
     map.map { case (key, value) => s"$key=$value" }.mkString("&")
-}

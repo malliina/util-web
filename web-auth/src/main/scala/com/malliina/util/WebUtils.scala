@@ -2,10 +2,9 @@ package com.malliina.util
 
 import java.net.URLEncoder
 
-trait WebUtils {
+trait WebUtils:
 
-  /**
-    * Simulates JavaScript.encodeURIComponent(...)
+  /** Simulates JavaScript.encodeURIComponent(...)
     *
     * http://stackoverflow.com/questions/607176/java-equivalent-to-javascripts-encodeuricomponent-that-produces-identical-outpu
     */
@@ -18,6 +17,5 @@ trait WebUtils {
       .replaceAll("\\%28", "(")
       .replaceAll("\\%29", ")")
       .replaceAll("\\%7E", "~")
-}
 
 object WebUtils extends WebUtils

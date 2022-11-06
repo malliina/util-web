@@ -2,17 +2,17 @@ package com.malliina.web
 
 import java.text.ParseException
 import java.time.Instant
-
+import cats.effect.{IO, MonadCancel, Sync}
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationCodec
-import com.malliina.values._
+import com.malliina.values.*
 import com.malliina.web.OAuthKeys.{ClientIdKey, ClientSecretKey, CodeKey, RedirectUri, Scope}
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
 import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
-import io.circe._
-import io.circe.generic.semiauto._
+import io.circe.*
+import io.circe.generic.semiauto.*
 
 import scala.concurrent.duration.{Duration, DurationLong}
 
@@ -25,9 +25,8 @@ object ClientSecret extends StringCompanion[ClientSecret]
 case class Issuer(value: String) extends AnyVal with WrappedString
 object Issuer extends StringCompanion[Issuer]
 
-case class Code(code: String) extends AnyVal with WrappedString {
+case class Code(code: String) extends AnyVal with WrappedString:
   override def value = code
-}
 object Code extends StringCompanion[Code]
 
 case class AuthConf(clientId: ClientId, clientSecret: ClientSecret)
@@ -46,51 +45,42 @@ case class Callback(
   redirectUrl: FullUrl
 )
 
-object RequestToken {
+object RequestToken:
   val Key = "request_token"
-}
 
 case class CognitoTokensJson(
   access_token: AccessToken,
   id_token: IdToken,
   refresh_token: RefreshToken
-) {
+):
   def canonical = CognitoTokens(access_token, id_token, refresh_token)
-}
 
-object CognitoTokensJson {
+object CognitoTokensJson:
   implicit val json: Codec[CognitoTokensJson] = deriveCodec[CognitoTokensJson]
-}
 
-case class CognitoTokens(accessToken: AccessToken, idToken: IdToken, refreshToken: RefreshToken) {
+case class CognitoTokens(accessToken: AccessToken, idToken: IdToken, refreshToken: RefreshToken):
   def json = CognitoTokensJson(accessToken, idToken, refreshToken)
-}
 
-object CognitoTokens {
+object CognitoTokens:
   implicit val json: Codec[CognitoTokens] = Codec.from(
     CognitoTokensJson.json.map(_.canonical),
     deriveEncoder[CognitoTokens]
   )
-}
 
-case class GitHubTokensJson(access_token: AccessToken, token_type: Option[String]) {
+case class GitHubTokensJson(access_token: AccessToken, token_type: Option[String]):
   def canonical = GitHubTokens(access_token, token_type)
-}
 
-object GitHubTokensJson {
+object GitHubTokensJson:
   implicit val json: Codec[GitHubTokensJson] = deriveCodec[GitHubTokensJson]
-}
 
-case class GitHubTokens(accessToken: AccessToken, tokenType: Option[String]) {
+case class GitHubTokens(accessToken: AccessToken, tokenType: Option[String]):
   def json = GitHubTokensJson(accessToken, tokenType)
-}
 
-object GitHubTokens {
+object GitHubTokens:
   implicit val json: Codec[GitHubTokens] = Codec.from(
     GitHubTokensJson.json.map(_.canonical),
     deriveEncoder[GitHubTokens]
   )
-}
 
 case class GitHubEmail(
   email: Email,
@@ -99,28 +89,24 @@ case class GitHubEmail(
   visibility: Option[String]
 )
 
-object GitHubEmail {
+object GitHubEmail:
   implicit val json: Codec[GitHubEmail] = deriveCodec[GitHubEmail]
-}
 
-trait OpenIdConf {
+trait OpenIdConf:
   def jwksUri: FullUrl
-}
 
 case class SimpleOpenIdConf(jwksUri: FullUrl) extends OpenIdConf
 
-object SimpleOpenIdConf {
+object SimpleOpenIdConf:
   implicit val decoder: Decoder[SimpleOpenIdConf] =
     Decoder.forProduct1("jwks_uri")(apply)
-}
 
 case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl)
   extends OpenIdConf
 
-object AuthEndpoints {
+object AuthEndpoints:
   implicit val decoder: Decoder[AuthEndpoints] =
     Decoder.forProduct3("authorization_endpoint", "token_endpoint", "jwks_uri")(apply)
-}
 
 case class MicrosoftOAuthConf(
   authorizationEndpoint: FullUrl,
@@ -132,7 +118,7 @@ case class MicrosoftOAuthConf(
   claimsSupported: Seq[String]
 ) extends OpenIdConf
 
-object MicrosoftOAuthConf {
+object MicrosoftOAuthConf:
   implicit val decoder: Decoder[MicrosoftOAuthConf] =
     Decoder.forProduct7(
       "authorization_endpoint",
@@ -143,25 +129,26 @@ object MicrosoftOAuthConf {
       "issuer",
       "claims_supported"
     )(apply)
-}
 
-trait TokenSet {
+trait TokenSet:
   def idToken: IdToken
-}
 
 case class SimpleTokens(idToken: IdToken)
 
-object SimpleTokens {
+object SimpleTokens:
   implicit val decoder: Decoder[SimpleTokens] =
     Decoder.forProduct1("id_token")(apply)
-}
 
 /** https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-code
   *
-  * @param idToken      only returned if scope "openid" is requested
-  * @param refreshToken only returned if scope "offline_access" is requested
-  * @param tokenType    Bearer
-  * @param expiresIn    seconds
+  * @param idToken
+  *   only returned if scope "openid" is requested
+  * @param refreshToken
+  *   only returned if scope "offline_access" is requested
+  * @param tokenType
+  *   Bearer
+  * @param expiresIn
+  *   seconds
   */
 case class MicrosoftTokens(
   idToken: IdToken,
@@ -172,7 +159,7 @@ case class MicrosoftTokens(
   scope: Option[String]
 ) extends TokenSet
 
-object MicrosoftTokens {
+object MicrosoftTokens:
   implicit val decoder: Decoder[MicrosoftTokens] =
     Decoder.forProduct6(
       "id_token",
@@ -182,7 +169,6 @@ object MicrosoftTokens {
       "expires_in",
       "scope"
     )(apply)
-}
 
 case class GoogleTokens(
   idToken: IdToken,
@@ -191,7 +177,7 @@ case class GoogleTokens(
   tokenType: String
 ) extends TokenSet
 
-object GoogleTokens {
+object GoogleTokens:
   implicit val decoder: Decoder[GoogleTokens] =
     Decoder.forProduct4(
       "id_token",
@@ -199,18 +185,16 @@ object GoogleTokens {
       "expires_in",
       "token_type"
     )(apply)
-}
 
 case class FacebookTokens(accessToken: AccessToken, tokenType: String, expiresIn: Duration)
 
-object FacebookTokens {
+object FacebookTokens:
   implicit val decoder: Decoder[FacebookTokens] =
     Decoder.forProduct3(
       "access_token",
       "token_type",
       "expires_in"
     )(apply)
-}
 
 case class TwitterTokens(
   oauthToken: AccessToken,
@@ -218,46 +202,40 @@ case class TwitterTokens(
   oauthCallbackConfirmed: Boolean
 )
 
-object TwitterTokens {
-  def fromString(in: String) = {
+object TwitterTokens:
+  def fromString(in: String) =
     val map = parseMap(in)
-    for {
+    for
       ot <- map.get("oauth_token").map(AccessToken.apply)
       ots <- map.get("oauth_token_secret")
       c <- map.get("oauth_callback_confirmed")
-    } yield TwitterTokens(ot, ots, c == "true")
-  }
+    yield TwitterTokens(ot, ots, c == "true")
 
   def parseMap(in: String) = in
     .split("&")
     .toList
     .flatMap { kv =>
       val parts = kv.split("=")
-      if (parts.length == 2) {
+      if parts.length == 2 then
         val Array(k, v) = parts
         Option(k -> v)
-      } else {
-        None
-      }
+      else None
     }
     .toMap
-}
 
 case class TwitterAccess(oauthToken: AccessToken, oauthTokenSecret: String)
 
-object TwitterAccess {
-  def fromString(in: String) = {
+object TwitterAccess:
+  def fromString(in: String) =
     val map = TwitterTokens.parseMap(in)
-    for {
+    for
       ot <- map.get("oauth_token").map(AccessToken.apply)
       ots <- map.get("oauth_token_secret")
-    } yield TwitterAccess(ot, ots)
-  }
-}
+    yield TwitterAccess(ot, ots)
 
 case class TwitterUser(id: String, name: String, screenName: String, email: Option[Email])
 
-object TwitterUser {
+object TwitterUser:
   implicit val decoder: Decoder[TwitterUser] =
     Decoder.forProduct4(
       "id_str",
@@ -265,24 +243,11 @@ object TwitterUser {
       "screen_name",
       "email"
     )(apply)
-}
 
 case class EmailResponse(email: Email)
 
-object EmailResponse {
+object EmailResponse:
   implicit val json: Codec[EmailResponse] = deriveCodec[EmailResponse]
-}
-
-trait Readable[R] {
-  def read(key: String): Either[ErrorMessage, R]
-  def map[S](f: R => S): Readable[S] = (s: String) => read(s).map(f)
-  def flatMap[S](f: R => Either[String, S]) = (s: String) => read(s).flatMap(f)
-}
-
-object Readable {
-  implicit val string: Readable[String] = (s: String) => Right(s)
-  implicit val email: Readable[Email] = string.map(Email.apply)
-}
 
 case class ParsedJWT(
   jwt: SignedJWT,
@@ -291,7 +256,7 @@ case class ParsedJWT(
   iss: Issuer,
   exp: Instant,
   token: TokenValue
-) {
+):
 
   import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -314,14 +279,12 @@ case class ParsedJWT(
 
   def read[T](danger: => T, key: String): Either[JWTError, T] =
     StaticTokenValidator.read(token, danger, ErrorMessage(s"Claim missing: '$key'."))
-}
 
-case class Verified(parsed: ParsedJWT) {
+case class Verified(parsed: ParsedJWT):
   def expiresIn: Duration = (parsed.exp.toEpochMilli - Instant.now().toEpochMilli).millis
   def readString(key: String) = parsed.readString(key)
   def readBoolean(key: String) = parsed.readBoolean(key)
   def token = parsed.token
-}
 
 case class KeyConf(
   n: Base64URL,
@@ -332,7 +295,7 @@ case class KeyConf(
   kty: String
 )
 
-object KeyConf {
+object KeyConf:
   implicit val keyUseDecoder: Decoder[KeyUse] = Decoder.decodeString.emap(s => parseUse(s))
   implicit val base64UrlDecoder: Decoder[Base64URL] =
     Decoder.decodeString.map(s => new Base64URL(s))
@@ -349,11 +312,8 @@ object KeyConf {
     KeyConf(n, kid, use, e, JWSAlgorithm.RS256, kty)
 
   def parseUse(s: String): Either[String, KeyUse] =
-    try {
-      Right(KeyUse.parse(s))
-    } catch {
-      case pe: ParseException => Left(pe.getMessage)
-    }
+    try Right(KeyUse.parse(s))
+    catch case pe: ParseException => Left(pe.getMessage)
 
   def rsa(n: String, kid: String) = KeyConf(
     new Base64URL(n),
@@ -363,17 +323,14 @@ object KeyConf {
     JWSAlgorithm.RS256,
     "RSA"
   )
-}
 
 case class JWTKeys(keys: Seq[KeyConf])
 
-object JWTKeys {
+object JWTKeys:
   implicit val json: Decoder[JWTKeys] = deriveDecoder[JWTKeys]
-}
 
-trait JWTUser {
+trait JWTUser:
   def username: Username
-}
 
 case class CognitoUser(
   username: Username,
@@ -384,27 +341,26 @@ case class CognitoUser(
 
 sealed abstract class IdentityProvider(val name: String)
 
-object IdentityProvider {
+object IdentityProvider:
   case object LoginWithAmazon extends IdentityProvider("LoginWithAmazon")
   case object IdentityFacebook extends IdentityProvider("Facebook")
   case object IdentityGoogle extends IdentityProvider("Google")
   case class IdentityOther(n: String) extends IdentityProvider(n)
-}
 
-case class AuthCodeConf(
+case class AuthCodeConf[F[_]: Sync](
   brandName: String,
   conf: AuthConf,
-  client: KeyClient,
+  client: KeyClient[F],
   extraStartParams: Map[String, String] = Map.empty,
   extraValidateParams: Map[String, String] = Map.empty
 )
 
-case class OAuthParams(
-  client: KeyClient,
+case class OAuthParams[F[_]: Sync](
+  client: KeyClient[F],
   conf: AuthConf,
   extraStartParams: Map[String, String] = Map.empty,
   extraValidateParams: Map[String, String] = Map.empty
-) {
+):
   protected def commonAuthParams(authScope: String, redirectUrl: FullUrl): Map[String, String] =
     Map(
       RedirectUri -> redirectUrl.url,
@@ -420,14 +376,12 @@ case class OAuthParams(
     RedirectUri -> redirectUrl.url,
     CodeKey -> code.code
   )
-}
 
 case class StaticConf(
   scope: String,
   authorizationEndpoint: FullUrl,
   tokenEndpoint: FullUrl,
   authConf: AuthConf
-) {
+):
   def clientId = authConf.clientId
   def clientSecret = authConf.clientSecret
-}

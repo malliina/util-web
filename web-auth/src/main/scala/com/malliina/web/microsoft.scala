@@ -1,17 +1,18 @@
 package com.malliina.web
 
-import java.time.Instant
-
-import cats.effect.IO
+import cats.effect.{IO, Sync}
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.ErrorMessage
 import com.malliina.web.MicrosoftValidator.knownUrlMicrosoft
 import com.malliina.web.OAuthKeys.{Scope, scope}
 
-object MicrosoftAuthFlow {
-  def apply(creds: AuthConf, http: HttpClient[IO]) = EmailAuthFlow(conf(creds, http))
+import java.time.Instant
 
-  def conf(creds: AuthConf, http: HttpClient[IO]) = AuthCodeConf(
+object MicrosoftAuthFlow:
+  def apply[F[_]: Sync](creds: AuthConf, http: HttpClient[F]): EmailAuthFlow[F] =
+    EmailAuthFlow(conf(creds, http))
+
+  def conf[F[_]: Sync](creds: AuthConf, http: HttpClient[F]): AuthCodeConf[F] = AuthCodeConf(
     "Microsoft",
     creds,
     keyClient(Seq(creds.clientId), http),
@@ -19,11 +20,10 @@ object MicrosoftAuthFlow {
     extraValidateParams = Map(Scope -> scope)
   )
 
-  def keyClient(clientIds: Seq[ClientId], http: HttpClient[IO]): KeyClient =
-    new KeyClient(knownUrlMicrosoft, MicrosoftValidator(clientIds), http)
-}
+  def keyClient[F[_]: Sync](clientIds: Seq[ClientId], http: HttpClient[F]): KeyClient[F] =
+    KeyClient(knownUrlMicrosoft, MicrosoftValidator(clientIds), http)
 
-object MicrosoftValidator {
+object MicrosoftValidator:
   // https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-tokens
   val knownUrlMicrosoft =
     FullUrl("https", "login.microsoftonline.com", "/common/v2.0/.well-known/openid-configuration")
@@ -32,24 +32,22 @@ object MicrosoftValidator {
 
   def apply(clientIds: Seq[ClientId]): MicrosoftValidator =
     new MicrosoftValidator(clientIds, issuerMicrosoftConsumer)
-}
 
-class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer) extends TokenValidator(issuer) {
+class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer) extends TokenValidator(issuer):
   override protected def validateClaims(
     parsed: ParsedJWT,
     now: Instant
   ): Either[JWTError, ParsedJWT] =
-    for {
+    for
       _ <- checkContains(Aud, clientIds.map(_.value), parsed)
       _ <- checkNbf(parsed, now)
-    } yield parsed
+    yield parsed
 
   def checkNbf(parsed: ParsedJWT, now: Instant): Either[JWTError, Instant] =
     StaticTokenValidator
       .read(parsed.token, parsed.claims.getNotBeforeTime, ErrorMessage(NotBefore))
       .flatMap { nbf =>
         val nbfInstant = nbf.toInstant
-        if (now.isBefore(nbfInstant)) Left(NotYetValid(parsed.token, nbfInstant, now))
+        if now.isBefore(nbfInstant) then Left(NotYetValid(parsed.token, nbfInstant, now))
         else Right(nbfInstant)
       }
-}

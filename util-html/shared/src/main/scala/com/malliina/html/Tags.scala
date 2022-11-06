@@ -6,9 +6,9 @@ import scalatags.generic.Bundle
 import scala.language.implicitConversions
 
 class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, FragT])
-  extends HtmlWords {
+  extends HtmlWords:
 
-  import impl.all._
+  import impl.all.*
 
   val crossorigin = attr("crossorigin")
   val integrity = attr("integrity")
@@ -67,4 +67,3 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
 
   def namedInput(idAndName: String, more: Modifier*) =
     input(id := idAndName, name := idAndName, more)
-}

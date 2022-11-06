@@ -14,7 +14,6 @@ inThisBuild(
   Seq(
     organization := "com.malliina",
     scalaVersion := "3.1.1",
-    crossScalaVersions := scalaVersion.value :: "2.13.8" :: Nil,
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,

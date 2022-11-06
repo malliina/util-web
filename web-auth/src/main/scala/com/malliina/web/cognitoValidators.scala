@@ -2,15 +2,14 @@ package com.malliina.web
 
 import java.time.Instant
 
-import com.malliina.values._
+import com.malliina.values.*
 
-object CognitoValidator extends OAuthKeys {
+object CognitoValidator extends OAuthKeys:
   val Access = "access"
   val Id = "id"
   val TokenUse = "token_use"
   val UserKey = "username"
   val GroupsKey = "cognito:groups"
-}
 
 case class CognitoValidation(
   issuer: Issuer,
@@ -23,12 +22,12 @@ abstract class CognitoValidator[T <: TokenValue, U](keys: Seq[KeyConf], issuer: 
   extends StaticTokenValidator[T, U](keys, issuer)
 
 class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: ClientId)
-  extends CognitoValidator[AccessToken, CognitoUser](keys, issuer) {
-  import com.malliina.web.CognitoValidator._
+  extends CognitoValidator[AccessToken, CognitoUser](keys, issuer):
+  import com.malliina.web.CognitoValidator.*
 
-  protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
+  protected def toUser(verified: Verified): Either[JWTError, CognitoUser] =
     val jwt = verified.parsed
-    for {
+    for
       username <- jwt
         .readString(UserKey)
         .filterOrElse(
@@ -37,39 +36,35 @@ class CognitoAccessValidator(keys: Seq[KeyConf], issuer: Issuer, clientId: Clien
         )
       email <- jwt.readStringOpt(EmailKey)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
-    } yield CognitoUser(Username(username), email.map(Email.apply), groups, verified)
-  }
+    yield CognitoUser(Username(username), email.map(Email.apply), groups, verified)
 
   override protected def validateClaims(
     parsed: ParsedJWT,
     now: Instant
   ): Either[JWTError, ParsedJWT] =
-    for {
+    for
       _ <- checkClaim(TokenUse, Access, parsed)
       _ <- checkClaim(ClientIdKey, clientId.value, parsed)
-    } yield parsed
-}
+    yield parsed
 
 class CognitoIdValidator(keys: Seq[KeyConf], issuer: Issuer, val clientIds: Seq[ClientId])
-  extends CognitoValidator[IdToken, CognitoUser](keys, issuer) {
+  extends CognitoValidator[IdToken, CognitoUser](keys, issuer):
   def this(keys: Seq[KeyConf], issuer: Issuer, clientId: ClientId) =
     this(keys, issuer, Seq(clientId))
-  import com.malliina.web.CognitoValidator._
+  import com.malliina.web.CognitoValidator.*
 
-  override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] = {
+  override protected def toUser(verified: Verified): Either[JWTError, CognitoUser] =
     val jwt = verified.parsed
-    for {
+    for
       email <- jwt.readString(EmailKey).map(Email.apply)
       groups <- jwt.readStringListOrEmpty(GroupsKey)
-    } yield CognitoUser(Username(email.email), Option(email), groups, verified)
-  }
+    yield CognitoUser(Username(email.email), Option(email), groups, verified)
 
   override protected def validateClaims(
     parsed: ParsedJWT,
     now: Instant
   ): Either[JWTError, ParsedJWT] =
-    for {
+    for
       _ <- checkClaim(TokenUse, Id, parsed)
       _ <- checkContains(Aud, clientIds.map(_.value), parsed)
-    } yield parsed
-}
+    yield parsed

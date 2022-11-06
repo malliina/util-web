@@ -2,7 +2,7 @@ package com.malliina.web
 
 object OAuthKeys extends OAuthKeys
 
-trait OAuthKeys extends ClaimKeys {
+trait OAuthKeys extends ClaimKeys:
   val AuthorizationCode = "authorization_code"
   val ClientIdKey = "client_id"
   val ClientSecretKey = "client_secret"
@@ -19,12 +19,10 @@ trait OAuthKeys extends ClaimKeys {
   val State = "state"
 
   val scope = "openid email"
-}
 
-trait ClaimKeys {
+trait ClaimKeys:
   val Aud = "aud"
   val Exp = "exp"
   val IssuerKey = "iss"
   val Kid = "kid"
   val NotBefore = "nbf"
-}
