@@ -3,10 +3,8 @@ import sbtcrossproject.CrossPlugin.autoImport.{
   CrossType => PortableType,
   crossProject => portableProject
 }
-import com.malliina.sbtutils.SbtUtils
-
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.3.0"
+val primitiveVersion = "3.4.0"
 val munitVersion = "0.7.29"
 val scalatagsVersion = "0.12.0"
 
@@ -27,9 +25,9 @@ val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
 val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
   .settings(
-    libraryDependencies ++= SbtUtils.loggingDeps ++ Seq(
+    libraryDependencies ++= Seq(
       malliinaGroup %% "okclient-io" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "9.25.6",
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.28",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
