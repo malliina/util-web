@@ -1,14 +1,14 @@
 import com.malliina.sbtutils.MavenCentralKeys
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.4.3"
+val primitiveVersion = "3.4.4"
 val munitVersion = "0.7.29"
 val scalatagsVersion = "0.12.0"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "3.2.2",
+    scalaVersion := "3.3.0",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,
@@ -46,9 +46,23 @@ val html = portableProject(JSPlatform, JVMPlatform)
 val htmlJvm = html.jvm
 val htmlJs = html.js
 
+val database = project
+  .in(file("database"))
+  .enablePlugins(MavenCentralPlugin)
+  .settings(
+    libraryDependencies ++= Seq("config", "okclient-io").map { m =>
+      malliinaGroup %%% m % primitiveVersion
+    } ++ Seq("core", "hikari").map { m =>
+      "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC4"
+    } ++ Seq(
+      "org.flywaydb" % "flyway-core" % "7.15.0"
+    ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
+  )
+
 val webAuthRoot = project
   .in(file("."))
-  .aggregate(webAuth, htmlJvm, htmlJs)
+  .aggregate(webAuth, htmlJvm, htmlJs, database)
   .settings(
     releaseProcess := (webAuth / releaseProcess).value,
     organization := malliinaGroup,
