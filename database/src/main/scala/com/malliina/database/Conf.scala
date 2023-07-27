@@ -1,6 +1,7 @@
 package com.malliina.database
 
-import com.malliina.config.ConfigReadable
+import com.malliina.config.ConfigReadable.ConfigOps
+import com.malliina.config.{ConfigError, ConfigReadable, InvalidValue}
 import com.malliina.values.ErrorMessage
 import com.typesafe.config.Config
 
@@ -13,20 +14,16 @@ case class Conf(
   autoMigrate: Boolean
 )
 
-implicit class ConfigOps(c: Config) extends AnyVal:
-  def read[T](key: String)(implicit r: ConfigReadable[T]): Either[ErrorMessage, T] =
-    r.read(key, c)
-
 object Conf:
   val MySQLDriver = "com.mysql.cj.jdbc.Driver"
 
   implicit val config: ConfigReadable[Conf] = ConfigReadable.config.emap { c =>
     for
-      url <- c.read[String]("url")
-      user <- c.read[String]("user")
-      pass <- c.read[String]("pass")
-      driver <- c.read[String]("driver")
-      maxPoolSize <- c.read[Int]("maxPoolSize")
-      autoMigrate <- c.read[Boolean]("autoMigrate")
+      url <- c.parse[String]("url")
+      user <- c.parse[String]("user")
+      pass <- c.parse[String]("pass")
+      driver <- c.parse[String]("driver")
+      maxPoolSize <- c.parse[Int]("maxPoolSize")
+      autoMigrate <- c.parse[Boolean]("autoMigrate")
     yield Conf(url, user, pass, driver, maxPoolSize, autoMigrate)
   }

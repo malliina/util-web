@@ -1,7 +1,7 @@
 import com.malliina.sbtutils.MavenCentralKeys
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.4.4"
+val primitiveVersion = "3.4.5"
 val munitVersion = "0.7.29"
 val scalatagsVersion = "0.12.0"
 
@@ -17,7 +17,7 @@ inThisBuild(
   )
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % "1.15"
+val commonsCodec = "commons-codec" % "commons-codec" % "1.16.0"
 
 val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
