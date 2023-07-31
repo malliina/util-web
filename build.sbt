@@ -55,7 +55,7 @@ val database = project
     } ++ Seq("core", "hikari").map { m =>
       "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC4"
     } ++ Seq(
-      "org.flywaydb" % "flyway-core" % "7.15.0"
+      "org.flywaydb" % "flyway-mysql" % "9.21.1"
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
