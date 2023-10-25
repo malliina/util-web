@@ -1,19 +1,19 @@
 package com.malliina.web
 
-import java.text.ParseException
-import java.time.Instant
-import cats.effect.{IO, MonadCancel, Sync}
+import cats.effect.Sync
 import com.malliina.http.FullUrl
 import com.malliina.json.PrimitiveFormats.durationCodec
 import com.malliina.values.*
-import com.malliina.web.OAuthKeys.{ClientIdKey, ClientSecretKey, CodeKey, RedirectUri, Scope}
+import com.malliina.web.OAuthKeys.*
 import com.nimbusds.jose.JWSAlgorithm
 import com.nimbusds.jose.jwk.KeyUse
 import com.nimbusds.jose.util.Base64URL
 import com.nimbusds.jwt.{JWTClaimsSet, SignedJWT}
 import io.circe.*
-import io.circe.generic.semiauto.*
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
+import java.text.ParseException
+import java.time.Instant
 import scala.concurrent.duration.{Duration, DurationLong}
 
 case class ClientId(value: String) extends AnyVal with WrappedString
@@ -52,33 +52,28 @@ case class CognitoTokensJson(
   access_token: AccessToken,
   id_token: IdToken,
   refresh_token: RefreshToken
-):
+) derives Codec.AsObject:
   def canonical = CognitoTokens(access_token, id_token, refresh_token)
-
-object CognitoTokensJson:
-  implicit val json: Codec[CognitoTokensJson] = deriveCodec[CognitoTokensJson]
 
 case class CognitoTokens(accessToken: AccessToken, idToken: IdToken, refreshToken: RefreshToken):
   def json = CognitoTokensJson(accessToken, idToken, refreshToken)
 
 object CognitoTokens:
-  implicit val json: Codec[CognitoTokens] = Codec.from(
-    CognitoTokensJson.json.map(_.canonical),
+  given Codec[CognitoTokens] = Codec.from(
+    Decoder[CognitoTokensJson].map(_.canonical),
     deriveEncoder[CognitoTokens]
   )
 
-case class GitHubTokensJson(access_token: AccessToken, token_type: Option[String]):
+case class GitHubTokensJson(access_token: AccessToken, token_type: Option[String])
+  derives Codec.AsObject:
   def canonical = GitHubTokens(access_token, token_type)
-
-object GitHubTokensJson:
-  implicit val json: Codec[GitHubTokensJson] = deriveCodec[GitHubTokensJson]
 
 case class GitHubTokens(accessToken: AccessToken, tokenType: Option[String]):
   def json = GitHubTokensJson(accessToken, tokenType)
 
 object GitHubTokens:
-  implicit val json: Codec[GitHubTokens] = Codec.from(
-    GitHubTokensJson.json.map(_.canonical),
+  given Codec[GitHubTokens] = Codec.from(
+    Decoder[GitHubTokensJson].map(_.canonical),
     deriveEncoder[GitHubTokens]
   )
 
@@ -87,10 +82,7 @@ case class GitHubEmail(
   primary: Boolean,
   verified: Boolean,
   visibility: Option[String]
-)
-
-object GitHubEmail:
-  implicit val json: Codec[GitHubEmail] = deriveCodec[GitHubEmail]
+) derives Codec.AsObject
 
 trait OpenIdConf:
   def jwksUri: FullUrl
@@ -98,14 +90,14 @@ trait OpenIdConf:
 case class SimpleOpenIdConf(jwksUri: FullUrl) extends OpenIdConf
 
 object SimpleOpenIdConf:
-  implicit val decoder: Decoder[SimpleOpenIdConf] =
+  given Decoder[SimpleOpenIdConf] =
     Decoder.forProduct1("jwks_uri")(apply)
 
 case class AuthEndpoints(authorizationEndpoint: FullUrl, tokenEndpoint: FullUrl, jwksUri: FullUrl)
   extends OpenIdConf
 
 object AuthEndpoints:
-  implicit val decoder: Decoder[AuthEndpoints] =
+  given Decoder[AuthEndpoints] =
     Decoder.forProduct3("authorization_endpoint", "token_endpoint", "jwks_uri")(apply)
 
 case class MicrosoftOAuthConf(
@@ -119,7 +111,7 @@ case class MicrosoftOAuthConf(
 ) extends OpenIdConf
 
 object MicrosoftOAuthConf:
-  implicit val decoder: Decoder[MicrosoftOAuthConf] =
+  given Decoder[MicrosoftOAuthConf] =
     Decoder.forProduct7(
       "authorization_endpoint",
       "token_endpoint",
@@ -136,7 +128,7 @@ trait TokenSet:
 case class SimpleTokens(idToken: IdToken)
 
 object SimpleTokens:
-  implicit val decoder: Decoder[SimpleTokens] =
+  given Decoder[SimpleTokens] =
     Decoder.forProduct1("id_token")(apply)
 
 /** https://docs.microsoft.com/en-us/azure/active-directory/develop/active-directory-v2-protocols-oauth-code
@@ -160,7 +152,7 @@ case class MicrosoftTokens(
 ) extends TokenSet
 
 object MicrosoftTokens:
-  implicit val decoder: Decoder[MicrosoftTokens] =
+  given Decoder[MicrosoftTokens] =
     Decoder.forProduct6(
       "id_token",
       "access_token",
@@ -178,7 +170,7 @@ case class GoogleTokens(
 ) extends TokenSet
 
 object GoogleTokens:
-  implicit val decoder: Decoder[GoogleTokens] =
+  given Decoder[GoogleTokens] =
     Decoder.forProduct4(
       "id_token",
       "access_token",
@@ -189,7 +181,7 @@ object GoogleTokens:
 case class FacebookTokens(accessToken: AccessToken, tokenType: String, expiresIn: Duration)
 
 object FacebookTokens:
-  implicit val decoder: Decoder[FacebookTokens] =
+  given Decoder[FacebookTokens] =
     Decoder.forProduct3(
       "access_token",
       "token_type",
@@ -236,7 +228,7 @@ object TwitterAccess:
 case class TwitterUser(id: String, name: String, screenName: String, email: Option[Email])
 
 object TwitterUser:
-  implicit val decoder: Decoder[TwitterUser] =
+  given Decoder[TwitterUser] =
     Decoder.forProduct4(
       "id_str",
       "name",
@@ -244,10 +236,7 @@ object TwitterUser:
       "email"
     )(apply)
 
-case class EmailResponse(email: Email)
-
-object EmailResponse:
-  implicit val json: Codec[EmailResponse] = deriveCodec[EmailResponse]
+case class EmailResponse(email: Email) derives Codec.AsObject
 
 case class ParsedJWT(
   jwt: SignedJWT,
@@ -261,7 +250,7 @@ case class ParsedJWT(
   import scala.jdk.CollectionConverters.CollectionHasAsScala
 
   def parse[T](key: String)(implicit r: Readable[T]): Either[JWTError, T] =
-    readString(key).flatMap { s => r.read(s).left.map(err => InvalidClaims(token, err)) }
+    readString(key).flatMap(s => r.read(s).left.map(err => InvalidClaims(token, err)))
 
   def readString(key: String): Either[JWTError, String] =
     read(claims.getStringClaim(key), key)
@@ -296,10 +285,10 @@ case class KeyConf(
 )
 
 object KeyConf:
-  implicit val keyUseDecoder: Decoder[KeyUse] = Decoder.decodeString.emap(s => parseUse(s))
-  implicit val base64UrlDecoder: Decoder[Base64URL] =
+  given Decoder[KeyUse] = Decoder.decodeString.emap(s => parseUse(s))
+  given Decoder[Base64URL] =
     Decoder.decodeString.map(s => new Base64URL(s))
-  implicit val decoder: Decoder[KeyConf] =
+  given Decoder[KeyConf] =
     Decoder.forProduct5(
       "n",
       "kid",
@@ -327,7 +316,7 @@ object KeyConf:
 case class JWTKeys(keys: Seq[KeyConf])
 
 object JWTKeys:
-  implicit val json: Decoder[JWTKeys] = deriveDecoder[JWTKeys]
+  given Decoder[JWTKeys] = deriveDecoder[JWTKeys]
 
 trait JWTUser:
   def username: Username

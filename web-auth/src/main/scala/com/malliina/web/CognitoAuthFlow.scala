@@ -1,7 +1,7 @@
 package com.malliina.web
 
 import cats.effect.Sync
-import cats.syntax.all.*
+import cats.syntax.all.toFunctorOps
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.web.CognitoAuthFlow.{IdentityProviderKey, staticConf}
 import com.malliina.web.OAuthKeys.*

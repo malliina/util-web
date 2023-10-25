@@ -65,48 +65,48 @@ abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys:
     else
       keys
         .find(_.kid == parsed.kid)
-        .map { keyConf =>
+        .map: keyConf =>
           val verifier = buildVerifier(keyConf)
           if !isSignatureValid(parsed.jwt, verifier) then Left(InvalidSignature(token))
           else if !now.isBefore(parsed.exp) then Left(Expired(token, parsed.exp, now))
           else validateClaims(parsed, now).map(p => Verified(p))
-        }
-        .getOrElse {
+        .getOrElse:
           Left(InvalidKeyId(token, parsed.kid, keys.map(_.kid)))
-        }
 
   protected def isSignatureValid(unverified: SignedJWT, verifier: RSASSAVerifier): Boolean =
     unverified.verify(verifier)
 
   def checkClaim(key: String, expected: String, parsed: ParsedJWT): Either[JWTError, ParsedJWT] =
-    parsed.readString(key).flatMap { actual =>
-      if actual == expected then Right(parsed)
-      else
-        Left(
-          InvalidClaims(
-            parsed.token,
-            ErrorMessage(s"Claim '$key' must equal '$expected', was '$actual'.")
+    parsed
+      .readString(key)
+      .flatMap: actual =>
+        if actual == expected then Right(parsed)
+        else
+          Left(
+            InvalidClaims(
+              parsed.token,
+              ErrorMessage(s"Claim '$key' must equal '$expected', was '$actual'.")
+            )
           )
-        )
-    }
 
   def checkContains(
     key: String,
     expecteds: Seq[String],
     parsed: ParsedJWT
   ): Either[JWTError, Seq[String]] =
-    parsed.readStringListOrEmpty(key).flatMap { arr =>
-      if expecteds.exists(e => arr.contains(e)) then Right(arr)
-      else
-        Left(
-          InvalidClaims(
-            parsed.token,
-            ErrorMessage(
-              s"Claim '$key' does not contain any of '${expecteds.mkString(", ")}', was '${arr.mkString(", ")}'."
+    parsed
+      .readStringListOrEmpty(key)
+      .flatMap: arr =>
+        if expecteds.exists(e => arr.contains(e)) then Right(arr)
+        else
+          Left(
+            InvalidClaims(
+              parsed.token,
+              ErrorMessage(
+                s"Claim '$key' does not contain any of '${expecteds.mkString(", ")}', was '${arr.mkString(", ")}'."
+              )
             )
           )
-        )
-    }
 
   def buildVerifier(conf: KeyConf): RSASSAVerifier =
     val rsaKey = new RSAKey.Builder(conf.n, conf.e)

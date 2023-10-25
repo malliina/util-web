@@ -39,4 +39,4 @@ case class CognitoIdentityConf(clientId: String, domain: FullUrl, scope: String)
     )
 
   def stringify(map: Map[String, String]): String =
-    map.map { case (key, value) => s"$key=$value" }.mkString("&")
+    map.map((key, value) => s"$key=$value").mkString("&")

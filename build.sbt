@@ -1,14 +1,14 @@
 import com.malliina.sbtutils.MavenCentralKeys
-import sbtcrossproject.CrossPlugin.autoImport.{CrossType => PortableType, crossProject => portableProject}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.4.5"
+val primitiveVersion = "3.4.6"
 val munitVersion = "0.7.29"
 val scalatagsVersion = "0.12.0"
 
 inThisBuild(
   Seq(
     organization := "com.malliina",
-    scalaVersion := "3.3.0",
+    scalaVersion := "3.3.1",
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,
@@ -24,14 +24,14 @@ val webAuth = Project("web-auth", file("web-auth"))
   .settings(
     libraryDependencies ++= Seq(
       malliinaGroup %% "okclient-io" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "9.31",
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.37",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
-val html = portableProject(JSPlatform, JVMPlatform)
-  .crossType(PortableType.Full)
+val html = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Full)
   .in(file("util-html"))
   .enablePlugins(MavenCentralPlugin)
   .settings(

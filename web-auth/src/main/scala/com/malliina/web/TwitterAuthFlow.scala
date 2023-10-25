@@ -32,7 +32,7 @@ object TwitterAuthFlow:
     val encoded = urlEncode(in)
     val strb = new StringBuilder
     var skip = -1
-    encoded.zipWithIndex.foreach { case (c, i) =>
+    encoded.zipWithIndex.foreach: (c, i) =>
       if i != skip then
         if c == '*' then strb.append("%2A")
         else if c == '+' then strb.append("%20")
@@ -42,10 +42,10 @@ object TwitterAuthFlow:
           strb += '~'
           skip = i + 1
         else strb.append(c)
-    }
     strb.toString()
 
 class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) extends FlowStart[F]:
+  val F = Sync[F]
   val brandName = "Twitter"
   val baseUrl = FullUrl.https("api.twitter.com", "")
   val requestTokenUrl = baseUrl / "oauth" / "request_token"
@@ -57,13 +57,13 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
 
   // TODO this doesn't work, reimplement locally
   def start(redirectUrl: FullUrl, extraParams: Map[String, String]): F[Start] =
-    Sync[F].pure(Start(redirectUrl, extraParams, None))
+    F.pure(Start(redirectUrl, extraParams, None))
 
   def requestToken(redirectUrl: FullUrl): F[Either[OAuthError, AccessToken]] =
     fetchRequestToken(redirectUrl).map { optTokens =>
       optTokens
         .filter(_.oauthCallbackConfirmed)
-        .map { tokens => tokens.oauthToken }
+        .map(tokens => tokens.oauthToken)
         .toRight(OAuthError("Callback not confirmed."))
     }
 
@@ -73,18 +73,18 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
     oauthVerifier: String
   ): F[Either[OAuthError, TwitterUser]] =
     if oauthToken == requestToken then
-      fetchAccessToken(oauthToken, oauthVerifier).flatMap { optAccess =>
-        optAccess.map { access => fetchUser(access).map(Right.apply) }
-          .getOrElse(Sync[F].pure(Left(OAuthError("No access token in response."))))
-      }
-    else Sync[F].pure(Left(OAuthError(s"Invalid callback parameters.")))
+      fetchAccessToken(oauthToken, oauthVerifier).flatMap: optAccess =>
+        optAccess
+          .map(access => fetchUser(access).map(Right.apply))
+          .getOrElse(F.pure(Left(OAuthError("No access token in response."))))
+    else F.pure(Left(OAuthError(s"Invalid callback parameters.")))
 
   private def fetchRequestToken(redirUrl: FullUrl): F[Option[TwitterTokens]] =
     val encodable = Encodable(buildNonce, Map("oauth_callback" -> redirUrl.url))
     val authHeaderValue = encodable.signed("POST", requestTokenUrl, None)
     http
       .postForm(requestTokenUrl, form = Map.empty, headers = Map(Authorization -> authHeaderValue))
-      .map { r => TwitterTokens.fromString(r.asString) }
+      .map(r => TwitterTokens.fromString(r.asString))
 
   private def fetchAccessToken(
     requestToken: AccessToken,
@@ -98,7 +98,7 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
         form = Map(OauthVerifierKey -> verifier),
         headers = Map(Authorization -> authHeaderValue, ContentType -> HttpConstants.FormUrlEncoded)
       )
-      .map { res => TwitterAccess.fromString(res.asString) }
+      .map(res => TwitterAccess.fromString(res.asString))
 
   private def fetchUser(access: TwitterAccess): F[TwitterUser] =
     val queryParams = Map(
@@ -108,25 +108,25 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
     )
     val encodable = paramsStringWith(access.oauthToken, buildNonce, queryParams)
     val authHeaderValue = encodable.signed("GET", userInfoUrl, Option(access.oauthTokenSecret))
-    val queryString = queryParams.map { case (k, v) => s"$k=$v" }.mkString("&")
+    val queryString = queryParams.map((k, v) => s"$k=$v").mkString("&")
     val reqUrl = userInfoUrl.append(s"?$queryString")
 
     val req =
       new Request.Builder().url(reqUrl.url).addHeader(Authorization, authHeaderValue).get.build()
-    http.execute(req).flatMap { res =>
-      res
-        .parse[TwitterUser]
-        .fold(
-          err => Sync[F].raiseError(com.malliina.http.JsonError(err, res, reqUrl).toException),
-          user => Sync[F].pure(user)
-        )
-    }
+    http
+      .execute(req)
+      .flatMap: res =>
+        res
+          .parse[TwitterUser]
+          .fold(
+            err => Sync[F].raiseError(com.malliina.http.JsonError(err, res, reqUrl).toException),
+            user => Sync[F].pure(user)
+          )
 
-  private def buildNonce =
-    new String(
-      Base64.getEncoder.encode(randomString().getBytes(StandardCharsets.UTF_8)),
-      StandardCharsets.UTF_8
-    )
+  private def buildNonce = new String(
+    Base64.getEncoder.encode(randomString().getBytes(StandardCharsets.UTF_8)),
+    StandardCharsets.UTF_8
+  )
 
   private def paramsStringWith(
     token: TokenValue,
@@ -152,5 +152,5 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
       val key = signingKey(conf.clientSecret, oauthTokenSecret)
       val signature = sign(key, signatureBaseString)
       val headerParams = encodedParams ++ Map("oauth_signature" -> percentEncode(signature))
-      val authHeaderValues = headerParams.map { case (k, v) => s"""$k="$v"""" }.mkString(", ")
+      val authHeaderValues = headerParams.map((k, v) => s"""$k="$v"""").mkString(", ")
       s"OAuth $authHeaderValues"

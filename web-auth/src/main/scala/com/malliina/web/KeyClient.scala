@@ -12,7 +12,7 @@ class KeyClient[F[_]: Sync](
   val http: HttpClient[F]
 ):
   def validate(token: TokenValue, now: Instant = Instant.now()): F[Either[AuthError, Verified]] =
-    fetchKeys().map { keys => validator.validate(token, keys, now) }
+    fetchKeys().map(keys => validator.validate(token, keys, now))
 
   def fetchKeys(): F[Seq[KeyConf]] =
     for

@@ -1,6 +1,6 @@
 package com.malliina.web
 
-import cats.effect.{IO, Sync}
+import cats.effect.Sync
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.ErrorMessage
 import com.malliina.web.MicrosoftValidator.knownUrlMicrosoft
@@ -30,10 +30,8 @@ object MicrosoftValidator:
   val issuerMicrosoftConsumer =
     Issuer("https://login.microsoftonline.com/9188040d-6c67-4c5b-b112-36a304b66dad/v2.0")
 
-  def apply(clientIds: Seq[ClientId]): MicrosoftValidator =
-    new MicrosoftValidator(clientIds, issuerMicrosoftConsumer)
-
-class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer) extends TokenValidator(issuer):
+class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer = issuerMicrosoftConsumer)
+  extends TokenValidator(issuer):
   override protected def validateClaims(
     parsed: ParsedJWT,
     now: Instant
@@ -46,8 +44,7 @@ class MicrosoftValidator(clientIds: Seq[ClientId], issuer: Issuer) extends Token
   def checkNbf(parsed: ParsedJWT, now: Instant): Either[JWTError, Instant] =
     StaticTokenValidator
       .read(parsed.token, parsed.claims.getNotBeforeTime, ErrorMessage(NotBefore))
-      .flatMap { nbf =>
+      .flatMap: nbf =>
         val nbfInstant = nbf.toInstant
         if now.isBefore(nbfInstant) then Left(NotYetValid(parsed.token, nbfInstant, now))
         else Right(nbfInstant)
-      }

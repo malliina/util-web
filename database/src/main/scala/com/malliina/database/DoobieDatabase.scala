@@ -26,7 +26,7 @@ object DoobieDatabase:
     yield DoobieDatabase(tx)
 
   private def withMigrations[F[_]: Async](conf: Conf): Resource[F, DoobieDatabase[F]] =
-    Resource.eval(migrate(conf)).flatMap { _ => default(conf) }
+    Resource.eval(migrate(conf)).flatMap(_ => default(conf))
 
   private def migrate[F[_]: Sync](conf: Conf): F[MigrateResult] = Sync[F].delay {
     val flyway = Flyway.configure.dataSource(conf.url, conf.user, conf.pass).load()

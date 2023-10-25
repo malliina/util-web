@@ -1,7 +1,7 @@
 package com.malliina.web
 
 import cats.effect.Sync
-import cats.syntax.all.*
+import cats.syntax.all.{toFlatMapOps, toFunctorOps}
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.Email
 import com.malliina.web.Utils.{stringify, urlEncode}

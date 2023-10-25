@@ -1,8 +1,8 @@
 package com.malliina.oauth
 
 import com.malliina.http.FullUrl
-import io.circe.*
-import io.circe.generic.semiauto.*
+import io.circe.generic.semiauto.deriveEncoder
+import io.circe.{Codec, Decoder}
 
 case class GoogleOAuthJson(
   issuer: String,
@@ -17,7 +17,7 @@ case class GoogleOAuthJson(
   scopes_supported: Seq[String],
   token_endpoint_auth_methods_supported: Seq[String],
   claims_supported: Seq[String]
-):
+) derives Codec.AsObject:
   def canonical = GoogleOAuthConf(
     issuer,
     authorization_endpoint,
@@ -32,9 +32,6 @@ case class GoogleOAuthJson(
     token_endpoint_auth_methods_supported,
     claims_supported
   )
-
-object GoogleOAuthJson:
-  implicit val json: Codec[GoogleOAuthJson] = deriveCodec[GoogleOAuthJson]
 
 case class GoogleOAuthConf(
   issuer: String,
@@ -53,6 +50,6 @@ case class GoogleOAuthConf(
 
 object GoogleOAuthConf:
   implicit val json: Codec[GoogleOAuthConf] = Codec.from(
-    GoogleOAuthJson.json.map(json => json.canonical),
+    Decoder[GoogleOAuthJson].map(json => json.canonical),
     deriveEncoder[GoogleOAuthConf]
   )

@@ -1,6 +1,6 @@
 package com.malliina.html
 
-import com.malliina.values.Wrapped
+import com.malliina.values.WrappedString
 import scalatags.generic.Bundle
 
 import scala.language.implicitConversions
@@ -21,7 +21,7 @@ class Tags[Builder, Output <: FragT, FragT](val impl: Bundle[Builder, Output, Fr
   val section = tag(Section)
   val titleTag = tag(Title)
 
-  implicit def wrappedFrag[T <: Wrapped](t: T): Frag = stringFrag(t.value)
+  implicit def wrappedFrag[T <: WrappedString](t: T): Frag = stringFrag(t.value)
 
   def labelFor(forTarget: String, more: Modifier*) = label(`for` := forTarget, more)
 

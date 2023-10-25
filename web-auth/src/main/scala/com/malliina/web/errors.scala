@@ -1,11 +1,10 @@
 package com.malliina.web
 
-import java.text.ParseException
-import java.time.Instant
-
 import com.malliina.http.{ResponseError, ResponseException, StatusError}
 import com.malliina.values.{ErrorMessage, TokenValue}
 
+import java.text.ParseException
+import java.time.Instant
 import scala.concurrent.duration.{Duration, DurationLong}
 
 sealed abstract class AuthError(val key: String):

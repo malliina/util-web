@@ -1,7 +1,7 @@
 package com.malliina.web
 
 import cats.effect.Sync
-import cats.syntax.all.*
+import cats.syntax.all.{toFlatMapOps, toFunctorOps}
 import com.malliina.http.{FullUrl, HttpClient}
 import com.malliina.values.{ErrorMessage, IdToken}
 import com.malliina.web.OAuthKeys.*
@@ -17,14 +17,13 @@ abstract class DiscoveringAuthFlow[F[_]: Sync, V](codeConf: AuthCodeConf[F])
   def parse(v: Verified): Either[JWTError, V]
 
   override def start(redirectUrl: FullUrl, extraParams: Map[String, String]): F[Start] =
-    fetchConf().map { oauthConf =>
+    fetchConf().map: oauthConf =>
       val nonce = randomString()
       val params = commonAuthParams(scope, redirectUrl, conf.clientId) ++
         Map(ResponseType -> CodeKey, Nonce -> nonce) ++
         codeConf.extraStartParams ++
         extraParams
       Start(oauthConf.authorizationEndpoint, params, Option(nonce))
-    }
 
   override def validate(
     code: Code,
@@ -48,9 +47,10 @@ abstract class DiscoveringAuthFlow[F[_]: Sync, V](codeConf: AuthCodeConf[F])
     verified: Verified,
     requestNonce: Option[String]
   ): Either[JWTError, Verified] =
-    verified.parsed.readString(Nonce).flatMap { n =>
-      if requestNonce.contains(n) then Right(verified)
-      else Left(InvalidClaims(idToken, ErrorMessage("Nonce mismatch.")))
-    }
+    verified.parsed
+      .readString(Nonce)
+      .flatMap: n =>
+        if requestNonce.contains(n) then Right(verified)
+        else Left(InvalidClaims(idToken, ErrorMessage("Nonce mismatch.")))
 
   def fetchConf(): F[AuthEndpoints] = http.getAs[AuthEndpoints](client.knownUrl)
