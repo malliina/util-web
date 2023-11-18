@@ -1,7 +1,7 @@
 import com.malliina.sbtutils.MavenCentralKeys
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.5.0"
+val primitiveVersion = "3.5.1"
 val munitVersion = "0.7.29"
 val scalatagsVersion = "0.12.0"
 
