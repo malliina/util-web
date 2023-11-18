@@ -1,7 +1,6 @@
 package com.malliina.database
 
 import com.malliina.config.ConfigReadable
-import com.malliina.config.ConfigReadable.ConfigOps
 
 case class Conf(
   url: String,
@@ -15,7 +14,7 @@ case class Conf(
 object Conf:
   val MySQLDriver = "com.mysql.cj.jdbc.Driver"
 
-  given ConfigReadable[Conf] = ConfigReadable.config.emap: c =>
+  given ConfigReadable[Conf] = ConfigReadable.node.emap: c =>
     for
       url <- c.parse[String]("url")
       user <- c.parse[String]("user")
