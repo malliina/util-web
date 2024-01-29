@@ -53,7 +53,7 @@ val database = project
     libraryDependencies ++= Seq("config", "okclient-io").map { m =>
       malliinaGroup %%% m % primitiveVersion
     } ++ Seq("core", "hikari").map { m =>
-      "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC4"
+      "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC5"
     } ++ Seq(
       "org.flywaydb" % "flyway-mysql" % "9.21.1"
     ),
