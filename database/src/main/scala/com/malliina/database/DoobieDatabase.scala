@@ -26,7 +26,8 @@ object DoobieDatabase:
     for tx <- poolTransactor(poolConfig(conf))
     yield DoobieDatabase(tx)
 
-  def fast[F[_]: Async](conf: Conf): DoobieDatabase[F] = DoobieDatabase(noPoolTransactor(conf))
+  def fast[F[_]: Async](conf: Conf): DoobieDatabase[F] =
+    DoobieDatabase(noPoolTransactor(conf))
 
   private def withMigrations[F[_]: Async](conf: Conf): Resource[F, DoobieDatabase[F]] =
     Resource.eval(migrate(conf)).flatMap(_ => default(conf))

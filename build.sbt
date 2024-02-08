@@ -24,7 +24,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .settings(
     libraryDependencies ++= Seq(
       malliinaGroup %% "okclient-io" % primitiveVersion,
-      "com.nimbusds" % "nimbus-jose-jwt" % "9.37.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % "9.37.3",
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -55,7 +55,7 @@ val database = project
     } ++ Seq("core", "hikari").map { m =>
       "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC5"
     } ++ Seq(
-      "org.flywaydb" % "flyway-mysql" % "9.21.1"
+      "org.flywaydb" % "flyway-mysql" % "10.7.2"
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
