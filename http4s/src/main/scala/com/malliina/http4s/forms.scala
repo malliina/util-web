@@ -1,5 +1,6 @@
 package com.malliina.http4s
 
+import com.malliina.http.{Errors, SingleError}
 import com.malliina.values.{ErrorMessage, Readable}
 import org.http4s.UrlForm
 

@@ -1,6 +1,7 @@
-package com.malliina.http4s
+package com.malliina.http
 
 import cats.data.NonEmptyList
+import com.malliina.http.{Errors, SingleError}
 import com.malliina.values.ErrorMessage
 import io.circe.{Codec, Decoder, Encoder}
 

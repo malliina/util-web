@@ -1,6 +1,7 @@
 package com.malliina.http4s
 
 import cats.effect.Concurrent
+import com.malliina.http.Errors
 import org.http4s.{DecodeResult, EntityDecoder, MalformedMessageBodyFailure, UrlForm}
 
 trait FormDecoders[F[_]: Concurrent]:
