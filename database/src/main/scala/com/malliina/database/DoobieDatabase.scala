@@ -3,6 +3,7 @@ package com.malliina.database
 import cats.Monad
 import cats.effect.kernel.Resource
 import cats.effect.{Async, Sync}
+import cats.implicits.toFunctorOps
 import cats.syntax.flatMap.toFlatMapOps
 import com.malliina.util.AppLogger
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -26,8 +27,10 @@ object DoobieDatabase:
     for tx <- poolTransactor(poolConfig(conf))
     yield DoobieDatabase(tx)
 
-  def fast[F[_]: Async](conf: Conf): DoobieDatabase[F] =
-    DoobieDatabase(noPoolTransactor(conf))
+  def fast[F[_]: Async](conf: Conf): F[DoobieDatabase[F]] =
+    val maybeMigration =
+      if conf.autoMigrate then migrate[F](conf).map(r => Option(r)) else Sync[F].pure(None)
+    maybeMigration.map(_ => DoobieDatabase(noPoolTransactor(conf)))
 
   private def withMigrations[F[_]: Async](conf: Conf): Resource[F, DoobieDatabase[F]] =
     Resource.eval(migrate(conf)).flatMap(_ => default(conf))

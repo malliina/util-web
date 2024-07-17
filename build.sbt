@@ -51,19 +51,33 @@ val database = project
   .in(file("database"))
   .enablePlugins(MavenCentralPlugin)
   .settings(
-    libraryDependencies ++= Seq("config", "okclient-io").map { m =>
-      malliinaGroup %%% m % primitiveVersion
-    } ++ Seq("core", "hikari").map { m =>
-      "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC5"
+    libraryDependencies ++=
+      Seq("config", "okclient-io").map { m =>
+        malliinaGroup %%% m % primitiveVersion
+      } ++ Seq("core", "hikari").map { m =>
+        "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC5"
+      } ++ Seq(
+        "org.flywaydb" % "flyway-mysql" % "10.15.2"
+      ),
+    releaseProcess := MavenCentralKeys.tagReleaseProcess.value
+  )
+
+val http4s = project
+  .in(file("http4s"))
+  .enablePlugins(MavenCentralPlugin)
+  .settings(
+    name := "util-http4s",
+    libraryDependencies ++= Seq("ember-server", "circe", "dsl").map { m =>
+      "org.http4s" %% s"http4s-$m" % "0.23.27"
     } ++ Seq(
-      "org.flywaydb" % "flyway-mysql" % "10.15.2"
+      malliinaGroup %%% "primitives" % primitiveVersion
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
 val webAuthRoot = project
   .in(file("."))
-  .aggregate(webAuth, htmlJvm, htmlJs, database)
+  .aggregate(webAuth, htmlJvm, htmlJs, database, http4s)
   .settings(
     releaseProcess := (webAuth / releaseProcess).value,
     organization := malliinaGroup,
