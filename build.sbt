@@ -67,11 +67,12 @@ val http4s = project
   .enablePlugins(MavenCentralPlugin)
   .settings(
     name := "util-http4s",
-    libraryDependencies ++= Seq("ember-server", "circe", "dsl").map { m =>
-      "org.http4s" %% s"http4s-$m" % "0.23.27"
-    } ++ Seq(
-      malliinaGroup %%% "primitives" % primitiveVersion
-    ),
+    libraryDependencies ++=
+      Seq("ember-server", "circe", "dsl").map { m =>
+        "org.http4s" %% s"http4s-$m" % "0.23.27"
+      } ++ Seq(
+        malliinaGroup %%% "primitives" % primitiveVersion
+      ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
