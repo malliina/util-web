@@ -5,7 +5,7 @@ import com.malliina.values.{ErrorMessage, Readable}
 import org.http4s.UrlForm
 
 class FormReader(form: UrlForm):
-  def read[T](key: String)(using r: Readable[T]): Either[Errors, T] =
+  def read[T](key: String)(using fr: FormReadable[T]): Either[Errors, T] =
     FormReadable[T].read(key, form).left.map(err => Errors(SingleError.input(err.message)))
 
 trait FormReadable[T]:
