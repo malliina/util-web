@@ -1,6 +1,7 @@
 package com.malliina.http4s
 
 import cats.Applicative
+import cats.data.NonEmptyList
 import cats.syntax.all.toFunctorOps
 import com.malliina.http.Errors
 import com.malliina.http4s.FeedbackSupport
@@ -13,7 +14,8 @@ import org.http4s.headers.{Location, `Cache-Control`}
 import org.http4s.{EntityEncoder, Request, Response, Uri, syntax}
 
 object BasicService:
-  val noCache = `Cache-Control`(`no-cache`(), `no-store`, `must-revalidate`)
+  val noCacheDirectives = NonEmptyList.of(`no-cache`(), `no-store`, `must-revalidate`)
+  val noCache = `Cache-Control`(noCacheDirectives)
 
 trait BasicService[F[_]: Applicative]
   extends syntax.AllSyntax
