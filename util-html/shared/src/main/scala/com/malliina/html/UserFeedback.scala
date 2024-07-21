@@ -1,8 +1,9 @@
 package com.malliina.html
 
 import com.malliina.html.UserFeedback.{Feedback, No, Success, Yes}
+import io.circe.Codec
 
-case class UserFeedback(message: String, isError: Boolean):
+case class UserFeedback(message: String, isError: Boolean) derives Codec.AsObject:
   def toMap: Seq[(String, String)] = Seq(
     Feedback -> message,
     Success -> (if isError then No else Yes)

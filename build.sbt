@@ -38,6 +38,7 @@ val html = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
+      "org.typelevel" %%% "case-insensitive" % "1.4.0",
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
       malliinaGroup %%% "primitives" % primitiveVersion
     ),
@@ -64,15 +65,14 @@ val database = project
 
 val http4s = project
   .in(file("http4s"))
+  .dependsOn(htmlJvm)
   .enablePlugins(MavenCentralPlugin)
   .settings(
     name := "util-http4s",
     libraryDependencies ++=
       Seq("ember-server", "circe", "dsl").map { m =>
         "org.http4s" %% s"http4s-$m" % "0.23.27"
-      } ++ Seq(
-        malliinaGroup %%% "primitives" % primitiveVersion
-      ),
+      },
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
 
