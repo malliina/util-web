@@ -7,7 +7,7 @@ import cats.syntax.all.toFunctorOps
 import cats.~>
 import com.malliina.http4s.BasicService
 import com.malliina.http.{CSRFConf, CSRFToken, Errors}
-import com.malliina.http4s.CSRFUtils.CSRFChecker
+import com.malliina.http4s.CSRFUtils.{CSRFChecker, defaultFailure}
 import org.http4s.circe.CirceEntityEncoder.circeEntityEncoder
 import org.http4s.circe.CirceInstances
 import org.http4s.server.Middleware
@@ -22,19 +22,24 @@ object CSRFUtils:
 
   def toToken(t: CSRF.CSRFToken): CSRFToken = CSRFToken(CSRF.unlift(t))
 
-class CSRFUtils(conf: CSRFConf) extends CirceInstances:
-  def default[F[_]: Sync: Concurrent] = build[F, F](FunctionK.id[F])
+  def defaultFailure[F[_]]: Response[F] =
+    Response[F](Status.Forbidden)
+      .withHeaders(BasicService.noCache)
+      .withEntity(Errors.single("CSRF"))
 
-  def build[F[_]: Sync, G[_]: Concurrent](gf: G ~> F): F[CSRF[F, G]] =
+class CSRFUtils(val conf: CSRFConf) extends CirceInstances:
+  def default[F[_]: Sync: Concurrent](onFailure: Response[F] = defaultFailure): F[CSRF[F, F]] =
+    build[F, F](FunctionK.id[F], onFailure)
+
+  def build[F[_]: Sync, G[_]: Concurrent](
+    gf: G ~> F,
+    onFailure: Response[G] = defaultFailure[G]
+  ): F[CSRF[F, G]] =
     CSRF
       .generateSigningKey[F]()
       .map: key =>
         CSRF[F, G](key, _ => true)
-          .withOnFailure(
-            Response[G](Status.Forbidden)
-              .withHeaders(BasicService.noCache)
-              .withEntity(Errors.single("CSRF"))
-          )
+          .withOnFailure(onFailure)
           .withCSRFCheck(
             CSRF.checkCSRFinHeaderAndForm[F, G](conf.tokenName, gf)
           )
