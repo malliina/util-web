@@ -2,8 +2,8 @@ import com.malliina.sbtutils.MavenCentralKeys
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.7.1"
-val munitVersion = "1.0.0"
+val primitiveVersion = "3.7.3"
+val munitVersion = "1.0.2"
 val scalatagsVersion = "0.13.1"
 
 inThisBuild(
@@ -56,7 +56,7 @@ val database = project
       Seq("config", "okclient-io").map { m =>
         malliinaGroup %%% m % primitiveVersion
       } ++ Seq("core", "hikari").map { m =>
-        "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC5"
+        "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC6"
       } ++ Seq(
         "org.flywaydb" % "flyway-mysql" % "10.15.2"
       ),
@@ -71,7 +71,7 @@ val http4s = project
     name := "util-http4s",
     libraryDependencies ++=
       Seq("ember-server", "circe", "dsl").map { m =>
-        "org.http4s" %% s"http4s-$m" % "0.23.27"
+        "org.http4s" %% s"http4s-$m" % "0.23.28"
       },
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
