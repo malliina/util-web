@@ -19,10 +19,16 @@ object DoobieDatabase:
   private val log = AppLogger(getClass)
 
   def init[F[_]: Async](conf: Conf): Resource[F, DoobieDatabase[F]] =
+    init(conf, makeLogHandler[F])
+
+  def init[F[_]: Async](conf: Conf, logHandler: LogHandler[F]): Resource[F, DoobieDatabase[F]] =
     if conf.autoMigrate then withMigrations(conf) else default(conf)
 
   def default[F[_]: Async](conf: Conf): Resource[F, DoobieDatabase[F]] =
-    pooledDatabase(poolConfig(conf))
+    default[F](conf, makeLogHandler[F])
+
+  def default[F[_]: Async](conf: Conf, logHandler: LogHandler[F]): Resource[F, DoobieDatabase[F]] =
+    pooledDatabase[F](poolConfig(conf))
 
   def fast[F[_]: Async](conf: Conf): F[DoobieDatabase[F]] =
     val maybeMigration =
@@ -41,7 +47,7 @@ object DoobieDatabase:
 
   private def migrate[F[_]: Sync](conf: Conf): F[MigrateResult] = Sync[F].delay:
     val flyway = Flyway.configure
-      .dataSource(conf.url, conf.user, conf.pass)
+      .dataSource(conf.url.url, conf.user, conf.pass.pass)
       .table(conf.schemaTable)
       .load()
     flyway.migrate()
@@ -49,9 +55,9 @@ object DoobieDatabase:
   private def poolConfig(conf: Conf): HikariConfig =
     val hikari = new HikariConfig()
     hikari.setDriverClassName(conf.driver)
-    hikari.setJdbcUrl(conf.url)
+    hikari.setJdbcUrl(conf.url.url)
     hikari.setUsername(conf.user)
-    hikari.setPassword(conf.pass)
+    hikari.setPassword(conf.pass.pass)
     hikari.setMaxLifetime(60.seconds.toMillis)
     hikari.setMaximumPoolSize(conf.maxPoolSize)
     hikari
@@ -87,9 +93,9 @@ object DoobieDatabase:
   private def noPoolTransactor[F[_]: Async](conf: Conf): Transactor[F] =
     Transactor.fromDriverManager[F](
       conf.driver,
-      conf.url,
+      conf.url.url,
       user = conf.user,
-      password = conf.pass,
+      password = conf.pass.pass,
       logHandler = Option(makeLogHandler[F])
     )
 

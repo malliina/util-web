@@ -1,11 +1,13 @@
 package com.malliina.database
 
 import com.malliina.config.ConfigReadable
+import com.malliina.http.FullUrl
+import com.malliina.values.{Password, Readable}
 
 case class Conf(
-  url: String,
+  url: FullUrl,
   user: String,
-  pass: String,
+  pass: Password,
   driver: String,
   maxPoolSize: Int,
   autoMigrate: Boolean,
@@ -16,11 +18,12 @@ object Conf:
   val MySQLDriver = "com.mysql.cj.jdbc.Driver"
   val DefaultSchemaTable = "flyway_schema_history"
 
+  given Readable[FullUrl] = FullUrl.readable
   given ConfigReadable[Conf] = ConfigReadable.node.emap: c =>
     for
-      url <- c.parse[String]("url")
+      url <- c.parse[FullUrl]("url")
       user <- c.parse[String]("user")
-      pass <- c.parse[String]("pass")
+      pass <- c.parse[Password]("pass")
       driver <- c.parse[String]("driver")
       maxPoolSize <- c.parse[Int]("maxPoolSize")
       autoMigrate <- c.parse[Boolean]("autoMigrate")

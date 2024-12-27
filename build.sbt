@@ -13,8 +13,7 @@ inThisBuild(
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,
-    libraryDependencies += "org.scalameta" %% "munit" % munitVersion % Test,
-    testFrameworks += new TestFramework("munit.Framework")
+    libraryDependencies += "org.scalameta" %% "munit" % munitVersion % Test
   )
 )
 
