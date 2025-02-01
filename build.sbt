@@ -2,8 +2,8 @@ import com.malliina.sbtutils.MavenCentralKeys
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.7.5"
-val munitVersion = "1.0.4"
+val primitiveVersion = "3.7.6"
+val munitVersion = "1.1.0"
 val scalatagsVersion = "0.13.1"
 
 inThisBuild(
@@ -17,7 +17,7 @@ inThisBuild(
   )
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % "1.17.2"
+val commonsCodec = "commons-codec" % "commons-codec" % "1.18.0"
 
 val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
@@ -57,7 +57,7 @@ val database = project
       } ++ Seq("core", "hikari").map { m =>
         "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC6"
       } ++ Seq(
-        "org.flywaydb" % "flyway-mysql" % "11.1.1"
+        "org.flywaydb" % "flyway-mysql" % "11.3.0"
       ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
