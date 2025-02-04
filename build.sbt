@@ -2,9 +2,12 @@ import com.malliina.sbtutils.MavenCentralKeys
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 
 val malliinaGroup = "com.malliina"
-val primitiveVersion = "3.7.6"
-val munitVersion = "1.1.0"
-val scalatagsVersion = "0.13.1"
+
+val versions = new {
+  val primitives = "3.7.7"
+  val munit = "1.1.0"
+  val scalatags = "0.13.1"
+}
 
 inThisBuild(
   Seq(
@@ -13,7 +16,7 @@ inThisBuild(
     gitUserName := "malliina",
     developerName := "Michael Skogberg",
     Test / publishArtifact := true,
-    libraryDependencies += "org.scalameta" %% "munit" % munitVersion % Test
+    libraryDependencies += "org.scalameta" %% "munit" % versions.munit % Test
   )
 )
 
@@ -23,7 +26,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
   .settings(
     libraryDependencies ++= Seq(
-      malliinaGroup %% "okclient-io" % primitiveVersion,
+      malliinaGroup %% "okclient-io" % versions.primitives,
       "com.nimbusds" % "nimbus-jose-jwt" % "10.0.1",
       commonsCodec
     ),
@@ -38,8 +41,8 @@ val html = crossProject(JSPlatform, JVMPlatform)
     name := "util-html",
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "case-insensitive" % "1.4.2",
-      "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
-      malliinaGroup %%% "primitives" % primitiveVersion
+      "com.lihaoyi" %%% "scalatags" % versions.scalatags,
+      malliinaGroup %%% "primitives" % versions.primitives
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
@@ -53,7 +56,7 @@ val database = project
   .settings(
     libraryDependencies ++=
       Seq("config", "okclient-io").map { m =>
-        malliinaGroup %%% m % primitiveVersion
+        malliinaGroup %%% m % versions.primitives
       } ++ Seq("core", "hikari").map { m =>
         "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC6"
       } ++ Seq(
