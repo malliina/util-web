@@ -4,8 +4,13 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 val malliinaGroup = "com.malliina"
 
 val versions = new {
-  val primitives = "3.7.7"
-  val munit = "1.1.0"
+  val doobie = "1.0.0-RC9"
+  val ci = "1.5.0"
+  val flywayMysql = "11.3.0"
+  val http4s = "0.23.30"
+  val munit = "1.1.1"
+  val nimbusJwt = "10.3"
+  val primitives = "3.7.10"
   val scalatags = "0.13.1"
 }
 
@@ -27,7 +32,7 @@ val webAuth = Project("web-auth", file("web-auth"))
   .settings(
     libraryDependencies ++= Seq(
       malliinaGroup %% "okclient-io" % versions.primitives,
-      "com.nimbusds" % "nimbus-jose-jwt" % "10.0.1",
+      "com.nimbusds" % "nimbus-jose-jwt" % versions.nimbusJwt,
       commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
@@ -40,7 +45,7 @@ val html = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "util-html",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "case-insensitive" % "1.4.2",
+      "org.typelevel" %%% "case-insensitive" % versions.ci,
       "com.lihaoyi" %%% "scalatags" % versions.scalatags,
       malliinaGroup %%% "primitives" % versions.primitives
     ),
@@ -58,9 +63,9 @@ val database = project
       Seq("config", "okclient-io").map { m =>
         malliinaGroup %%% m % versions.primitives
       } ++ Seq("core", "hikari").map { m =>
-        "org.tpolecat" %% s"doobie-$m" % "1.0.0-RC6"
+        "org.tpolecat" %% s"doobie-$m" % versions.doobie
       } ++ Seq(
-        "org.flywaydb" % "flyway-mysql" % "11.3.0"
+        "org.flywaydb" % "flyway-mysql" % versions.flywayMysql
       ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
@@ -73,7 +78,7 @@ val http4s = project
     name := "util-http4s",
     libraryDependencies ++=
       Seq("ember-server", "circe", "dsl").map { m =>
-        "org.http4s" %% s"http4s-$m" % "0.23.30"
+        "org.http4s" %% s"http4s-$m" % versions.http4s
       },
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
