@@ -2,12 +2,14 @@ package com.malliina.web
 
 import java.text.ParseException
 import java.time.Instant
-
 import com.malliina.util.AppLogger
 import com.malliina.values.{ErrorMessage, TokenValue}
+import com.malliina.web.TokenValidator.buildVerifier
 import com.nimbusds.jose.crypto.RSASSAVerifier
 import com.nimbusds.jose.jwk.RSAKey
 import com.nimbusds.jwt.SignedJWT
+
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 object StaticTokenValidator:
   private val log = AppLogger(getClass)
@@ -36,7 +38,16 @@ abstract class StaticTokenValidator[T <: TokenValue, U](keys: Seq[KeyConf], issu
 
   protected def toUser(v: Verified): Either[JWTError, U]
 
-abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys:
+object TokenValidator:
+  def buildVerifier(conf: KeyConf): RSASSAVerifier =
+    val rsaKey = new RSAKey.Builder(conf.n, conf.e)
+      .keyUse(conf.use)
+      .keyID(conf.kid)
+      .build()
+    new RSASSAVerifier(rsaKey)
+
+abstract class TokenValidator(issuers: Seq[Issuer], maxClockSkew: FiniteDuration = 60.seconds)
+  extends ClaimKeys:
   def this(issuer: Issuer) = this(Seq(issuer))
   import StaticTokenValidator.read
   protected def validateClaims(parsed: ParsedJWT, now: Instant): Either[JWTError, ParsedJWT]
@@ -55,7 +66,7 @@ abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys:
     exp <- read(token, claims.getExpirationTime, ErrorMessage(Exp))
   yield ParsedJWT(jwt, claims, kid, iss, exp.toInstant, token)
 
-  protected def verify(
+  private def verify(
     parsed: ParsedJWT,
     keys: Seq[KeyConf],
     now: Instant
@@ -68,12 +79,13 @@ abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys:
         .map: keyConf =>
           val verifier = buildVerifier(keyConf)
           if !isSignatureValid(parsed.jwt, verifier) then Left(InvalidSignature(token))
-          else if !now.isBefore(parsed.exp) then Left(Expired(token, parsed.exp, now))
+          else if !now.minusSeconds(maxClockSkew.toSeconds).isBefore(parsed.exp) then
+            Left(Expired(token, parsed.exp, now))
           else validateClaims(parsed, now).map(p => Verified(p))
         .getOrElse:
           Left(InvalidKeyId(token, parsed.kid, keys.map(_.kid)))
 
-  protected def isSignatureValid(unverified: SignedJWT, verifier: RSASSAVerifier): Boolean =
+  private def isSignatureValid(unverified: SignedJWT, verifier: RSASSAVerifier): Boolean =
     unverified.verify(verifier)
 
   def checkClaim(key: String, expected: String, parsed: ParsedJWT): Either[JWTError, ParsedJWT] =
@@ -107,10 +119,3 @@ abstract class TokenValidator(issuers: Seq[Issuer]) extends ClaimKeys:
               )
             )
           )
-
-  def buildVerifier(conf: KeyConf): RSASSAVerifier =
-    val rsaKey = new RSAKey.Builder(conf.n, conf.e)
-      .keyUse(conf.use)
-      .keyID(conf.kid)
-      .build()
-    new RSASSAVerifier(rsaKey)
