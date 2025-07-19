@@ -4,13 +4,14 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 val malliinaGroup = "com.malliina"
 
 val versions = new {
-  val doobie = "1.0.0-RC9"
+  val commonsCodec = "1.18.0"
+  val doobie = "1.0.0-RC10"
   val ci = "1.5.0"
-  val flywayMysql = "11.9.1"
+  val flywayMysql = "11.10.3"
   val http4s = "0.23.30"
   val munit = "1.1.1"
-  val nimbusJwt = "10.3"
-  val primitives = "3.7.10"
+  val nimbusJwt = "10.3.1"
+  val primitives = "3.7.13"
   val scalatags = "0.13.1"
 }
 
@@ -25,7 +26,7 @@ inThisBuild(
   )
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % "1.18.0"
+val commonsCodec = "commons-codec" % "commons-codec" % versions.commonsCodec
 
 val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
