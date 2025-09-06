@@ -45,7 +45,7 @@ object TwitterAuthFlow:
     strb.toString()
 
 class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) extends FlowStart[F]:
-  val F = Sync[F]
+  private val F = Sync[F]
   val brandName = "Twitter"
   val baseUrl = FullUrl.https("api.twitter.com", "")
   val requestTokenUrl = baseUrl / "oauth" / "request_token"
@@ -110,18 +110,7 @@ class TwitterAuthFlow[F[_]: Sync](conf: AuthConf, val http: HttpClient[F]) exten
     val authHeaderValue = encodable.signed("GET", userInfoUrl, Option(access.oauthTokenSecret))
     val queryString = queryParams.map((k, v) => s"$k=$v").mkString("&")
     val reqUrl = userInfoUrl.append(s"?$queryString")
-
-    val req =
-      new Request.Builder().url(reqUrl.url).addHeader(Authorization, authHeaderValue).get.build()
-    http
-      .execute(req)
-      .flatMap: res =>
-        res
-          .parse[TwitterUser]
-          .fold(
-            err => Sync[F].raiseError(com.malliina.http.JsonError(err, res, reqUrl).toException),
-            user => Sync[F].pure(user)
-          )
+    http.getAs[TwitterUser](reqUrl, Map(Authorization -> authHeaderValue))
 
   private def buildNonce = new String(
     Base64.getEncoder.encode(randomString().getBytes(StandardCharsets.UTF_8)),

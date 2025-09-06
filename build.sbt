@@ -4,14 +4,14 @@ import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 val malliinaGroup = "com.malliina"
 
 val versions = new {
-  val commonsCodec = "1.18.0"
+  val commonsCodec = "1.19.0"
   val doobie = "1.0.0-RC10"
   val ci = "1.5.0"
-  val flywayMysql = "11.10.3"
+  val flywayMysql = "11.12.0"
   val http4s = "0.23.30"
   val munit = "1.1.1"
-  val nimbusJwt = "10.3.1"
-  val primitives = "3.7.13"
+  val nimbusJwt = "10.5"
+  val primitives = "3.7.16"
   val scalatags = "0.13.1"
 }
 
