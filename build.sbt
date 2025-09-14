@@ -11,7 +11,7 @@ val versions = new {
   val http4s = "0.23.30"
   val munit = "1.2.0"
   val nimbusJwt = "10.5"
-  val primitives = "3.8.0"
+  val primitives = "3.8.3"
   val scalatags = "0.13.1"
 }
 
