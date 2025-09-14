@@ -9,9 +9,9 @@ val versions = new {
   val ci = "1.5.0"
   val flywayMysql = "11.12.0"
   val http4s = "0.23.30"
-  val munit = "1.1.1"
+  val munit = "1.2.0"
   val nimbusJwt = "10.5"
-  val primitives = "3.7.18"
+  val primitives = "3.8.0"
   val scalatags = "0.13.1"
 }
 
