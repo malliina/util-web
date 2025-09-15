@@ -11,7 +11,7 @@ val versions = new {
   val http4s = "0.23.30"
   val munit = "1.2.0"
   val nimbusJwt = "10.5"
-  val primitives = "3.8.3"
+  val primitives = "3.8.4"
   val scalatags = "0.13.1"
 }
 
@@ -26,15 +26,13 @@ inThisBuild(
   )
 )
 
-val commonsCodec = "commons-codec" % "commons-codec" % versions.commonsCodec
-
 val webAuth = Project("web-auth", file("web-auth"))
   .enablePlugins(MavenCentralPlugin)
   .settings(
     libraryDependencies ++= Seq(
       malliinaGroup %% "okclient-io" % versions.primitives,
       "com.nimbusds" % "nimbus-jose-jwt" % versions.nimbusJwt,
-      commonsCodec
+      "commons-codec" % "commons-codec" % versions.commonsCodec
     ),
     releaseProcess := MavenCentralKeys.tagReleaseProcess.value
   )
