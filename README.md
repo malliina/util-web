@@ -1,6 +1,8 @@
 [![Build Status](https://github.com/malliina/util-web/workflows/Test/badge.svg)](https://github.com/malliina/util-web/actions)
 [![Maven Central](https://img.shields.io/maven-central/v/com.malliina/web-auth_3.svg)](https://search.maven.org/search?q=g:com.malliina%20AND%20a:web-auth_3)
 
+Moved to monorepo https://github.com/malliina/util-base.
+
 A set of modules I find helpful when building applications.
 
 # web-auth
